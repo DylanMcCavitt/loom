@@ -145,7 +145,7 @@ export default function workflowCockpit(pi) {
   });
 
   pi.registerCommand("diff", {
-    description: "Render a read-only split diff widget for a git revision range",
+    description: "Render a read-only split diff overlay for a git revision range",
     handler: renderDiffCommand,
   });
 
