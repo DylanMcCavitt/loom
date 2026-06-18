@@ -1,6 +1,5 @@
 providers: 
   webSearch: codex
-symbolPreset: unicode
 theme: 
   dark: dark-tundra
 setupVersion: 1
@@ -50,10 +49,8 @@ statusLine:
   preset: full
   separator: pipe
   sessionAccent: true
-  transparent: false
 tui: 
   textSizing: false
-  hyperlinks: auto
   tight: false
 display: 
   showTokenUsage: true
