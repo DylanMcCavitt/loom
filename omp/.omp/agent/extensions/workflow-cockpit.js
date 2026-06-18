@@ -1,5 +1,6 @@
 import { formatRouteResult, routeIntent } from "./workflow-routing.js";
 import { formatRecipe } from "./workflow-recipes.js";
+import { renderDiffCommand } from "./split-diff.js";
 
 const UNKNOWN = "unknown";
 const MAX_PANEL_BODY_LINES = 14;
@@ -410,6 +411,11 @@ export default function workflowCockpit(pi) {
         return [];
       }
     },
+  });
+
+  pi.registerCommand("diff", {
+    description: "Render a read-only split diff overlay for a git revision range",
+    handler: renderDiffCommand,
   });
 
   pi.registerCommand("go", {

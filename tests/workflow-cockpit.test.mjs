@@ -96,7 +96,7 @@ function plainTheme() {
 test("workflow cockpit registers visible commands", () => {
   const { commands, labels } = install();
   assert.deepEqual(labels, ["Workflow Cockpit"]);
-  for (const command of ["ctx", "route", "new-thread", "spawn-recipe", "go", "ship"]) {
+  for (const command of ["ctx", "route", "new-thread", "spawn-recipe", "diff", "go", "ship"]) {
     assert.ok(commands.has(command), `${command} command missing`);
   }
 });
