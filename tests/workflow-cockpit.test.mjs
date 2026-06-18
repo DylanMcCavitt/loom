@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import workflowCockpit from "../omp/.omp/agent/extensions/workflow-cockpit.js";
 
+const GO_PROMPT = "Proceed with the current plan. Do not ask unless blocked by missing external information. Preserve unrelated changes. Use subagents for parallelizable work. Verify before yielding.";
+const SHIP_PROMPT = "Finish the active issue end-to-end. Check acceptance criteria, implement missing work, verify behavior, and prepare closeout evidence. Ask only if the active issue or target repository is unknown.";
+
 function install() {
   const commands = new Map();
   const labels = [];
@@ -41,7 +44,7 @@ function context(overrides = {}) {
 test("workflow cockpit registers visible commands", () => {
   const { commands, labels } = install();
   assert.deepEqual(labels, ["Workflow Cockpit"]);
-  for (const command of ["ctx", "route", "new-thread", "spawn-recipe"]) {
+  for (const command of ["ctx", "route", "new-thread", "spawn-recipe", "go", "ship"]) {
     assert.ok(commands.has(command), `${command} command missing`);
   }
 });
@@ -102,8 +105,46 @@ test("invalid command args produce visible errors without throwing", async () =>
   assert.equal(recipeState.notifications.at(-1).message, "Usage: /spawn-recipe <intent>");
 });
 
-test("workflow cockpit does not register go or ship in this slice", () => {
+test("/go displays the exact execute-plan prompt", async () => {
   const { commands } = install();
-  assert.equal(commands.has("go"), false);
-  assert.equal(commands.has("ship"), false);
+  const state = context();
+  const lines = await commands.get("go").handler("", state.ctx);
+  assert.deepEqual(lines, [GO_PROMPT]);
+  assert.equal(state.notifications.at(-1).message, "Go prompt shown");
+});
+
+test("/ship requires an active issue", async () => {
+  const { commands } = install();
+  const state = context();
+  const lines = await commands.get("ship").handler("", state.ctx);
+  assert.deepEqual(lines, []);
+  assert.equal(state.notifications.at(-1).message, "Active issue is unknown; set or provide one before /ship.");
+});
+
+test("/ship displays the exact issue-autopilot prompt with active issue", async () => {
+  const { commands } = install();
+  const state = context({ activeIssue: "#8" });
+  const lines = await commands.get("ship").handler("", state.ctx);
+  assert.deepEqual(lines, [SHIP_PROMPT]);
+  assert.equal(state.notifications.at(-1).message, "Ship prompt shown");
+});
+
+test("/go and /ship do not call shell or GitHub APIs", async () => {
+  const { commands } = install();
+  let unsafeCalls = 0;
+  const state = context({
+    activeIssue: "#8",
+    shell() {
+      unsafeCalls += 1;
+    },
+    github() {
+      unsafeCalls += 1;
+    },
+    gh() {
+      unsafeCalls += 1;
+    },
+  });
+  await commands.get("go").handler("", state.ctx);
+  await commands.get("ship").handler("", state.ctx);
+  assert.equal(unsafeCalls, 0);
 });

@@ -3,6 +3,9 @@ import { formatRecipe } from "./workflow-recipes.js";
 
 const UNKNOWN = "unknown";
 
+const GO_PROMPT = "Proceed with the current plan. Do not ask unless blocked by missing external information. Preserve unrelated changes. Use subagents for parallelizable work. Verify before yielding.";
+const SHIP_PROMPT = "Finish the active issue end-to-end. Check acceptance criteria, implement missing work, verify behavior, and prepare closeout evidence. Ask only if the active issue or target repository is unknown.";
+
 function present(value) {
   if (value === undefined || value === null || value === "") return UNKNOWN;
   if (Array.isArray(value)) return value.length ? value.join(", ") : "none";
@@ -65,6 +68,10 @@ function threadStarter(ctx = {}) {
     "Next-thread starter:",
     `Use the handoff skill to resume ${present(focus)}. Start from the handoff artifact, verify the current repo, issue, branch/worktree, and latest validation evidence, then re-read touched files before editing.`,
   ];
+}
+
+function hasActiveIssue(ctx = {}) {
+  return firstPresent(ctx.activeIssue, ctx.issue?.number, ctx.issue, ctx.state?.activeIssue, ctx.workflow?.activeIssue) !== UNKNOWN;
 }
 
 export default function workflowCockpit(pi) {
@@ -131,6 +138,34 @@ export default function workflowCockpit(pi) {
         return await render(ctx, lines, "Spawn recipe shown", "info");
       } catch (error) {
         ctx?.ui?.notify?.(`Spawn recipe failed: ${error.message}`, "error");
+        return [];
+      }
+    },
+  });
+
+  pi.registerCommand("go", {
+    description: "Display the exact execute-plan prompt for proceeding with the current plan",
+    handler: async (_args, ctx) => {
+      try {
+        return await render(ctx, [GO_PROMPT], "Go prompt shown", "info");
+      } catch (error) {
+        ctx?.ui?.notify?.(`Go prompt failed: ${error.message}`, "error");
+        return [];
+      }
+    },
+  });
+
+  pi.registerCommand("ship", {
+    description: "Display the exact issue-autopilot prompt for finishing the active issue",
+    handler: async (_args, ctx) => {
+      if (!hasActiveIssue(ctx)) {
+        ctx?.ui?.notify?.("Active issue is unknown; set or provide one before /ship.", "error");
+        return [];
+      }
+      try {
+        return await render(ctx, [SHIP_PROMPT], "Ship prompt shown", "info");
+      } catch (error) {
+        ctx?.ui?.notify?.(`Ship prompt failed: ${error.message}`, "error");
         return [];
       }
     },
