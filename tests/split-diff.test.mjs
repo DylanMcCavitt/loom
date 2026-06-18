@@ -1,41 +1,147 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import workflowCockpit from "../omp/.omp/agent/extensions/workflow-cockpit.js";
 import {
-  SplitDiffOverlayComponent,
+  buildDiffErrorWidget,
+  buildDiffSections,
   buildDiffWidget,
+  createDiffState,
   ghPrDiffArgs,
   gitDiffArgs,
+  handleDiffKey,
   parseDiffArgs,
   parseUnifiedDiff,
   renderDiffCommand,
 } from "../omp/.omp/agent/extensions/split-diff.js";
 
-function install() {
-  const commands = new Map();
-  workflowCockpit({
-    setLabel() {},
-    registerCommand(name, command) {
-      commands.set(name, command);
-    },
-  });
-  return commands;
+const SPLIT_DIFF_SOURCE = readFileSync(
+  new URL("../omp/.omp/agent/extensions/split-diff.js", import.meta.url),
+  "utf8",
+);
+
+// Identity-ish theme: wraps text in `<token>…</token>` so assertions can detect
+// which theme diff token styled each cell (toolDiffRemoved/Added/Context, etc.).
+const theme = {
+  fg(token, text) {
+    return `<${token}>${text}</${token}>`;
+  },
+};
+
+// Stub of the native `ScrollView`: a fixed-height window over `lines` with an
+// offset clamped to [0, max] and the same `handleScrollKey(data)` seam the real
+// component exposes. Mirrors the canonical CSI sequences used by the extensions.
+class StubScrollView {
+  constructor(lines, options = {}) {
+    this.lines = [...lines];
+    this.height = Math.max(0, Math.trunc(options.height ?? this.lines.length));
+    this.offset = 0;
+  }
+
+  maxOffset() {
+    return Math.max(0, this.lines.length - this.height);
+  }
+
+  clamp() {
+    this.offset = Math.max(0, Math.min(this.offset, this.maxOffset()));
+  }
+
+  getScrollOffset() {
+    return this.offset;
+  }
+
+  getMaxScrollOffset() {
+    return this.maxOffset();
+  }
+
+  scrollBy(delta) {
+    this.offset += delta;
+    this.clamp();
+  }
+
+  handleScrollKey(data) {
+    switch (data) {
+      case "\u001b[A":
+        this.scrollBy(-1);
+        return true;
+      case "\u001b[B":
+        this.scrollBy(1);
+        return true;
+      case "\u001b[5~":
+        this.scrollBy(-this.height);
+        return true;
+      case "\u001b[6~":
+        this.scrollBy(this.height);
+        return true;
+      case "\u001b[H":
+        this.offset = 0;
+        return true;
+      case "\u001b[F":
+        this.offset = this.maxOffset();
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  render() {
+    if (this.height === 0) return [];
+    this.clamp();
+    const out = [];
+    for (let row = 0; row < this.height; row += 1) out.push(this.lines[this.offset + row] ?? "");
+    return out;
+  }
+
+  setLines(lines) {
+    this.lines = [...lines];
+    this.clamp();
+  }
+
+  setHeight(height) {
+    this.height = Math.max(0, Math.trunc(height));
+    this.clamp();
+  }
+
+  setScrollOffset(offset) {
+    this.offset = Number.isFinite(offset) ? Math.trunc(offset) : 0;
+    this.clamp();
+  }
 }
 
-function context(overrides = {}) {
-  const diffWidgets = [];
-  const legacyWidgets = [];
-  const customOverlays = [];
-  const notifications = [];
-  const theme = {
-    fg(token, text) {
-      return `<${token}>${text}</${token}>`;
+// Stub of the native `framedBlock`: calls `build(width)` and flattens the
+// resulting block (header + headerMeta, labelled sections, lines) into the
+// `readonly string[]` the Component contract returns.
+function stubFramedBlock(_theme, build) {
+  return {
+    render(width) {
+      const opts = build(width);
+      const lines = [];
+      if (opts.header) lines.push(`[${opts.header}${opts.headerMeta ? ` ${opts.headerMeta}` : ""}]`);
+      for (const section of opts.sections ?? []) {
+        if (section.label) lines.push(`<<${section.label}>>`);
+        for (const line of section.lines ?? []) lines.push(line);
+      }
+      return lines;
     },
+    invalidate() {},
   };
+}
+
+function panelPrimitives() {
+  return { framedBlock: stubFramedBlock, renderOutputBlock: () => [], ScrollView: StubScrollView };
+}
+
+// Command-path harness: a ctx whose `ui.custom` builds the real shell from
+// injected primitives (so ctx.ui.custom IS exercised under `node --test`) and
+// captures the mounted component plus its `done` result.
+function context(overrides = {}) {
+  const customOverlays = [];
+  const legacyWidgets = [];
+  const notifications = [];
   return {
     ctx: {
       cwd: "/repo",
       hasUI: true,
+      panelPrimitives: panelPrimitives(),
       ui: {
         custom(factory, options) {
           let resolvePromise;
@@ -49,9 +155,6 @@ function context(overrides = {}) {
           customOverlays.push({ component, options, result: undefined });
           return promise;
         },
-        async setDiffWidget(widget, options) {
-          diffWidgets.push({ widget, options });
-        },
         async setWidget(lines, options) {
           legacyWidgets.push({ lines, options });
         },
@@ -62,7 +165,6 @@ function context(overrides = {}) {
       ...overrides,
     },
     customOverlays,
-    diffWidgets,
     legacyWidgets,
     notifications,
   };
@@ -105,6 +207,22 @@ index 1111111..2222222 100644
  twenty();
 -oldTwenty();
 +newTwenty();
+`;
+
+// A change near the top (so red/green/context are visible in the first window)
+// followed by enough context to overflow any plausible terminal viewport, so the
+// shell's scroll handling is genuinely exercised.
+const SCROLL_BODY = Array.from({ length: 140 }, (_value, index) => ` keep${index + 1}();`).join("\n");
+const SCROLL_DIFF = `diff --git a/src/scroll.js b/src/scroll.js
+index 1111111..2222222 100644
+--- a/src/scroll.js
++++ b/src/scroll.js
+@@ -1,142 +1,143 @@
+ topKept();
+-oldLine();
++newLine();
+${SCROLL_BODY}
++tailAdded();
 `;
 
 test("parseUnifiedDiff builds split rows for additions, deletions, and modifications", () => {
@@ -182,62 +300,111 @@ test("buildDiffWidget applies --file filtering before rendering the panel model"
   assert.deepEqual(widget.navigation.files.map((file) => file.path), ["docs/new.txt"]);
 });
 
-test("SplitDiffOverlayComponent renders split panes with styled deletion and addition cells", () => {
-  const widget = buildDiffWidget({ kind: "range", label: "base..head", range: "base..head", file: "" }, MODIFIED_DIFF);
-  const component = new SplitDiffOverlayComponent(widget, { fg: (token, text) => `<${token}>${text}</${token}>` }, null, () => {});
-  const lines = component.render(180);
+test("buildDiffSections styles red/green/context rows with line numbers for the current file", () => {
+  const widget = buildDiffWidget({ kind: "range", label: "base..head", range: "base..head", file: "" }, `${MODIFIED_DIFF}${RENAMED_DIFF}`);
+  const state = createDiffState(widget);
+  const sections = buildDiffSections(widget, state, 120, theme);
 
-  assert.ok(lines.some((line) => line.includes("OLD") && line.includes("NEW")));
-  assert.ok(lines.some((line) => line.includes("src/app.js")));
-  assert.ok(lines.some((line) => line.includes("<error>") && line.includes("const name = \"old\";")));
-  assert.ok(lines.some((line) => line.includes("<success>") && line.includes("const name = \"new\";")));
-  assert.ok(lines.at(-1).includes("[ ] file"));
-  assert.ok(lines.at(-1).includes("{ } hunk"));
+  assert.equal(sections.length, 1);
+  // Header carries the diff title, file position, path, and status of file 0.
+  assert.match(sections[0].label, /Diff: base\.\.head · 1\/2 src\/app\.js \(modified\)/u);
+
+  const lines = sections[0].lines;
+  const text = lines.join("\n");
+  assert.ok(text.includes("OLD") && text.includes("NEW"), "OLD/NEW column header present");
+
+  // The modified line is a `change` row: its OLD half is red (toolDiffRemoved),
+  // its NEW half is green (toolDiffAdded), and both line numbers are preserved.
+  const changeLine = lines.find((line) => line.includes("const name = \"old\";"));
+  assert.ok(changeLine, "change row rendered");
+  assert.ok(changeLine.includes("<toolDiffRemoved>"), "deletion styled red via toolDiffRemoved");
+  assert.ok(changeLine.includes("<toolDiffAdded>"), "addition styled green via toolDiffAdded");
+  assert.ok(changeLine.includes("const name = \"new\";"), "new text on the same split row");
+  assert.match(changeLine, /\b2\b/u, "old/new line number 2 preserved");
+
+  // Unchanged lines render as context on both panes via toolDiffContext.
+  const contextLine = lines.find((line) => line.includes("const keep = true;"));
+  assert.ok(contextLine.includes("<toolDiffContext>"), "context styled via toolDiffContext");
+  assert.match(contextLine, /\b1\b/u, "context line number 1 preserved");
+
+  // Hunk header rows render as accent.
+  assert.ok(lines.some((line) => line.includes("<accent>") && line.includes("@@")), "hunk header styled accent");
 });
 
-test("SplitDiffOverlayComponent keeps narrow renders inside the requested width", () => {
-  const widget = buildDiffWidget({ kind: "range", label: "base..head", range: "base..head", file: "" }, MODIFIED_DIFF);
-  const component = new SplitDiffOverlayComponent(widget, null, null, () => {});
-  const lines = component.render(24);
+test("handleDiffKey [ ] switches the current file and resets scroll", () => {
+  const widget = buildDiffWidget({ kind: "range", label: "base..head", range: "base..head", file: "" }, `${MODIFIED_DIFF}${RENAMED_DIFF}`);
+  const state = createDiffState(widget);
+  buildDiffSections(widget, state, 120, theme);
 
-  assert.ok(lines.some((line) => line.includes("Widen terminal")));
-  for (const line of lines) assert.ok(line.length <= 24, line);
+  const calls = { scrollTo: [], refresh: 0 };
+  const controller = {
+    scrollTo(line) {
+      calls.scrollTo.push(line);
+    },
+    refresh() {
+      calls.refresh += 1;
+    },
+    scrollView: { getScrollOffset: () => 0 },
+  };
+
+  assert.equal(handleDiffKey("]", controller, state), true);
+  assert.equal(state.fileIndex, 1);
+  assert.deepEqual(calls.scrollTo, [0]);
+  assert.equal(calls.refresh, 1);
+
+  // The active file is now the renamed file; its section reflects 2/2 + rename path.
+  const sections = buildDiffSections(widget, state, 120, theme);
+  assert.match(sections[0].label, /2\/2 docs\/old\.txt → docs\/new\.txt \(renamed\)/u);
+
+  assert.equal(handleDiffKey("[", controller, state), true);
+  assert.equal(state.fileIndex, 0);
+  assert.deepEqual(calls.scrollTo, [0, 0]);
+  assert.equal(calls.refresh, 2);
 });
 
-test("SplitDiffOverlayComponent supports scrolling, file navigation, hunk navigation, and close keys", () => {
-  const longContext = Array.from({ length: 22 }, (_value, index) => ` line${index + 1}();`).join("\n");
-  const longTwoHunkDiff = `diff --git a/src/two.js b/src/two.js
-index 1111111..2222222 100644
---- a/src/two.js
-+++ b/src/two.js
-@@ -1,22 +1,22 @@
-${longContext}
-@@ -40,2 +40,2 @@ tail
- forty();
--oldForty();
-+newForty();
-`;
-  const widget = buildDiffWidget({ kind: "range", label: "base..head", range: "base..head", file: "" }, `${MODIFIED_DIFF}${longTwoHunkDiff}`);
-  let closed = "";
-  const component = new SplitDiffOverlayComponent(widget, null, null, (result) => {
-    closed = result;
+test("handleDiffKey { } jumps to the next/previous hunk offsets", () => {
+  const widget = buildDiffWidget({ kind: "range", label: "base..head", range: "base..head", file: "" }, SECOND_HUNK_DIFF);
+  const state = createDiffState(widget);
+  buildDiffSections(widget, state, 120, theme);
+  // Two hunk headers → two recorded body offsets (label + OLD/NEW header above).
+  assert.equal(state.hunkOffsets.length, 2);
+  const [firstHunk, secondHunk] = state.hunkOffsets;
+
+  let offset = 0;
+  const controller = {
+    scrollTo(line) {
+      offset = line;
+    },
+    scrollView: { getScrollOffset: () => offset },
+  };
+
+  assert.equal(handleDiffKey("}", controller, state), true);
+  assert.equal(offset, firstHunk, "first } jumps to the first hunk below the top");
+  assert.equal(handleDiffKey("}", controller, state), true);
+  assert.equal(offset, secondHunk, "second } advances to the next hunk");
+  assert.equal(handleDiffKey("{", controller, state), true);
+  assert.equal(offset, firstHunk, "{ steps back to the previous hunk");
+});
+
+test("buildDiffSections renders explicit empty and error states", () => {
+  const emptyWidget = buildDiffWidget({ kind: "range", label: "base..head", range: "base..head", file: "" }, "");
+  const emptySections = buildDiffSections(emptyWidget, createDiffState(emptyWidget), 80, theme);
+  assert.equal(emptySections.length, 1);
+  assert.match(emptySections[0].lines.join("\n"), /No changes/u);
+
+  const errorWidget = buildDiffErrorWidget("fatal: bad revision 'missing'", {
+    kind: "range",
+    label: "base..head",
+    range: "base..head",
+    file: "",
   });
-
-  component.handleInput("]");
-  assert.equal(component.currentFile().path, "src/two.js");
-  assert.equal(component.scroll, 0);
-  component.handleInput("j");
-  assert.equal(component.scroll, 1);
-  component.handleInput("}");
-  assert.ok(component.scroll > 1);
-  component.handleInput("{");
-  assert.equal(component.scroll, 0);
-  component.handleInput("q");
-  assert.equal(closed, "closed");
+  const errorSections = buildDiffSections(errorWidget, createDiffState(errorWidget), 80, theme);
+  const errorText = errorSections[0].lines.join("\n");
+  assert.match(errorText, /bad revision/u, "error message is visible");
+  assert.ok(errorText.includes("<error>"), "error message styled");
 });
 
-test("/diff registers and renders through ctx.ui.custom overlay", async () => {
-  const commands = install();
+test("/diff renders through an injected ctx.ui.custom overlay shell", async () => {
   const state = context({
     async gitDiff(args) {
       assert.deepEqual(args, [
@@ -254,48 +421,67 @@ test("/diff registers and renders through ctx.ui.custom overlay", async () => {
     },
   });
 
-  const widget = await commands.get("diff").handler("base..head --file src/app.js", state.ctx);
+  const widget = await renderDiffCommand("base..head --file src/app.js", state.ctx);
   assert.equal(widget.title, "Diff: base..head · src/app.js");
   assert.equal(widget.mode, "split");
   assert.equal(widget.files.length, 1);
   assert.equal(state.customOverlays.length, 1);
   assert.equal(state.customOverlays[0].options.overlay, true);
-  assert.equal(state.diffWidgets.length, 0);
   assert.equal(state.legacyWidgets.length, 0);
   assert.equal(state.notifications.at(-1).message, "Showing split diff for 1 file");
+
+  // The shell factory built a real panel that renders the styled split body.
+  const text = state.customOverlays[0].component.render(120).join("\n");
+  assert.ok(text.includes("OLD") && text.includes("NEW"), "split header rendered through the shell");
+  assert.ok(text.includes("<toolDiffRemoved>"), "deletion styled in the live render path");
+  assert.ok(text.includes("<toolDiffAdded>"), "addition styled in the live render path");
 });
 
 test("/diff carries a scrollable multi-file model with file and hunk navigation", async () => {
-  const commands = install();
   const state = context({
     async gitDiff() {
       return `${MODIFIED_DIFF}${RENAMED_DIFF}`;
     },
   });
 
-  const widget = await commands.get("diff").handler("base..head", state.ctx);
+  const widget = await renderDiffCommand("base..head", state.ctx);
   assert.equal(widget.scrollable, true);
   assert.deepEqual(widget.navigation.files.map((file) => file.path), ["src/app.js", "docs/new.txt"]);
   assert.equal(widget.navigation.hunks, true);
   assert.ok(widget.navigation.keys.some((key) => key.includes("hunk")));
 });
 
+test("/diff scrolls a tall diff through the shell's scroll handling", async () => {
+  const state = context({
+    async gitDiff() {
+      return SCROLL_DIFF;
+    },
+  });
+
+  await renderDiffCommand("base..head", state.ctx);
+  const component = state.customOverlays[0].component;
+  component.render(120);
+
+  const before = component.controller.scrollView.getScrollOffset();
+  component.handleInput("\u001b[6~"); // PgDn routes through the shell to ScrollView
+  const after = component.controller.scrollView.getScrollOffset();
+  assert.ok(after > before, "shell scroll advances the diff body for tall diffs");
+});
+
 test("/diff renders an explicit empty state for no changes", async () => {
-  const commands = install();
   const state = context({
     async gitDiff() {
       return "";
     },
   });
 
-  const widget = await commands.get("diff").handler("base..head", state.ctx);
+  const widget = await renderDiffCommand("base..head", state.ctx);
   assert.deepEqual(widget.state, { kind: "empty", message: "No changes" });
-  assert.equal(state.customOverlays[0].component.widget.files.length, 0);
   assert.equal(state.notifications.at(-1).message, "No changes");
+  assert.match(state.customOverlays[0].component.render(80).join("\n"), /No changes/u);
 });
 
 test("/diff replaces stale diff overlays on repeated render and invalid input", async () => {
-  const commands = install();
   const state = context({
     async gitDiff(args) {
       if (args.includes("missing..head")) throw new Error("fatal: bad revision 'missing..head'");
@@ -303,19 +489,20 @@ test("/diff replaces stale diff overlays on repeated render and invalid input", 
     },
   });
 
-  await commands.get("diff").handler("base..head", state.ctx);
-  await commands.get("diff").handler("other..head", state.ctx);
-  assert.equal(state.customOverlays[0].result, "replaced");
+  await renderDiffCommand("base..head", state.ctx);
+  await renderDiffCommand("other..head", state.ctx);
+  assert.equal(state.customOverlays[0].result, "replaced", "first overlay closed when the second mounts");
 
-  const widget = await commands.get("diff").handler("missing..head", state.ctx);
-  assert.equal(state.customOverlays[1].result, "replaced");
+  const widget = await renderDiffCommand("missing..head", state.ctx);
+  assert.equal(state.customOverlays[1].result, "replaced", "second overlay closed before the error overlay");
   assert.equal(widget.state.kind, "error");
   assert.match(widget.state.message, /bad revision/u);
-  assert.equal(state.customOverlays.at(-1).component.widget.state.kind, "error");
+  const errorText = state.customOverlays.at(-1).component.render(80).join("\n");
+  assert.match(errorText, /bad revision/u, "error overlay leaves a visible error, not stale UI");
   assert.equal(state.notifications.at(-1).level, "error");
 });
 
-test("/diff uses a safe non-TUI fallback instead of requiring setDiffWidget", async () => {
+test("/diff uses a safe non-TUI fallback instead of requiring custom overlays", async () => {
   const notifications = [];
   const legacyWidgets = [];
   const result = await renderDiffCommand("base..head", {
@@ -335,4 +522,12 @@ test("/diff uses a safe non-TUI fallback instead of requiring setDiffWidget", as
   assert.equal(legacyWidgets.length, 1);
   assert.match(legacyWidgets[0][1], /Open an interactive TUI/u);
   assert.equal(notifications.at(-1).level, "info");
+});
+
+test("split-diff renders without box-art or legacy windowing helpers", () => {
+  assert.doesNotMatch(SPLIT_DIFF_SOURCE, /[\u2500-\u257F]/u, "no box-drawing characters remain");
+  assert.doesNotMatch(SPLIT_DIFF_SOURCE, /\bOVERLAY_ROWS\b/u, "no manual OVERLAY_ROWS windowing");
+  assert.doesNotMatch(SPLIT_DIFF_SOURCE, /\bBODY_ROWS\b/u, "no manual BODY_ROWS windowing");
+  assert.doesNotMatch(SPLIT_DIFF_SOURCE, /\btruncateAnsi\b/u, "no hand-rolled ANSI truncation");
+  assert.doesNotMatch(SPLIT_DIFF_SOURCE, /\bSplitDiffOverlayComponent\b/u, "hand-rolled overlay component removed");
 });

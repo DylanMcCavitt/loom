@@ -1,8 +1,13 @@
+import { createPanelShell, resolvePanelPrimitives } from "./panel-shell.js";
+
 const DIFF_USAGE = "Usage: /diff (<base..head> | --worktree | --staged | --pr <number>) [--file <path>]";
-const OVERLAY_ROWS = 24;
-const BODY_ROWS = 17;
-const ANSI_PATTERN = /\x1b\[[0-9;]*m/gu;
 const ACTIVE_DIFF_OVERLAYS = new WeakMap();
+// Plain ASCII column divider between the OLD and NEW panes. The shell owns the
+// outer frame, so this module draws no box-drawing characters of its own.
+const DIFF_COLUMN_SEPARATOR = " | ";
+const DIFF_KEY_HINTS = "j/k ↑/↓ scroll · space/PgUp/PgDn page · [ ] file · { } hunk · g/G top/end · Esc close";
+// Theme diff tokens used for red/green/context styling of the split body.
+const DIFF_TOKENS = { removed: "toolDiffRemoved", added: "toolDiffAdded", context: "toolDiffContext" };
 
 function tokenizeArgs(input = "") {
   const tokens = [];
@@ -384,14 +389,6 @@ function buildDiffErrorWidget(message, request = null) {
   };
 }
 
-function stripAnsi(value) {
-  return String(value).replace(ANSI_PATTERN, "");
-}
-
-function visibleLength(value) {
-  return stripAnsi(value).length;
-}
-
 function sanitizeText(value) {
   return String(value ?? "").replace(/\t/gu, "  ").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/gu, " ");
 }
@@ -404,18 +401,13 @@ function truncatePlain(value, width) {
   return `${text.slice(0, width - 1)}…`;
 }
 
-function padPlain(value, width) {
-  const text = truncatePlain(value, width);
-  return `${text}${" ".repeat(Math.max(0, width - text.length))}`;
+function padToWidth(value, width) {
+  return truncatePlain(value, width).padEnd(Math.max(0, width));
 }
 
-function truncateAnsi(value, width) {
-  const text = String(value);
-  if (visibleLength(text) <= width) return text;
-  return truncatePlain(stripAnsi(text), width);
-}
-
-
+// Apply a theme foreground token to already-padded plain text. Styling wraps the
+// final plain string, so no manual ANSI slicing/measuring is needed; the shell's
+// ScrollView owns width-aware truncation of the composed rows.
 function color(theme, token, text) {
   if (!text) return text;
   if (theme?.fg) {
@@ -425,31 +417,11 @@ function color(theme, token, text) {
       return text;
     }
   }
-  if (token === "error") return `\x1b[31m${text}\x1b[0m`;
-  if (token === "success") return `\x1b[32m${text}\x1b[0m`;
+  if (token === "error" || token === "toolDiffRemoved") return `\x1b[31m${text}\x1b[0m`;
+  if (token === "success" || token === "toolDiffAdded") return `\x1b[32m${text}\x1b[0m`;
   if (token === "accent") return `\x1b[36m${text}\x1b[0m`;
   if (token === "dim" || token === "muted") return `\x1b[2m${text}\x1b[0m`;
   return text;
-}
-
-function rawKey(data) {
-  if (data === "\u001b[A") return "up";
-  if (data === "\u001b[B") return "down";
-  if (data === "\u001b[5~") return "pageup";
-  if (data === "\u001b[6~") return "pagedown";
-  if (data === "\u001b[H" || data === "\u001bOH") return "home";
-  if (data === "\u001b[F" || data === "\u001bOF") return "end";
-  if (data === "\u0003") return "ctrl-c";
-  if (data === "\u001b") return "escape";
-  return data;
-}
-
-function safeMatches(keybindings, data, action) {
-  try {
-    return Boolean(keybindings?.matches?.(data, action));
-  } catch {
-    return false;
-  }
 }
 
 function hunkTitle(hunk) {
@@ -475,220 +447,131 @@ function flattenFile(file) {
   return rows;
 }
 
-class SplitDiffOverlayComponent {
-  constructor(widget, theme, keybindings, done) {
-    this.widget = widget;
-    this.theme = theme;
-    this.keybindings = keybindings;
-    this.done = done;
-    this.fileIndex = 0;
-    this.scroll = 0;
-    this.closed = false;
-    this.cachedWidth = 0;
-    this.cachedRows = null;
+// Per-overlay closure state: which file is currently shown, the widget it draws
+// from, and the body-line offsets of each hunk header (derived during
+// buildDiffSections, consumed by handleDiffKey for `{`/`}` navigation).
+function createDiffState(widget) {
+  return { widget, fileIndex: 0, hunkOffsets: [] };
+}
+
+function diffFilePath(file) {
+  return file.oldPath && file.oldPath !== file.path ? `${file.oldPath} → ${file.path}` : file.path;
+}
+
+// Render one OLD|NEW pane cell: a right-aligned line-number gutter, a space, then
+// width-truncated text, padded to the pane width and styled with `token` only
+// when the side carries content (so empty halves of add/delete rows stay blank).
+function renderDiffCell(lineNumber, text, paneWidth, gutter, token, theme) {
+  const hasContent = Boolean(lineNumber);
+  const numberLabel = lineNumber ? String(lineNumber).padStart(gutter) : " ".repeat(gutter);
+  const textWidth = Math.max(0, paneWidth - gutter - 1);
+  const cell = `${numberLabel} ${truncatePlain(text ?? "", textWidth)}`.slice(0, Math.max(0, paneWidth)).padEnd(Math.max(0, paneWidth));
+  return hasContent ? color(theme, token, cell) : cell;
+}
+
+function renderDiffSplitRow(row, leftWidth, rightWidth, gutter, theme) {
+  const oldToken = row.oldStyle === "delete" ? DIFF_TOKENS.removed : DIFF_TOKENS.context;
+  const newToken = row.newStyle === "add" ? DIFF_TOKENS.added : DIFF_TOKENS.context;
+  const oldCell = renderDiffCell(row.oldLine, row.oldText, leftWidth, gutter, oldToken, theme);
+  const newCell = renderDiffCell(row.newLine, row.newText, rightWidth, gutter, newToken, theme);
+  return `${oldCell}${DIFF_COLUMN_SEPARATOR}${newCell}`;
+}
+
+// Width-aware sections builder handed to the shell. Composes the current file's
+// two-column split (OLD | NEW) sized to `innerWidth`, styling deletions/additions/
+// context via theme diff tokens and hunk headers as accent. Records the body-line
+// offset of each hunk header on `state.hunkOffsets` for `{`/`}` navigation.
+function buildDiffSections(widget, state, innerWidth, theme) {
+  const width = Math.max(1, Math.floor(Number(innerWidth) || 80));
+  const model = widget.state || {};
+
+  if (model.kind === "error") {
+    state.hunkOffsets = [];
+    return [{ label: widget.title, lines: [color(theme, "error", model.message || "Diff failed")] }];
+  }
+  if (!widget.files.length) {
+    state.hunkOffsets = [];
+    return [{ label: widget.title, lines: [color(theme, "dim", model.message || "No changes")] }];
   }
 
-  invalidate() {
-    this.cachedRows = null;
-  }
+  const fileCount = widget.files.length;
+  state.fileIndex = ((state.fileIndex % fileCount) + fileCount) % fileCount;
+  const file = widget.files[state.fileIndex];
+  const rows = flattenFile(file);
 
-  dispose() {
-    this.closed = true;
-    this.invalidate();
-  }
+  const gutter = lineNumberWidth(file);
+  const available = Math.max(2, width - DIFF_COLUMN_SEPARATOR.length);
+  const leftWidth = Math.floor(available / 2);
+  const rightWidth = available - leftWidth;
 
-  close(result = "closed") {
-    if (this.closed) return;
-    this.closed = true;
-    this.invalidate();
-    this.done?.(result);
-  }
+  const lines = [
+    `${color(theme, "dim", padToWidth(" OLD", leftWidth))}${DIFF_COLUMN_SEPARATOR}${color(theme, "dim", padToWidth(" NEW", rightWidth))}`,
+  ];
 
-  currentFile() {
-    return this.widget.files[this.fileIndex] || null;
-  }
-
-  currentRows() {
-    return flattenFile(this.currentFile());
-  }
-
-  clampScroll() {
-    const max = Math.max(0, this.currentRows().length - BODY_ROWS);
-    this.scroll = Math.max(0, Math.min(this.scroll, max));
-  }
-
-  markChanged() {
-    this.clampScroll();
-    this.invalidate();
-  }
-
-  scrollBy(delta) {
-    this.scroll += delta;
-    this.markChanged();
-  }
-
-  goTop() {
-    this.scroll = 0;
-    this.markChanged();
-  }
-
-  goBottom() {
-    this.scroll = Number.POSITIVE_INFINITY;
-    this.markChanged();
-  }
-
-  moveFile(delta) {
-    if (!this.widget.files.length) return;
-    this.fileIndex = (this.fileIndex + delta + this.widget.files.length) % this.widget.files.length;
-    this.scroll = 0;
-    this.markChanged();
-  }
-
-  moveHunk(delta) {
-    const rows = this.currentRows();
-    if (!rows.length) return;
-    const hunkOffsets = rows.flatMap((row, index) => (row.type === "hunk" ? [index] : []));
-    if (!hunkOffsets.length) return;
-    let next = hunkOffsets.at(delta > 0 ? 0 : -1);
-    if (delta > 0) {
-      next = hunkOffsets.find((offset) => offset > this.scroll) ?? hunkOffsets[0];
-    } else {
-      next = hunkOffsets.findLast((offset) => offset < this.scroll) ?? hunkOffsets.at(-1);
-    }
-    this.scroll = next;
-    this.markChanged();
-  }
-
-  handleInput(data) {
-    if (this.closed) return;
-    if (safeMatches(this.keybindings, data, "app.interrupt")) {
-      this.close("cancelled");
+  // Body offset = accent label row (1) + OLD/NEW header row (1) + row index.
+  const bodyOffset = 2;
+  const hunkOffsets = [];
+  rows.forEach((row, index) => {
+    if (row.type === "hunk") {
+      hunkOffsets.push(bodyOffset + index);
+      lines.push(color(theme, "accent", padToWidth(` ${hunkTitle(row.hunk)}`, width)));
       return;
     }
+    lines.push(renderDiffSplitRow(row, leftWidth, rightWidth, gutter, theme));
+  });
+  state.hunkOffsets = hunkOffsets;
 
-    switch (rawKey(data)) {
-      case "q":
-      case "escape":
-      case "ctrl-c":
-        this.close("closed");
-        return;
-      case "j":
-      case "down":
-        this.scrollBy(1);
-        return;
-      case "k":
-      case "up":
-        this.scrollBy(-1);
-        return;
-      case " ":
-      case "pagedown":
-        this.scrollBy(BODY_ROWS);
-        return;
-      case "b":
-      case "pageup":
-        this.scrollBy(-BODY_ROWS);
-        return;
-      case "g":
-      case "home":
-        this.goTop();
-        return;
-      case "G":
-      case "end":
-        this.goBottom();
-        return;
-      case "]":
-        this.moveFile(1);
-        return;
-      case "[":
-        this.moveFile(-1);
-        return;
-      case "}":
-        this.moveHunk(1);
-        return;
-      case "{":
-        this.moveHunk(-1);
-        return;
-      default:
-        return;
-    }
+  const label = `${widget.title} · ${state.fileIndex + 1}/${fileCount} ${diffFilePath(file)} (${file.status})`;
+  return [{ label, lines }];
+}
+
+function diffScrollOffset(controller) {
+  try {
+    const value = Number(controller?.scrollView?.getScrollOffset?.() ?? 0);
+    return Number.isFinite(value) ? value : 0;
+  } catch {
+    return 0;
   }
+}
 
-  render(width) {
-    const safeWidth = Math.max(1, Math.floor(width || 80));
-    if (this.cachedRows && this.cachedWidth === safeWidth) return this.cachedRows;
+function jumpToHunk(controller, state, direction) {
+  const offsets = state.hunkOffsets || [];
+  if (!offsets.length) return;
+  const current = diffScrollOffset(controller);
+  const target = direction > 0
+    ? (offsets.find((offset) => offset > current) ?? offsets[0])
+    : (offsets.findLast((offset) => offset < current) ?? offsets[offsets.length - 1]);
+  controller.scrollTo(target);
+}
 
-    this.clampScroll();
-    const rows = safeWidth < 40
-      ? this.renderNarrowRows(safeWidth)
-      : this.widget.files.length
-        ? this.renderDiffRows(safeWidth)
-        : this.renderStateRows(safeWidth);
-    this.cachedWidth = safeWidth;
-    this.cachedRows = rows.slice(0, OVERLAY_ROWS).map((line) => truncateAnsi(line, safeWidth));
-    return this.cachedRows;
-  }
-
-  renderNarrowRows(width) {
-    const state = this.widget.state;
-    const message = state.kind === "ready" ? "Widen terminal for split diff" : state.message || "No changes";
-    return [
-      padPlain(" Diff ", width),
-      padPlain(message, width),
-      padPlain("q/Esc close", width),
-    ];
-  }
-
-  renderStateRows(width) {
-    const state = this.widget.state;
-    const style = state.kind === "error" ? "error" : "accent";
-    return [
-      color(this.theme, "accent", padPlain(` ${this.widget.title} `, width)),
-      "─".repeat(width),
-      color(this.theme, style, padPlain(` ${state.message || "No changes"}`, width)),
-      padPlain(" q/Esc close", width),
-    ];
-  }
-
-  renderDiffRows(width) {
-    const file = this.currentFile();
-    const rows = this.currentRows();
-    const maxScroll = Math.max(0, rows.length - BODY_ROWS);
-    const start = Math.min(this.scroll, maxScroll);
-    const end = Math.min(rows.length, start + BODY_ROWS);
-    const gutter = lineNumberWidth(file);
-    const separator = " │ ";
-    const paneWidth = Math.max(12, Math.floor((width - visibleLength(separator)) / 2));
-    const rightWidth = Math.max(12, width - paneWidth - visibleLength(separator));
-    const hunkCount = file.hunks.length;
-    const visibleHunk = rows[start]?.hunkIndex ?? 0;
-    const path = file.oldPath && file.oldPath !== file.path ? `${file.oldPath} → ${file.path}` : file.path;
-    const title = ` ${this.widget.title} · ${this.fileIndex + 1}/${this.widget.files.length} ${path} (${file.status}) `;
-    const position = ` lines ${rows.length ? start + 1 : 0}-${end}/${rows.length} · hunk ${Math.min(visibleHunk + 1, hunkCount)}/${hunkCount || 0}`;
-    const output = [
-      color(this.theme, "accent", padPlain(title, width)),
-      color(this.theme, "dim", padPlain(position, width)),
-      `${padPlain("OLD", paneWidth)}${separator}${padPlain("NEW", rightWidth)}`,
-    ];
-
-    for (const row of rows.slice(start, end)) output.push(this.renderRow(row, paneWidth, rightWidth, gutter, separator, width));
-    while (output.length < BODY_ROWS + 3) output.push(`${" ".repeat(paneWidth)}${separator}${" ".repeat(rightWidth)}`);
-    output.push(color(this.theme, "dim", padPlain(" j/k ↑/↓ scroll · PgUp/PgDn page · [ ] file · { } hunk · g/G top/end · q/Esc close", width)));
-    return output;
-  }
-
-  renderRow(row, paneWidth, rightWidth, gutter, separator, width) {
-    if (row.type === "hunk") {
-      return color(this.theme, "accent", padPlain(` ${hunkTitle(row.hunk)}`, width));
-    }
-    const oldCell = this.renderCell(row.oldLine, row.oldText, paneWidth, gutter, row.oldStyle === "delete" ? "error" : "");
-    const newCell = this.renderCell(row.newLine, row.newText, rightWidth, gutter, row.newStyle === "add" ? "success" : "");
-    return `${oldCell}${separator}${newCell}`;
-  }
-
-  renderCell(lineNumber, text, width, gutter, style) {
-    const line = lineNumber ? String(lineNumber).padStart(gutter) : " ".repeat(gutter);
-    const plain = padPlain(`${line} │ ${text ?? ""}`, width);
-    return style ? color(this.theme, style, plain) : plain;
+// Consumer input hook: own file (`[`/`]`) and hunk (`{`/`}`) navigation, returning
+// true so the shell suppresses its default for those keys. Every other key
+// (scroll, page, top/end, Esc, Ctrl-C) falls through to the shell's defaults.
+function handleDiffKey(data, controller, state) {
+  const fileCount = state.widget?.files?.length ?? 0;
+  switch (data) {
+    case "]":
+      if (fileCount > 1) {
+        state.fileIndex = (state.fileIndex + 1) % fileCount;
+        controller.scrollTo(0);
+        controller.refresh();
+      }
+      return true;
+    case "[":
+      if (fileCount > 1) {
+        state.fileIndex = (state.fileIndex - 1 + fileCount) % fileCount;
+        controller.scrollTo(0);
+        controller.refresh();
+      }
+      return true;
+    case "}":
+      jumpToHunk(controller, state, 1);
+      return true;
+    case "{":
+      jumpToHunk(controller, state, -1);
+      return true;
+    default:
+      return false;
   }
 }
 
@@ -713,11 +596,25 @@ async function presentDiffWidget(ctx, widget) {
   const ui = ctx?.ui;
   if (!ui) return "none";
 
-  if (ctx.hasUI !== false && typeof ui.custom === "function") {
+  // `ctx.panelPrimitives` is the test-injection seam; default to the live resolver.
+  const primitives = ctx.panelPrimitives ?? (await resolvePanelPrimitives());
+
+  if (primitives && ctx.hasUI !== false && typeof ui.custom === "function") {
+    // Own ctx.ui.custom factory (not presentPanel) so the body builder can color
+    // rows with the live `theme` and drive interactive file/hunk navigation.
+    const state = createDiffState(widget);
     let component = null;
     try {
-      const promise = ui.custom((_tui, theme, keybindings, done) => {
-        component = new SplitDiffOverlayComponent(widget, theme, keybindings, done);
+      const promise = ui.custom((tui, theme, _keybindings, done) => {
+        component = createPanelShell(primitives, {
+          title: widget.title,
+          theme,
+          tui,
+          done,
+          keyHints: DIFF_KEY_HINTS,
+          sections: (innerWidth) => buildDiffSections(widget, state, innerWidth, theme),
+          onInput: (data, controller) => handleDiffKey(data, controller, state),
+        });
         ACTIVE_DIFF_OVERLAYS.set(ui, component);
         return component;
       }, { overlay: true });
@@ -771,11 +668,13 @@ async function renderDiffCommand(args, ctx = {}) {
 }
 
 export {
-  SplitDiffOverlayComponent,
   buildDiffErrorWidget,
+  buildDiffSections,
   buildDiffWidget,
+  createDiffState,
   ghPrDiffArgs,
   gitDiffArgs,
+  handleDiffKey,
   parseDiffArgs,
   parseUnifiedDiff,
   presentDiffWidget,
