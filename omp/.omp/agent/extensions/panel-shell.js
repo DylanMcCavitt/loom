@@ -409,4 +409,160 @@ async function presentPanel(ctx, { title, sections = [], keyHints, onInput } = {
   return "none";
 }
 
-export { closeActivePanel, createPanelShell, panelFallbackLines, presentPanel, resolvePanelPrimitives };
+// === Gated positioned side-panel (issue #29 spike) ===
+//
+// OMP 16.0.5's `ctx.ui.custom(factory, { overlay })` hardcodes a bottom-center,
+// full-width overlay and ignores any positioning options (see
+// `pi-coding-agent` `extension-ui-controller.ts#showHookCustom`). The factory
+// DOES receive the real `tui: TUI` handle, whose `showOverlay(component,
+// OverlayOptions)` (`pi-tui` `tui.ts`) supports anchored/percentage placement
+// and a per-render `visible(termW, termH)` predicate. The presenter below
+// obtains that handle through the factory and drives `showOverlay` directly,
+// mounting the SAME shell component as two complementary slots — a framed
+// full-width slot for narrow terminals and a right-anchored floating slot for
+// wide ones — so exactly one is visible at any width and the panel flips live
+// on resize. This is lower-level than the documented extension contract, so it
+// stays OPT-IN: `presentPanel` (framed full-width) remains the authoritative
+// default. See docs/spikes/floating-side-panel.md.
+
+// Terminal width (columns) at/above which the floating side panel is used.
+const SIDE_PANEL_BREAKPOINT = 100;
+// Floating-slot width: percentage of terminal width, floored by `minWidth`.
+const SIDE_PANEL_WIDTH = "42%";
+const SIDE_PANEL_MIN_WIDTH = 56;
+
+// Pure placement decision for the gated side panel. Returns "positioned" only
+// when the path is enabled AND the terminal is at least `threshold` columns
+// wide; otherwise "framed" (the authoritative default). Width falls back to the
+// live terminal column count when not supplied.
+function resolvePanelPlacement({ width, threshold = SIDE_PANEL_BREAKPOINT, enabled = false } = {}) {
+  if (!enabled) return "framed";
+  const cols = Number.isFinite(width) ? width : process.stdout?.columns ?? 0;
+  return cols >= threshold ? "positioned" : "framed";
+}
+
+// Mount one shell `panel` as two complementary `tui.showOverlay` slots. The
+// framed slot covers narrow terminals (`w < threshold`, bottom-center, full
+// width — identical geometry to `presentPanel`); the floating slot covers wide
+// terminals (`w >= threshold`, right-anchored, percentage width). Their
+// `visible` predicates are mutually exclusive, so the shell renders into a
+// single active slot and the engine flips it on resize. Returns a `close()`
+// that removes BOTH slots (no ghost overlay) and runs `onClose`. Focus is
+// captured by `showOverlay` (preFocus) and restored by `hide()`.
+function mountSidePanelOverlay(tui, panel, options = {}) {
+  const threshold = Number.isFinite(options.threshold) ? options.threshold : SIDE_PANEL_BREAKPOINT;
+  const width = options.width ?? SIDE_PANEL_WIDTH;
+  const minWidth = Number.isFinite(options.minWidth) ? options.minWidth : SIDE_PANEL_MIN_WIDTH;
+  const anchor = options.anchor ?? "right-center";
+
+  const framedHandle = tui.showOverlay(panel, {
+    anchor: "bottom-center",
+    width: "100%",
+    maxHeight: "100%",
+    margin: 0,
+    visible: (w) => w < threshold,
+  });
+  const floatingHandle = tui.showOverlay(panel, {
+    anchor,
+    width,
+    minWidth,
+    maxHeight: "100%",
+    visible: (w) => w >= threshold,
+  });
+  // showOverlay already focuses the visible slot; this is a harmless belt for
+  // TUIs whose showOverlay defers focus, and the seam tests assert it.
+  tui.setFocus?.(panel);
+
+  let closed = false;
+  return {
+    framedHandle,
+    floatingHandle,
+    close() {
+      if (closed) return;
+      closed = true;
+      // Remove both slots so no ghost overlay survives; the hide() focus-restore
+      // chain lands on the editor (each slot's preFocus) once both are gone.
+      floatingHandle?.hide?.();
+      framedHandle?.hide?.();
+      try {
+        options.onClose?.();
+      } catch {
+        // teardown is best-effort
+      }
+    },
+  };
+}
+
+// Opt-in positioned presenter (issue #29). Obtains the real `tui` through
+// `ctx.ui.custom`'s factory, self-manages a positioned overlay via
+// `mountSidePanelOverlay`, and resolves the custom promise immediately so the
+// framework never mounts its hardcoded bottom-full overlay. Degrades to the
+// authoritative framed presenter when no UI / TUI / primitives are available,
+// or when the running TUI lacks `showOverlay`.
+async function presentPositionedPanel(ctx, { title, sections = [], keyHints, onInput, threshold } = {}) {
+  closeActivePanel(ctx);
+  const ui = ctx?.ui;
+  if (!ui) return "none";
+
+  const primitives = await resolvePanelPrimitives();
+  if (ctx?.hasUI !== false && typeof ui.custom === "function" && primitives) {
+    try {
+      const promise = ui.custom(
+        (tui, theme, _keybindings, done) => {
+          // No positioning API on this TUI: behave exactly like presentPanel —
+          // return the panel so the framework overlays it bottom-full (framed).
+          if (typeof tui?.showOverlay !== "function") {
+            const framed = createPanelShell(primitives, { title, sections, keyHints, onInput, theme, tui, done });
+            ACTIVE_PANELS.set(ui, framed);
+            return framed;
+          }
+          let overlay;
+          const panel = createPanelShell(primitives, {
+            title,
+            sections,
+            keyHints,
+            onInput,
+            theme,
+            tui,
+            done: () => overlay?.close?.(),
+          });
+          overlay = mountSidePanelOverlay(tui, panel, {
+            threshold,
+            onClose: () => {
+              if (ACTIVE_PANELS.get(ui) === activeRef) ACTIVE_PANELS.delete(ui);
+            },
+          });
+          const activeRef = { close: () => panel.close("closed") };
+          ACTIVE_PANELS.set(ui, activeRef);
+          // Resolve the custom promise now and skip the framework's hardcoded
+          // bottom-full mount: with `closed` already set, the post-factory step
+          // only calls dispose() on the returned component. Return an inert
+          // placeholder so dispose() never touches the live `panel`.
+          done("opened");
+          return { render: () => [], dispose: () => {} };
+        },
+        { overlay: true },
+      );
+      Promise.resolve(promise).catch((error) => {
+        ui.notify?.(`Side panel failed: ${error.message}`, "error");
+      });
+      return "custom-positioned";
+    } catch (error) {
+      ui.notify?.(`Side panel unavailable: ${error.message}`, "error");
+    }
+  }
+
+  // No live TUI/primitives (piped output, tests): authoritative framed path.
+  return presentPanel(ctx, { title, sections, keyHints, onInput });
+}
+
+export {
+  closeActivePanel,
+  createPanelShell,
+  mountSidePanelOverlay,
+  panelFallbackLines,
+  presentPanel,
+  presentPositionedPanel,
+  resolvePanelPlacement,
+  resolvePanelPrimitives,
+};

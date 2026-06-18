@@ -1,7 +1,7 @@
 import { formatRouteResult, routeIntent } from "./workflow-routing.js";
 import { formatRecipe } from "./workflow-recipes.js";
 import { renderDiffCommand } from "./split-diff.js";
-import { closeActivePanel, presentPanel } from "./panel-shell.js";
+import { closeActivePanel, presentPanel, presentPositionedPanel } from "./panel-shell.js";
 
 const COCKPIT_KEY_HINTS = "↑↓/jk scroll · PgUp/PgDn page · g/G top/end · Esc close";
 const EXEC_TIMEOUT_MS = 5000;
@@ -245,6 +245,16 @@ async function render(ctx, lines, message, level = "info") {
   return lines;
 }
 
+// Opt-in (issue #29): `OMP_CTX_SIDE_PANEL=1` routes /ctx through the gated
+// positioned side panel (right-anchored on wide terminals, framed full-width on
+// narrow ones). Unset/anything else keeps the authoritative framed full-width
+// panel that #27 shipped. The positioned path itself degrades to framed when no
+// live TUI is available, so this flag is always safe.
+function sidePanelEnabled() {
+  const flag = process.env.OMP_CTX_SIDE_PANEL;
+  return flag === "1" || flag === "true";
+}
+
 async function renderCockpit(ctx, providers) {
   const data = await gatherCockpitData(ctx, providers);
   const lines = contextLines(data);
@@ -253,7 +263,8 @@ async function renderCockpit(ctx, providers) {
   if (ctx?.hasUI !== false && typeof ctx?.ui?.custom === "function") {
     closeActivePanel(ctx);
     const sections = cockpitSections(data).map((section) => ({ label: section.title, lines: section.rows }));
-    await presentPanel(ctx, { title: "Workflow Cockpit", sections, keyHints: COCKPIT_KEY_HINTS });
+    const present = sidePanelEnabled() ? presentPositionedPanel : presentPanel;
+    await present(ctx, { title: "Workflow Cockpit", sections, keyHints: COCKPIT_KEY_HINTS });
     return lines;
   }
 
