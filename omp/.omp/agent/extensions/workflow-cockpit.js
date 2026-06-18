@@ -156,14 +156,14 @@ function padded(text, width) {
 
 function isKey(data, key) {
   if (data === key) return true;
-  if (key === "escape") return data === "\u001b" || data === "esc";
+  if (key === "escape") return data === "\u001b" || data === "esc" || data === "\u001b[27u";
   if (key === "ctrl+c") return data === "\u0003";
-  if (key === "up") return data === "\u001b[A" || data === "k";
-  if (key === "down") return data === "\u001b[B" || data === "j";
-  if (key === "pageup") return data === "\u001b[5~";
-  if (key === "pagedown") return data === "\u001b[6~" || data === " ";
-  if (key === "home") return data === "\u001b[H" || data === "\u001b[1~";
-  if (key === "end") return data === "\u001b[F" || data === "\u001b[4~";
+  if (key === "up") return data === "\u001b[A" || data === "\u001bOA" || data === "k";
+  if (key === "down") return data === "\u001b[B" || data === "\u001bOB" || data === "j";
+  if (key === "pageup") return data === "\u001b[5~" || data === "\u001b[[5~";
+  if (key === "pagedown") return data === "\u001b[6~" || data === "\u001b[[6~" || data === " ";
+  if (key === "home") return data === "\u001b[H" || data === "\u001bOH" || data === "\u001b[1~" || data === "g";
+  if (key === "end") return data === "\u001b[F" || data === "\u001bOF" || data === "\u001b[4~" || data === "G";
   return false;
 }
 
@@ -305,7 +305,7 @@ async function renderCockpit(ctx) {
   if (ctx?.hasUI !== false && typeof ctx?.ui?.custom === "function") {
     closeActiveCockpit("replaced");
     const session = { done: undefined, handle: undefined };
-    const result = await ctx.ui.custom(
+    const promise = ctx.ui.custom(
       (tui, theme, _keybindings, done) => {
         session.done = done;
         activeCockpitSession = session;
@@ -320,10 +320,13 @@ async function renderCockpit(ctx) {
         },
       },
     );
-    if (activeCockpitSession === session) {
-      activeCockpitSession = undefined;
-    }
-    if (result !== "replaced") ctx?.ui?.notify?.("Workflow cockpit closed", "info");
+    Promise.resolve(promise).then((result) => {
+      if (activeCockpitSession === session) activeCockpitSession = undefined;
+      if (result !== "replaced") ctx?.ui?.notify?.("Workflow cockpit closed", "info");
+    }).catch((error) => {
+      if (activeCockpitSession === session) activeCockpitSession = undefined;
+      ctx?.ui?.notify?.(`Workflow cockpit failed: ${error.message}`, "error");
+    });
     return lines;
   }
 

@@ -153,6 +153,20 @@ test("/ctx opens a focused overlay when custom UI is available", async () => {
   assert.equal(state.notifications.at(-1).message, "Workflow cockpit closed");
 });
 
+test("/ctx command returns immediately after opening overlay", async () => {
+  const { commands } = install();
+  const state = context({ repo: "owner/repo" });
+
+  const lines = await commands.get("ctx").handler("", state.ctx);
+  assert.equal(state.customCalls.length, 1);
+  assert.match(lines.join("\n"), /repo: owner\/repo/u);
+  assert.equal(state.customCalls[0].result, undefined);
+
+  state.customCalls[0].component.handleInput("\u001b[27u");
+  await Promise.resolve();
+  assert.equal(state.customCalls[0].result, "closed");
+});
+
 test("workflow cockpit panel renders narrow terminal fallback", () => {
   const panel = new WorkflowCockpitPanel(panelSections(), plainTheme(), () => {});
   const lines = panel.render(24);
