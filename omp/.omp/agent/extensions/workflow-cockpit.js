@@ -1,5 +1,6 @@
 import { formatRouteResult, routeIntent } from "./workflow-routing.js";
 import { formatRecipe } from "./workflow-recipes.js";
+import { renderDiffCommand } from "./split-diff.js";
 
 const UNKNOWN = "unknown";
 
@@ -141,6 +142,11 @@ export default function workflowCockpit(pi) {
         return [];
       }
     },
+  });
+
+  pi.registerCommand("diff", {
+    description: "Render a read-only split diff widget for a git revision range",
+    handler: renderDiffCommand,
   });
 
   pi.registerCommand("go", {
