@@ -105,7 +105,7 @@ export default function githubIssuesPanel(pi) {
     handler: async (args, ctx) => {
       const trimmed = args.trim();
       if (trimmed === "clear" || trimmed === "off") {
-        await ctx.ui?.setWidget?.([], { placement: "belowEditor" });
+        await ctx.ui?.setWidget?.("github-issues-panel");
         ctx.ui?.notify?.("GitHub issues panel cleared", "info");
         return;
       }
@@ -125,7 +125,7 @@ export default function githubIssuesPanel(pi) {
             lines.push(`${label} ${truncate(issue.title, 72)} · ${issue.state.toLowerCase()}`);
           }
         }
-        await ctx.ui?.setWidget?.(lines, { placement: "belowEditor" });
+        await ctx.ui?.setWidget?.("github-issues-panel", lines, { placement: "belowEditor" });
         ctx.ui?.notify?.(`Showing ${issues.length} open issue${issues.length === 1 ? "" : "s"}`, "info");
       } catch (error) {
         ctx.ui?.notify?.(`GitHub issues panel failed: ${error.message}`, "error");

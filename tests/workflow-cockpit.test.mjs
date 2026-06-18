@@ -27,8 +27,8 @@ function context(overrides = {}) {
     ctx: {
       cwd: "/repo",
       ui: {
-        async setWidget(lines, options) {
-          widgets.push({ lines, options });
+        async setWidget(key, lines, options) {
+          widgets.push({ key, lines, options });
         },
         notify(message, level) {
           notifications.push({ message, level });
@@ -58,6 +58,8 @@ test("/ctx renders known and unknown context without throwing", async () => {
     contextRiskFlags: ["stale verification"],
   });
   const lines = await commands.get("ctx").handler("", state.ctx);
+  assert.equal(state.widgets.at(-1).key, "workflow-cockpit");
+  assert.deepEqual(state.widgets.at(-1).options, { placement: "belowEditor" });
   assert.match(lines.join("\n"), /repo: DylanMcCavitt\/oh-my-pi-config/u);
   assert.match(lines.join("\n"), /active issue: 7/u);
   assert.match(lines.join("\n"), /touched-file count: 2/u);
