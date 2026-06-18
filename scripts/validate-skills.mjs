@@ -85,6 +85,7 @@ function containsConcreteUseWhen(description) {
 
 const SECRET_PATTERNS = [
   /\bgh[pousr]_[A-Za-z0-9_]{20,}\b/u,
+  /\bgithub_pat_[A-Za-z0-9_]{20,}\b/u,
   /\bsk-[A-Za-z0-9_-]{20,}\b/u,
   /\bAKIA[0-9A-Z]{16}\b/u,
   /\b(?:api[_-]?key|token|secret|password)\b\s*[:=]\s*["']?[A-Za-z0-9_./+=-]{16,}["']?/iu,

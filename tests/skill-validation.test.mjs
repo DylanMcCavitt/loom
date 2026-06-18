@@ -46,6 +46,12 @@ test("rejects API-key and token looking text", () => {
   assert.match(result.stderr, /API-key\/token-looking text/u);
 });
 
+test("rejects fine-grained GitHub PAT looking text", () => {
+  const result = runValidation("bad-fine-grained-pat");
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /API-key\/token-looking text/u);
+});
+
 test("rejects nested SKILL.md files", () => {
   const result = runValidation("bad-nested-skill");
   assert.notEqual(result.status, 0);
