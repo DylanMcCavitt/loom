@@ -2,327 +2,724 @@
 set -euo pipefail
 
 node --input-type=module <<'NODE'
-import { readFileSync, readdirSync } from 'node:fs';
-import { Buffer } from 'node:buffer';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, existsSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { spawnSync } from 'node:child_process';
 
-const root = process.cwd();
-const configPath = `${root}/omp/.omp/agent/config.yml`;
-const agentsPath = `${root}/omp/.omp/agent/AGENTS.md`;
-const rulesPath = `${root}/omp/.omp/agent/RULES.md`;
-const extensionPath = `${root}/omp/.omp/agent/extensions/github-issues-panel.js`;
+const kitRoot = '/Users/dylanmccavitt/.omp/agent/workflow-kit';
+const templates = join(kitRoot, 'templates');
+const scripts = join(kitRoot, 'scripts');
 
-const config = readFileSync(configPath, 'utf8');
-const agents = readFileSync(agentsPath, 'utf8');
-const rules = readFileSync(rulesPath, 'utf8');
-const extension = readFileSync(extensionPath, 'utf8');
-
-function assert(condition, message) {
-  if (!condition) throw new Error(message);
+function read(path) {
+  return existsSync(path) ? readFileSync(path, 'utf8') : '';
 }
 
-function lineCount(text) {
-  if (!text) return 0;
-  return text.endsWith('\n') ? text.split('\n').length - 1 : text.split('\n').length;
-}
-
-function listValuesUnder(source, key) {
-  const lines = source.split(/\r?\n/);
-  for (let index = 0; index < lines.length; index += 1) {
-    const line = lines[index];
-    const match = line.match(new RegExp(`^(\\s*)${key}:\\s*$`));
-    if (!match) continue;
-    const baseIndent = match[1].length;
-    const values = [];
-    for (let cursor = index + 1; cursor < lines.length; cursor += 1) {
-      const current = lines[cursor];
-      if (!current.trim()) continue;
-      const indent = current.match(/^\s*/)[0].length;
-      if (indent <= baseIndent) break;
-      const item = current.match(/^\s*-\s+(.+?)\s*$/);
-      if (item) values.push(item[1].replace(/^['"]|['"]$/g, ''));
-    }
-    return values;
+function run(command, args, options = {}) {
+  const result = spawnSync(command, args, { encoding: 'utf8', ...options });
+  if (result.status !== 0) {
+    throw new Error(`${command} ${args.join(' ')} failed\n${result.stdout || ''}${result.stderr || ''}`);
   }
-  return [];
+  return result;
 }
 
-function countListUnder(source, key) {
-  return listValuesUnder(source, key).length;
+function has(text, needle) {
+  return text.toLowerCase().includes(needle.toLowerCase());
 }
 
-function countMapUnder(source, key) {
-  const lines = source.split(/\r?\n/);
-  for (let index = 0; index < lines.length; index += 1) {
-    const line = lines[index];
-    const match = line.match(new RegExp(`^(\\s*)${key}:\\s*$`));
-    if (!match) continue;
-    const baseIndent = match[1].length;
-    let count = 0;
-    for (let cursor = index + 1; cursor < lines.length; cursor += 1) {
-      const current = lines[cursor];
-      if (!current.trim()) continue;
-      const indent = current.match(/^\s*/)[0].length;
-      if (indent <= baseIndent) break;
-      if (indent === baseIndent + 2 && /^\s*[A-Za-z0-9_-]+:\s+/.test(current)) count += 1;
-    }
-    return count;
-  }
-  return 0;
+function countPresent(text, needles) {
+  return needles.filter((needle) => has(text, needle)).length;
 }
 
-function boolValue(source, key) {
-  const match = source.match(new RegExp(`^\\s*${key}:\\s*(true|false)\\s*$`, 'm'));
-  return match ? (match[1] === 'true' ? 1 : 0) : 0;
-}
-
-function scalarValue(source, key) {
-  const match = source.match(new RegExp(`^\\s*${key}:\\s*([^#\\n]+?)\\s*$`, 'm'));
-  return match ? match[1].trim() : '';
-}
-
-const disabledExtensionValues = listValuesUnder(config, 'disabledExtensions');
-const ignoredSkillPatterns = listValuesUnder(config, 'ignoredSkills');
-const disabledProviders = countListUnder(config, 'disabledProviders');
-const disabledExtensions = disabledExtensionValues.length;
-const ignoredSkills = ignoredSkillPatterns.length;
-const modelRoles = countMapUnder(config, 'modelRoles');
-const customExtensions = readdirSync(`${root}/omp/.omp/agent/extensions`).filter((name) => name.endsWith('.js')).length;
-const configLines = lineCount(config);
-const workflowLines = lineCount(agents) + lineCount(rules);
-const extensionLines = lineCount(extension);
-const mcpDiscoveryEnabled = boolValue(config, 'discoveryMode');
-const advisorSubagentsEnabled = boolValue(config, 'subagents');
-const taskEagerPreferred = scalarValue(config, 'eager') === 'preferred' ? 1 : 0;
-
-function globMatches(pattern, value) {
-  const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
-  return new RegExp(`^${escaped}$`).test(value);
-}
-
-const expectedBlockedSkills = [
-  'caveman',
-  'codex-deliverable-report',
-  'codex-issue-implementation',
-  'codex-pr-review',
-  'codex-project-sanity-check',
-  'codex-proof-pass',
-  'codex-repo-triage',
-  'codex-resume-thread',
-  'codex-skill-maintenance',
-  'codex-thread-closeout',
-  'codex-workflow-sharpener',
-  'devenv',
-  'doc',
-  'excalidraw-diagrams',
-  'find-skills',
-  'fleet-status',
-  'gh-issue-thread-chain',
-  'graduate',
-  'html-annotated-pr-review',
-  'html-code-approaches',
-  'html-implementation-plan',
-  'html-module-map',
-  'html-ticket-triage-board',
-  'inspo',
-  'jupyter-notebook',
-  'learn',
-  'loading',
-  'mocking',
-  'orca-cli',
-  'pdf',
-  'quick',
-  'repo-workflow-bootstrap',
-  'security-best-practices',
-  'security-ownership-map',
-  'security-threat-model',
-  'summarize-youtube-videos',
-  'swiftui-pro',
-  'theme-factory',
-  'vault-note',
-  'write-a-skill',
-  'writing-hookify-rules',
-  'skill-creator',
-  'sentry-android-sdk',
-  'sentry-browser-sdk',
-  'sentry-cloudflare-sdk',
-  'sentry-cocoa-sdk',
-  'sentry-code-review',
-  'sentry-create-alert',
-  'sentry-dotnet-sdk',
-  'sentry-elixir-sdk',
-  'sentry-feature-setup',
-  'sentry-fix-issues',
-  'sentry-flutter-sdk',
-  'sentry-go-sdk',
-  'sentry-nestjs-sdk',
-  'sentry-nextjs-sdk',
-  'sentry-node-sdk',
-  'sentry-otel-exporter-setup',
-  'sentry-php-sdk',
-  'sentry-pr-code-review',
-  'sentry-python-sdk',
-  'sentry-react-native-sdk',
-  'sentry-react-sdk',
-  'sentry-ruby-sdk',
-  'sentry-sdk-setup',
-  'sentry-sdk-skill-creator',
-  'sentry-sdk-upgrade',
-  'sentry-setup-ai-monitoring',
-  'sentry-svelte-sdk',
-  'sentry-workflow',
-  'ai-gateway',
-];
-const unblockedSkills = expectedBlockedSkills.filter((name) => {
-  return !disabledExtensionValues.includes(`skill:${name}`) && !ignoredSkillPatterns.some((pattern) => globMatches(pattern, name));
-});
-assert(unblockedSkills.length === 0, `skill filters no longer block: ${unblockedSkills.join(', ')}`);
-assert(disabledExtensionValues.includes('context-file:user:CLAUDE.md'), 'user CLAUDE.md context suppression was removed');
-
-const spawnCalls = [];
-const encoder = new TextEncoder();
-function streamFrom(text) {
-  return new ReadableStream({
-    start(controller) {
-      controller.enqueue(encoder.encode(text));
-      controller.close();
-    },
-  });
-}
-
-const fakeIssues = Array.from({ length: 7 }, (_, index) => ({
-  number: index + 1,
-  title: `Deterministic issue ${index + 1} title for panel rendering`,
-  url: `https://github.com/example/project/issues/${index + 1}`,
-  state: 'OPEN',
-  updatedAt: `2026-01-0${Math.min(index + 1, 9)}T00:00:00Z`,
-}));
-
-globalThis.Bun = {
-  spawn(argv, options) {
-    spawnCalls.push({ argv, cwd: options?.cwd || '' });
-    let stdout = '';
-    let stderr = '';
-    let code = 0;
-    const joined = argv.join(' ');
-    if (joined === 'gh repo view --json nameWithOwner,url') {
-      stdout = JSON.stringify({ nameWithOwner: 'example/project', url: 'https://github.com/example/project' });
-    } else if (joined === 'gh issue list --state open --limit 7 --json number,title,url,state,updatedAt') {
-      stdout = JSON.stringify(fakeIssues);
-    } else {
-      stderr = `unexpected gh invocation: ${joined}`;
-      code = 1;
-    }
-    return {
-      stdout: streamFrom(stdout),
-      stderr: streamFrom(stderr),
-      exited: Promise.resolve(code),
-    };
-  },
-};
-
-const moduleUrl = `data:text/javascript;base64,${Buffer.from(`${extension}\n//# sourceURL=github-issues-panel.js`, 'utf8').toString('base64')}`;
-const imported = await import(moduleUrl);
-const commands = new Map();
-const labels = [];
-const pi = {
-  setLabel(label) { labels.push(label); },
-  registerCommand(name, definition) { commands.set(name, definition); },
-};
-imported.default(pi);
-
-for (const name of ['issues', 'issue', 'issue-link', 'linkrefs']) {
-  assert(commands.has(name), `missing /${name} command`);
-}
-assert(labels.includes('GitHub Issues Panel'), 'extension label was not registered');
-
-let widgetLines = [];
-let widgetPlacement = '';
-let editorText = 'Fix #1 and (#2) but not word#3';
-const notifications = [];
-const ctx = {
-  cwd: root,
-  ui: {
-    async setWidget(lines, options) {
-      widgetLines = lines;
-      widgetPlacement = options?.placement || '';
-    },
-    notify(message, level) { notifications.push({ message, level }); },
-    async pasteToEditor(text) { editorText += text; },
-    async getEditorText() { return editorText; },
-    async setEditorText(text) { editorText = text; },
-  },
-};
-
-let startCalls = spawnCalls.length;
-await commands.get('issues').handler('7', ctx);
-const issuesGhCalls = spawnCalls.length - startCalls;
-assert(widgetPlacement === 'belowEditor', '/issues did not render below the editor');
-assert(widgetLines.length === 8, '/issues did not render the expected issue count');
-assert(widgetLines[0].includes('GitHub issues · example/project'), '/issues header did not include repo identity');
-assert(widgetLines[1].includes('Deterministic issue 1'), '/issues body did not include issue titles');
-
-startCalls = spawnCalls.length;
-await commands.get('issue').handler('#42', ctx);
-const issueRefGhCalls = spawnCalls.length - startCalls;
-assert(editorText.includes('issue://42'), '/issue did not paste an issue:// reference');
-
-startCalls = spawnCalls.length;
-await commands.get('issue-link').handler('42', ctx);
-const issueLinkGhCalls = spawnCalls.length - startCalls;
-assert(editorText.includes('[#42](https://github.com/example/project/issues/42)'), '/issue-link did not paste a Markdown issue link');
-
-editorText = 'Fix #1 and (#2) but not word#3';
-startCalls = spawnCalls.length;
-await commands.get('linkrefs').handler('', ctx);
-const linkrefsGhCalls = spawnCalls.length - startCalls;
-assert(editorText.includes('[#1](https://github.com/example/project/issues/1)'), '/linkrefs did not rewrite plain refs');
-assert(editorText.includes('([#2](https://github.com/example/project/issues/2))'), '/linkrefs did not rewrite parenthesized refs');
-assert(editorText.includes('word#3'), '/linkrefs rewrote a non-reference suffix');
-
-await commands.get('issues').handler('clear', ctx);
-assert(widgetLines.length === 0, '/issues clear did not clear the panel');
-assert(notifications.some((entry) => entry.level === 'info'), 'commands did not notify the UI');
-
-const commandNames = Array.from(commands.keys());
-const requiredCapabilities = 4;
-const liveGhCallsForPanel = issuesGhCalls;
-const workflowSurface = workflowLines + configLines;
-const skillFilterCount = disabledExtensions + ignoredSkills;
-const configSurface = configLines + (disabledExtensions * 2) + (ignoredSkills * 3) + (disabledProviders * 5) + (modelRoles * 2) + (mcpDiscoveryEnabled * 10) + (advisorSubagentsEnabled * 4) + (taskEagerPreferred * 2);
-const extensionSurface = extensionLines + (customExtensions * 20) + (commands.size * 8) + ((issuesGhCalls + issueRefGhCalls + issueLinkGhCalls + linkrefsGhCalls) * 15);
-const harnessFriction = configSurface + extensionSurface + workflowLines;
-
-const metrics = {
-  harness_friction: harnessFriction,
-  config_surface: configSurface,
-  extension_surface: extensionSurface,
-  workflow_surface: workflowSurface,
-  disabled_extensions: disabledExtensions,
-  ignored_skills: ignoredSkills,
-  skill_filter_count: skillFilterCount,
-  disabled_providers: disabledProviders,
-  model_roles: modelRoles,
-  mcp_discovery_enabled: mcpDiscoveryEnabled,
-  advisor_subagents_enabled: advisorSubagentsEnabled,
-  task_eager_preferred: taskEagerPreferred,
-  custom_extensions: customExtensions,
-  extension_commands: commands.size,
-  required_capabilities: requiredCapabilities,
-  issues_gh_calls: issuesGhCalls,
-  issue_ref_gh_calls: issueRefGhCalls,
-  issue_link_gh_calls: issueLinkGhCalls,
-  linkrefs_gh_calls: linkrefsGhCalls,
-  panel_live_gh_calls: liveGhCallsForPanel,
-  config_lines: configLines,
-  workflow_lines: workflowLines,
-  extension_lines: extensionLines,
-};
-
-assert(commandNames.length >= requiredCapabilities, 'GitHub issue panel lost required commands');
-assert(metrics.harness_friction > 0, 'primary metric did not compute');
-
-for (const [name, value] of Object.entries(metrics)) {
-  assert(Number.isFinite(value), `metric ${name} is not finite`);
+function metric(name, value) {
+  if (!Number.isFinite(value)) throw new Error(`metric ${name} is not finite`);
   console.log(`METRIC ${name}=${value}`);
+}
+
+function detail(name, values) {
+  const rendered = values.length === 0 ? 'none' : values.join('; ');
+  console.log(`DETAIL ${name}=${rendered}`);
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function markdownSection(text, heading) {
+  const lines = text.split(/\r?\n/);
+  const headingPattern = new RegExp(`^(#{1,6})\\s+${escapeRegExp(heading)}\\s*$`, 'i');
+  let start = -1;
+  let level = 0;
+  for (let index = 0; index < lines.length; index += 1) {
+    const match = lines[index].match(headingPattern);
+    if (match) {
+      start = index + 1;
+      level = match[1].length;
+      break;
+    }
+  }
+  if (start === -1) return '';
+  let end = lines.length;
+  for (let index = start; index < lines.length; index += 1) {
+    const match = lines[index].match(/^(#{1,6})\s+/);
+    if (match && match[1].length <= level) {
+      end = index;
+      break;
+    }
+  }
+  return lines.slice(start, end).join('\n');
+}
+
+function joinSections(text, headings) {
+  return headings.map((heading) => markdownSection(text, heading)).join('\n');
+}
+
+function replaceLiteral(text, needle, replacement) {
+  return text.split(needle).join(replacement);
+}
+
+function makeConcreteFlow() {
+  const atoms = {
+    northStar: 'reduce repeat setup decisions',
+    now: 'project bootstrap creates continuity scaffolding',
+    next: 'issue packets inherit PRD trace links',
+    deferred: 'cross-repo workflow analytics',
+    doNotPreclude: 'issue IDs must survive branch/worktree naming',
+    namingAnchor: 'scope ledger',
+    openQuestion: 'who owns triage labels',
+    openQuestionAnswer: 'triage labels are owned by platform',
+    openQuestionEvidence: 'label ownership evidence: docs/agents/triage-labels.md names platform',
+    expectedEvidence: 'fixture check shows ledger generated',
+    actualEvidence: './scripts/check-project.sh fixture-project passed and ledger generated',
+    sourceGrilledPlan: 'grilled-plan-setup-continuity',
+    sourcePrd: 'PRD-setup-continuity',
+    ledgerLink: 'docs/agents/scope-ledger.md#scope-ledger',
+    issueId: '#42',
+    branchName: '42-continuity-scaffolding',
+  };
+
+  const artifacts = {
+    grilledPlan: `# Grilled plan: ${atoms.sourceGrilledPlan}
+
+- Product north star: ${atoms.northStar}
+- Now: ${atoms.now}
+- Next: ${atoms.next}
+- Later: ${atoms.deferred}
+- Do not preclude: ${atoms.doNotPreclude}
+- Naming anchor: ${atoms.namingAnchor}
+- Open question: ${atoms.openQuestion}
+- Acceptance/evidence atom: ${atoms.expectedEvidence}
+`,
+    prd: `# PRD: ${atoms.sourcePrd}
+
+- Source grilled plan: ${atoms.sourceGrilledPlan}
+- Scope ledger: ${atoms.ledgerLink}
+
+## Product north star
+
+${atoms.northStar}
+
+## Now
+
+- ${atoms.now}
+
+## Next
+
+- ${atoms.next}
+
+## Later
+
+- ${atoms.deferred}
+
+## Explicitly deferred
+
+- Capability: ${atoms.deferred}
+  - Why deferred: not required for the current repo bootstrap slice.
+  - Where tracked: ${atoms.ledgerLink}
+  - Constraint imposed on Now: ${atoms.doNotPreclude}
+
+## Do not preclude
+
+- Constraint: ${atoms.doNotPreclude}
+  - Deferred capability protected: ${atoms.deferred}
+  - Verification evidence: ${atoms.expectedEvidence}
+
+## Naming anchors
+
+- ${atoms.namingAnchor}
+
+## Open questions
+
+- Question: ${atoms.openQuestion}
+  - Owner: unresolved
+  - Needed before: triage automation
+
+## Acceptance criteria
+
+| Acceptance criterion | Expected evidence |
+| --- | --- |
+| ${atoms.now} | ${atoms.expectedEvidence} |
+`,
+    issue: `# Agent Task ${atoms.issueId}
+
+## Source traceability
+
+- Source PRD: ${atoms.sourcePrd}
+- Scope ledger: ${atoms.ledgerLink}
+- Parent issue: none
+- Depends on: none
+- Now slice: ${atoms.now}
+- Preserves from scope ledger: ${atoms.northStar}; ${atoms.namingAnchor}
+
+## Acceptance criteria
+
+| Acceptance criterion | Expected evidence | Actual evidence |
+| --- | --- | --- |
+| ${atoms.now} | ${atoms.expectedEvidence} | Filled during closeout. |
+
+## Deferred scope custody
+
+- Long-term capability: ${atoms.deferred}
+- Why deferred: outside ${atoms.issueId}
+- Where tracked: ${atoms.ledgerLink}
+- Constraint imposed on V1: ${atoms.doNotPreclude}
+
+## Open questions
+
+- ${atoms.openQuestion}
+
+## Continuity constraints checked
+
+- Constraint: ${atoms.doNotPreclude}
+  - Result: preserved for ${atoms.deferred}
+  - Evidence: ${atoms.expectedEvidence}
+
+## Future issue candidates
+
+| Title | Depends on | Preserves |
+| --- | --- | --- |
+| ${atoms.next} | ${atoms.issueId} | ${atoms.deferred} |
+`,
+    triage: `# Triage update for ${atoms.issueId}
+
+- Source PRD: ${atoms.sourcePrd}
+- Scope ledger: ${atoms.ledgerLink}
+- Label: ready-for-agent
+- Deferred scope custody: ${atoms.deferred}
+- Do not preclude: ${atoms.doNotPreclude}
+- Open question preserved: ${atoms.openQuestion}
+- Future issue candidate preserved: ${atoms.next}
+`,
+    implementation: `# Implementation closeout for ${atoms.issueId}
+
+- Source PRD: ${atoms.sourcePrd}
+- Scope ledger: ${atoms.ledgerLink}
+- Worktree branch: ${atoms.branchName}
+- Implemented Now slice: ${atoms.now}
+- Expected evidence: ${atoms.expectedEvidence}
+- Actual evidence: ${atoms.actualEvidence}
+
+## Deferred scope custody
+
+- ${atoms.deferred}
+- Constraint respected: ${atoms.doNotPreclude}
+- Open question unchanged or answered with evidence: ${atoms.openQuestion}
+`,
+    pr: `# Pull request for ${atoms.issueId}
+
+- Closes ${atoms.issueId}
+- Source PRD: ${atoms.sourcePrd}
+- Scope ledger updated or linked: ${atoms.ledgerLink}
+
+## Verification evidence
+
+| Expected evidence | Actual evidence |
+| --- | --- |
+| ${atoms.expectedEvidence} | ${atoms.actualEvidence} |
+
+## Continuity constraints checked
+
+- Constraint: ${atoms.doNotPreclude}
+  - Result: preserved ${atoms.deferred}
+  - Evidence: ${atoms.actualEvidence}
+- Did not preclude deferred capabilities: ${atoms.deferred}
+- Open questions unchanged or answered with evidence: ${atoms.openQuestion}
+
+## Deferred scope
+
+- Explicitly deferred scope preserved: ${atoms.deferred}
+- Future issue candidates affected: ${atoms.next}
+- Naming anchor preserved: ${atoms.namingAnchor}
+`,
+    handoff: `# Handoff
+
+## Task
+
+${atoms.now} from ${atoms.sourcePrd} for ${atoms.issueId}.
+
+## Files touched
+
+- ${atoms.ledgerLink}
+
+## Verification run
+
+| Expected evidence | Actual evidence |
+| --- | --- |
+| ${atoms.expectedEvidence} | ${atoms.actualEvidence} |
+
+## Deferred scope custody
+
+- Scope ledger updated or linked: ${atoms.ledgerLink}
+- Explicitly deferred scope preserved: ${atoms.deferred}
+- Do not preclude constraints respected: ${atoms.doNotPreclude}
+- Deferred capability preserved: ${atoms.deferred}
+- Future issue candidates affected: ${atoms.next}
+- Open questions unchanged or answered with evidence: ${atoms.openQuestion}
+
+## Continuity constraints checked
+
+- Constraint: ${atoms.doNotPreclude}
+  - Result: ${atoms.deferred} remains possible.
+  - Evidence: ${atoms.actualEvidence}
+- Naming anchor preserved: ${atoms.namingAnchor}
+`,
+  };
+  return { atoms, artifacts };
+}
+
+function concreteExpectations(flow) {
+  const a = flow.atoms;
+  return [
+    { name: 'prd', text: flow.artifacts.prd, atoms: [a.sourceGrilledPlan, a.sourcePrd, a.ledgerLink, a.northStar, a.now, a.next, a.deferred, a.doNotPreclude, a.namingAnchor, a.openQuestion, a.expectedEvidence] },
+    { name: 'issue', text: flow.artifacts.issue, atoms: [a.sourcePrd, a.ledgerLink, a.issueId, a.northStar, a.now, a.next, a.deferred, a.doNotPreclude, a.namingAnchor, a.openQuestion, a.expectedEvidence] },
+    { name: 'triage', text: flow.artifacts.triage, atoms: [a.sourcePrd, a.ledgerLink, a.issueId, a.next, a.deferred, a.doNotPreclude, a.openQuestion] },
+    { name: 'implementation', text: flow.artifacts.implementation, atoms: [a.sourcePrd, a.ledgerLink, a.issueId, a.branchName, a.now, a.deferred, a.doNotPreclude, a.openQuestion, a.expectedEvidence, a.actualEvidence] },
+    { name: 'pr', text: flow.artifacts.pr, atoms: [a.sourcePrd, a.ledgerLink, a.issueId, a.next, a.deferred, a.doNotPreclude, a.namingAnchor, a.openQuestion, a.expectedEvidence, a.actualEvidence] },
+    { name: 'handoff', text: flow.artifacts.handoff, atoms: [a.sourcePrd, a.ledgerLink, a.issueId, a.now, a.next, a.deferred, a.doNotPreclude, a.namingAnchor, a.openQuestion, a.expectedEvidence, a.actualEvidence] },
+  ];
+}
+
+function evaluateConcreteFlow(flow) {
+  const a = flow.atoms;
+  let score = 0;
+  let max = 0;
+  const lostAtoms = [];
+  for (const expectation of concreteExpectations(flow)) {
+    for (const atom of expectation.atoms) {
+      max += 1;
+      if (has(expectation.text, atom)) {
+        score += 1;
+      } else {
+        lostAtoms.push(`${expectation.name}:${atom}`);
+      }
+    }
+  }
+
+  let scopeCreepEvents = 0;
+  for (const [name, text] of Object.entries(flow.artifacts)) {
+    const committedScope = joinSections(text, ['Now', 'Acceptance criteria']);
+    if (has(committedScope, a.deferred)) scopeCreepEvents += 1;
+  }
+
+  let openQuestionsSilentlyAnswered = 0;
+  for (const text of Object.values(flow.artifacts)) {
+    if (has(text, a.openQuestionAnswer) && !has(text, a.openQuestionEvidence)) {
+      openQuestionsSilentlyAnswered += 1;
+    }
+  }
+
+  let vagueFutureWorkCount = 0;
+  for (const text of Object.values(flow.artifacts)) {
+    const deferredSections = joinSections(text, ['Later', 'Explicitly deferred', 'Deferred scope custody', 'Deferred scope', 'Future issue candidates']);
+    if (/\bfuture work\b/i.test(deferredSections) && !has(deferredSections, a.deferred)) {
+      vagueFutureWorkCount += 1;
+    }
+  }
+
+  let unlinkedDeferredItems = 0;
+  for (const [name, text] of Object.entries(flow.artifacts)) {
+    if (name === 'grilledPlan') continue;
+    if (has(text, a.deferred) && !has(text, a.ledgerLink)) {
+      unlinkedDeferredItems += 1;
+    }
+  }
+
+  let missingActualEvidence = 0;
+  for (const name of ['implementation', 'pr', 'handoff']) {
+    if (!has(flow.artifacts[name], a.actualEvidence)) {
+      missingActualEvidence += 1;
+    }
+  }
+
+  return {
+    score,
+    max,
+    lostAtoms,
+    scopeCreepEvents,
+    openQuestionsSilentlyAnswered,
+    vagueFutureWorkCount,
+    unlinkedDeferredItems,
+    missingActualEvidence,
+  };
+}
+
+function cloneConcreteFlow(flow) {
+  return {
+    atoms: flow.atoms,
+    artifacts: { ...flow.artifacts },
+  };
+}
+
+function writeConcreteFlowArtifacts(root, label, flow) {
+  const dir = join(root, label);
+  mkdirSync(dir, { recursive: true });
+  for (const [name, text] of Object.entries(flow.artifacts)) {
+    writeFileSync(join(dir, `${name}.md`), text);
+  }
+  return dir;
+}
+
+function readConcreteFlowArtifacts(dir, atoms) {
+  const names = ['grilledPlan', 'prd', 'issue', 'triage', 'implementation', 'pr', 'handoff'];
+  const artifacts = {};
+  for (const name of names) {
+    artifacts[name] = read(join(dir, `${name}.md`));
+  }
+  return { atoms, artifacts };
+}
+
+function mutationCaught(evaluation) {
+  return evaluation.score < evaluation.max ||
+    evaluation.scopeCreepEvents > 0 ||
+    evaluation.openQuestionsSilentlyAnswered > 0 ||
+    evaluation.vagueFutureWorkCount > 0 ||
+    evaluation.unlinkedDeferredItems > 0 ||
+    evaluation.missingActualEvidence > 0;
+}
+
+const tempRoot = mkdtempSync(join(tmpdir(), 'omp-full-flow-traceability-'));
+try {
+  const repo = join(tempRoot, 'fixture-project');
+  mkdirSync(repo);
+  run('git', ['init', '-q'], { cwd: repo });
+  run('git', ['remote', 'add', 'origin', 'https://github.com/example/full-flow-fixture.git'], { cwd: repo });
+  run('bash', [join(scripts, 'init-project.sh'), repo]);
+  const checkResult = run('bash', [join(scripts, 'check-project.sh'), repo]);
+
+  const artifacts = {
+    readme: read(join(kitRoot, 'README.md')),
+    agentsTemplate: read(join(templates, 'project-omp-AGENTS.md')),
+    generatedAgents: read(join(repo, '.omp/AGENTS.md')),
+    githubTrackerTemplate: read(join(templates, 'docs-agents-issue-tracker-github.md')),
+    localTrackerTemplate: read(join(templates, 'docs-agents-issue-tracker-local.md')),
+    generatedTracker: read(join(repo, 'docs/agents/issue-tracker.md')),
+    triageTemplate: read(join(templates, 'docs-agents-triage-labels.md')),
+    generatedTriage: read(join(repo, 'docs/agents/triage-labels.md')),
+    issueTemplate: read(join(templates, 'github-agent-task.md')),
+    generatedIssue: read(join(repo, '.github/ISSUE_TEMPLATE/agent-task.md')),
+    prTemplate: read(join(templates, 'github-pull-request-template.md')),
+    generatedPr: read(join(repo, '.github/PULL_REQUEST_TEMPLATE.md')),
+    handoffTemplate: read(join(templates, 'handoff.md')),
+    ledgerTemplate: read(join(templates, 'scope-ledger.md')),
+    generatedLedger: read(join(repo, 'docs/agents/scope-ledger.md')),
+    initScript: read(join(scripts, 'init-project.sh')),
+    checkScript: read(join(scripts, 'check-project.sh')),
+  };
+
+  const flowArtifacts = Object.values(artifacts).join('\n');
+  const planningContract = artifacts.readme + artifacts.agentsTemplate + artifacts.generatedAgents + artifacts.ledgerTemplate + artifacts.generatedLedger;
+  const prdContract = artifacts.readme + artifacts.ledgerTemplate + artifacts.generatedLedger + artifacts.githubTrackerTemplate + artifacts.localTrackerTemplate + artifacts.generatedTracker;
+  const issueContract = artifacts.githubTrackerTemplate + artifacts.localTrackerTemplate + artifacts.generatedTracker + artifacts.issueTemplate + artifacts.generatedIssue;
+  const triageContract = artifacts.triageTemplate + artifacts.generatedTriage;
+  const implementationContract = artifacts.agentsTemplate + artifacts.generatedAgents + artifacts.issueTemplate + artifacts.generatedIssue + artifacts.prTemplate + artifacts.generatedPr;
+  const prContract = artifacts.prTemplate + artifacts.generatedPr;
+  const handoffContract = artifacts.handoffTemplate;
+  const closeoutContract = prContract + handoffContract + artifacts.agentsTemplate + artifacts.generatedAgents;
+
+  // Synthetic grilled transcript fixture, represented as trace atom categories. The
+  // benchmark scores whether workflow-kit artifacts provide an explicit carrier for
+  // each atom at every handoff in the real intended flow.
+  const traceAtoms = [
+    'Product north star',
+    'Now',
+    'Next',
+    'Later',
+    'Explicitly deferred',
+    'Do not preclude',
+    'Naming anchors',
+    'Open questions',
+    'Acceptance criterion',
+    'Expected evidence',
+    'Actual evidence',
+    'Future issue candidates',
+  ];
+
+  const phaseChecks = [
+    {
+      name: 'grill_to_prd',
+      text: planningContract,
+      requirements: [
+        ['grilled plan', 'PRD', 'shared understanding'],
+        ['scope ledger', 'Product north star', 'Now', 'Next', 'Later'],
+        ['Explicitly deferred', 'Do not preclude', 'Naming anchors', 'Open questions'],
+      ],
+    },
+    {
+      name: 'prd_to_issues',
+      text: prdContract + issueContract,
+      requirements: [
+        ['PRD', 'issue'],
+        ['Source PRD', 'Scope ledger'],
+        ['Deferred scope custody', 'Long-term capability', 'Why deferred', 'Constraint imposed on V1'],
+        ['Future issue candidates', 'Depends on', 'Preserves'],
+        ['Acceptance criterion', 'Expected evidence'],
+      ],
+    },
+    {
+      name: 'issues_to_triage',
+      text: triageContract,
+      requirements: [
+        ['triage', 'scope ledger'],
+        ['label', 'Deferred scope custody'],
+        ['Open questions', 'Do not preclude'],
+        ['Future issue candidates', 'ready-for-agent'],
+      ],
+    },
+    {
+      name: 'triage_to_implementation',
+      text: implementationContract,
+      requirements: [
+        ['one issue', 'worktree', 'PR'],
+        ['Source PRD', 'Parent issue', 'Depends on'],
+        ['Continuity constraints checked', 'Evidence'],
+        ['did not preclude deferred capabilities'],
+        ['Open questions unchanged or answered with evidence'],
+      ],
+    },
+    {
+      name: 'implementation_to_pr',
+      text: prContract,
+      requirements: [
+        ['Closes #', 'Verification'],
+        ['Actual evidence', 'Expected evidence'],
+        ['Continuity constraints checked', 'Evidence'],
+        ['Scope ledger updated or linked', 'Future issue candidates affected'],
+        ['Deferred capability preserved', 'Open questions unchanged or answered with evidence'],
+      ],
+    },
+    {
+      name: 'handoff_round_trip',
+      text: handoffContract,
+      requirements: [
+        ['Handoff', 'Files touched', 'Verification run'],
+        ['Deferred scope custody', 'Scope ledger updated or linked'],
+        ['Continuity constraints checked', 'Constraint', 'Evidence'],
+        ['Expected evidence', 'Actual evidence'],
+        ['Did not preclude deferred capabilities'],
+        ['Explicitly deferred', 'Do not preclude', 'Future issue candidates affected'],
+        ['Next step', 'Blockers'],
+      ],
+    },
+    {
+      name: 'fixture_check_contract',
+      text: artifacts.checkScript,
+      requirements: [
+        ['Full-flow traceability', 'Source PRD'],
+        ['Continuity rules', 'Deferred scope custody'],
+        ['PRD continuity', 'Expected evidence'],
+        ['Source traceability', 'Future issue candidates'],
+        ['Actual evidence', 'Deferred capability preserved'],
+      ],
+    },
+  ];
+
+  let fullFlowScore = 0;
+  let fullFlowMax = 0;
+  const missingByPhase = [];
+  for (const phase of phaseChecks) {
+    let phaseScore = 0;
+    for (const requirement of phase.requirements) {
+      fullFlowMax += 1;
+      const ok = requirement.every((needle) => has(phase.text, needle));
+      if (ok) {
+        phaseScore += 1;
+        fullFlowScore += 1;
+      } else {
+        const missingNeedles = requirement.filter((needle) => !has(phase.text, needle));
+        missingByPhase.push(`${phase.name}: ${missingNeedles.join(', ')}`);
+      }
+    }
+    metric(`${phase.name}_score`, phaseScore);
+    metric(`${phase.name}_max`, phase.requirements.length);
+  }
+
+  const atomDestinations = [
+    { name: 'prd', text: prdContract, atoms: traceAtoms },
+    { name: 'issue', text: issueContract, atoms: traceAtoms },
+    { name: 'triage', text: triageContract, atoms: ['Explicitly deferred', 'Do not preclude', 'Open questions', 'Future issue candidates'] },
+    { name: 'pr', text: prContract, atoms: ['Explicitly deferred', 'Do not preclude', 'Open questions', 'Actual evidence', 'Future issue candidates'] },
+    { name: 'handoff', text: handoffContract, atoms: ['Explicitly deferred', 'Do not preclude', 'Open questions', 'Actual evidence', 'Future issue candidates'] },
+  ];
+
+  let atomScore = 0;
+  let atomMax = 0;
+  const lostAtoms = [];
+  for (const destination of atomDestinations) {
+    for (const atom of destination.atoms) {
+      atomMax += 1;
+      if (has(destination.text, atom)) {
+        atomScore += 1;
+      } else {
+        lostAtoms.push(`${destination.name}:${atom}`);
+      }
+    }
+  }
+
+  const implementationSilentlyAnsweredQuestions = has(implementationContract + closeoutContract, 'Open questions unchanged or answered with evidence') ? 0 : 1;
+  const closeoutMissingContinuityEvidence = has(closeoutContract, 'Continuity constraints checked') && has(closeoutContract, 'Evidence') ? 0 : 1;
+  const acceptanceWithoutExpectedEvidence = has(issueContract, 'Acceptance criterion') && has(issueContract, 'Expected evidence') ? 0 : 1;
+  const actualEvidenceMissingAtPr = has(closeoutContract, 'Actual evidence') ? 0 : 1;
+  const unlinkedFutureIssueCandidates = has(issueContract + closeoutContract, 'Future issue candidates') && has(issueContract, 'Preserves') ? 0 : 1;
+  const domainTermsLostAfterPrd = has(prdContract + issueContract + closeoutContract, 'Naming anchors') ? 0 : 1;
+  const triageDroppedContext = has(triageContract, 'Deferred scope custody') && has(triageContract, 'Open questions') && has(triageContract, 'Do not preclude') ? 0 : 1;
+  const issueLostDeferredScope = has(issueContract, 'Deferred scope custody') && has(issueContract, 'Long-term capability') && has(issueContract, 'Why deferred') ? 0 : 1;
+  const prdLostDecisions = has(prdContract, 'PRD') && has(prdContract, 'Product north star') && has(prdContract, 'Do not preclude') ? 0 : 1;
+
+  const concreteFlow = makeConcreteFlow();
+  const cleanFlowDir = writeConcreteFlowArtifacts(tempRoot, 'adversarial-flow-clean', concreteFlow);
+  const concreteEvaluation = evaluateConcreteFlow(readConcreteFlowArtifacts(cleanFlowDir, concreteFlow.atoms));
+  const mutations = [
+    {
+      name: 'remove_deferred_item',
+      apply(flow) {
+        flow.artifacts.issue = replaceLiteral(flow.artifacts.issue, flow.atoms.deferred, '');
+      },
+      detects(evaluation) {
+        return evaluation.score < evaluation.max;
+      },
+    },
+    {
+      name: 'scope_creep_deferred_into_now_acceptance',
+      apply(flow) {
+        flow.artifacts.issue = replaceLiteral(
+          flow.artifacts.issue,
+          `| ${flow.atoms.now} | ${flow.atoms.expectedEvidence} | Filled during closeout. |`,
+          `| ${flow.atoms.now} | ${flow.atoms.expectedEvidence} | Filled during closeout. |
+| ${flow.atoms.deferred} | ${flow.atoms.expectedEvidence} | Filled during closeout. |`,
+        );
+      },
+      detects(evaluation) {
+        return evaluation.scopeCreepEvents > 0;
+      },
+    },
+    {
+      name: 'silent_open_question_answer',
+      apply(flow) {
+        for (const name of ['prd', 'issue', 'triage', 'implementation', 'pr', 'handoff']) {
+          flow.artifacts[name] = replaceLiteral(flow.artifacts[name], flow.atoms.openQuestion, flow.atoms.openQuestionAnswer);
+        }
+      },
+      detects(evaluation) {
+        return evaluation.openQuestionsSilentlyAnswered > 0;
+      },
+    },
+    {
+      name: 'vague_future_work_boilerplate',
+      apply(flow) {
+        flow.artifacts.handoff = replaceLiteral(flow.artifacts.handoff, flow.atoms.deferred, 'future work');
+      },
+      detects(evaluation) {
+        return evaluation.vagueFutureWorkCount > 0;
+      },
+    },
+    {
+      name: 'unlinked_deferred_item',
+      apply(flow) {
+        flow.artifacts.issue = replaceLiteral(flow.artifacts.issue, flow.atoms.ledgerLink, '');
+      },
+      detects(evaluation) {
+        return evaluation.unlinkedDeferredItems > 0;
+      },
+    },
+    {
+      name: 'missing_actual_evidence',
+      apply(flow) {
+        flow.artifacts.pr = replaceLiteral(flow.artifacts.pr, flow.atoms.actualEvidence, '');
+        flow.artifacts.handoff = replaceLiteral(flow.artifacts.handoff, flow.atoms.actualEvidence, '');
+      },
+      detects(evaluation) {
+        return evaluation.missingActualEvidence > 0;
+      },
+    },
+  ];
+
+  let caughtMutations = 0;
+  const caughtMutationNames = [];
+  const missedMutationNames = [];
+  for (const mutation of mutations) {
+    const mutatedFlow = cloneConcreteFlow(concreteFlow);
+    mutation.apply(mutatedFlow);
+    const mutatedFlowDir = writeConcreteFlowArtifacts(tempRoot, `adversarial-flow-${mutation.name}`, mutatedFlow);
+    const evaluation = evaluateConcreteFlow(readConcreteFlowArtifacts(mutatedFlowDir, mutatedFlow.atoms));
+    const caught = mutationCaught(evaluation) && mutation.detects(evaluation);
+    if (caught) {
+      caughtMutations += 1;
+      caughtMutationNames.push(mutation.name);
+    } else {
+      missedMutationNames.push(mutation.name);
+    }
+    metric(`mutation_${mutation.name}_caught`, caught ? 1 : 0);
+    metric(`mutation_${mutation.name}_concrete_trace_atom_score`, evaluation.score);
+    metric(`mutation_${mutation.name}_scope_creep_events`, evaluation.scopeCreepEvents);
+    metric(`mutation_${mutation.name}_open_questions_silently_answered`, evaluation.openQuestionsSilentlyAnswered);
+    metric(`mutation_${mutation.name}_vague_future_work_count`, evaluation.vagueFutureWorkCount);
+    metric(`mutation_${mutation.name}_unlinked_deferred_items`, evaluation.unlinkedDeferredItems);
+    metric(`mutation_${mutation.name}_missing_actual_evidence`, evaluation.missingActualEvidence);
+  }
+
+  metric('full_flow_traceability_score', fullFlowScore);
+  metric('full_flow_traceability_max', fullFlowMax);
+  metric('trace_atom_retention_score', atomScore);
+  metric('trace_atom_retention_max', atomMax);
+  metric('concrete_trace_atom_score', concreteEvaluation.score);
+  metric('concrete_trace_atom_max', concreteEvaluation.max);
+  metric('anti_cheat_mutations_caught', caughtMutations);
+  metric('anti_cheat_mutations_total', mutations.length);
+  metric('scope_creep_events', concreteEvaluation.scopeCreepEvents);
+  metric('open_questions_silently_answered', concreteEvaluation.openQuestionsSilentlyAnswered);
+  metric('vague_future_work_count', concreteEvaluation.vagueFutureWorkCount);
+  metric('unlinked_deferred_items', concreteEvaluation.unlinkedDeferredItems);
+  metric('missing_actual_evidence', concreteEvaluation.missingActualEvidence);
+  metric('prd_lost_decisions', prdLostDecisions);
+  metric('issue_lost_deferred_scope', issueLostDeferredScope);
+  metric('triage_dropped_context', triageDroppedContext);
+  metric('implementation_silently_answered_questions', implementationSilentlyAnsweredQuestions);
+  metric('closeout_missing_continuity_evidence', closeoutMissingContinuityEvidence);
+  metric('unlinked_future_issue_candidates', unlinkedFutureIssueCandidates);
+  metric('domain_terms_lost_after_prd', domainTermsLostAfterPrd);
+  metric('acceptance_without_expected_evidence', acceptanceWithoutExpectedEvidence);
+  metric('actual_evidence_missing_at_pr', actualEvidenceMissingAtPr);
+  metric('fixture_check_passed', checkResult.status === 0 ? 1 : 0);
+  detail('missing_full_flow_contracts', missingByPhase);
+  detail('lost_trace_atoms', lostAtoms);
+  detail('lost_concrete_trace_atoms', concreteEvaluation.lostAtoms);
+  detail('anti_cheat_mutations_caught_names', caughtMutationNames);
+  detail('anti_cheat_mutations_missed', missedMutationNames);
+
+  if (fullFlowScore > fullFlowMax) throw new Error('full_flow_traceability_score exceeded max score');
+  if (atomScore > atomMax) throw new Error('trace_atom_retention_score exceeded max score');
+  if (concreteEvaluation.score !== concreteEvaluation.max) {
+    throw new Error(`concrete trace atoms were lost: ${concreteEvaluation.lostAtoms.join(', ')}`);
+  }
+  if (concreteEvaluation.scopeCreepEvents !== 0) throw new Error('clean fixture has scope creep');
+  if (concreteEvaluation.openQuestionsSilentlyAnswered !== 0) throw new Error('clean fixture silently answered open questions');
+  if (concreteEvaluation.vagueFutureWorkCount !== 0) throw new Error('clean fixture has vague future-work boilerplate');
+  if (concreteEvaluation.unlinkedDeferredItems !== 0) throw new Error('clean fixture has unlinked deferred items');
+  if (concreteEvaluation.missingActualEvidence !== 0) throw new Error('clean fixture is missing actual evidence');
+  if (caughtMutations !== mutations.length) {
+    throw new Error(`anti-cheat mutations missed: ${missedMutationNames.join(', ')}`);
+  }
+} finally {
+  rmSync(tempRoot, { recursive: true, force: true });
 }
 NODE

@@ -5,13 +5,13 @@ theme:
 setupVersion: 1
 modelRoles: 
   smol: openai-codex/gpt-5.5:xhigh
-  slow: openai-codex/gpt-5.5
+  slow: openai-codex/gpt-5.5:xhigh
   designer: anthropic/claude-opus-4-8:high
 disabledProviders: 
   - claude-plugins
   - opencode
-skills:
-  ignoredSkills:
+skills: 
+  ignoredSkills: 
     - using-superpowers
     - orca-pi-harness
     - caveman
@@ -43,7 +43,7 @@ skills:
     - skill-creator
     - sentry-*
     - ai-gateway
-disabledExtensions:
+disabledExtensions: 
   - context-file:user:CLAUDE.md
 statusLine: 
   preset: full
