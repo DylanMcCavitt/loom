@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import workflowCockpit from "../omp/.omp/agent/extensions/workflow-cockpit.js";
 import {
+  SplitDiffOverlayComponent,
   buildDiffWidget,
+  ghPrDiffArgs,
   gitDiffArgs,
   parseDiffArgs,
   parseUnifiedDiff,
@@ -23,11 +25,30 @@ function install() {
 function context(overrides = {}) {
   const diffWidgets = [];
   const legacyWidgets = [];
+  const customOverlays = [];
   const notifications = [];
+  const theme = {
+    fg(token, text) {
+      return `<${token}>${text}</${token}>`;
+    },
+  };
   return {
     ctx: {
       cwd: "/repo",
+      hasUI: true,
       ui: {
+        custom(factory, options) {
+          let resolvePromise;
+          const promise = new Promise((resolve) => {
+            resolvePromise = resolve;
+          });
+          const component = factory({}, theme, { matches: () => false }, (result) => {
+            customOverlays.at(-1).result = result;
+            resolvePromise(result);
+          });
+          customOverlays.push({ component, options, result: undefined });
+          return promise;
+        },
         async setDiffWidget(widget, options) {
           diffWidgets.push({ widget, options });
         },
@@ -40,6 +61,7 @@ function context(overrides = {}) {
       },
       ...overrides,
     },
+    customOverlays,
     diffWidgets,
     legacyWidgets,
     notifications,
@@ -69,6 +91,20 @@ rename to docs/new.txt
 @@ -1 +1 @@
 -old title
 +new title
+`;
+
+const SECOND_HUNK_DIFF = `diff --git a/src/two.js b/src/two.js
+index 1111111..2222222 100644
+--- a/src/two.js
++++ b/src/two.js
+@@ -1,2 +1,2 @@
+ one();
+-oldOne();
++newOne();
+@@ -20,2 +20,2 @@ tail
+ twenty();
+-oldTwenty();
++newTwenty();
 `;
 
 test("parseUnifiedDiff builds split rows for additions, deletions, and modifications", () => {
@@ -111,7 +147,7 @@ test("buildDiffWidget represents empty diffs without fake text output", () => {
   assert.deepEqual(widget.files, []);
 });
 
-test("parseDiffArgs accepts ranges and file pathspecs only in one mode", () => {
+test("parseDiffArgs accepts local modes and file pathspecs only in one mode", () => {
   const request = parseDiffArgs("main..feature --file omp/.omp/agent/extensions/workflow-cockpit.js");
   assert.deepEqual(request, {
     kind: "range",
@@ -131,10 +167,76 @@ test("parseDiffArgs accepts ranges and file pathspecs only in one mode", () => {
   ]);
   assert.throws(() => parseDiffArgs("main feature"), /Usage/u);
   assert.throws(() => parseDiffArgs("main..feature --staged"), /Usage/u);
-  assert.throws(() => parseDiffArgs("--pr 12"), /not implemented/u);
 });
 
-test("/diff registers and renders through ctx.ui.setDiffWidget", async () => {
+test("parseDiffArgs accepts explicit PR mode without local GitHub calls", () => {
+  const request = parseDiffArgs("--pr 20 --file src/app.js");
+  assert.deepEqual(request, { kind: "pr", label: "PR #20", pr: "20", file: "src/app.js" });
+  assert.deepEqual(ghPrDiffArgs(request), ["pr", "diff", "20", "--patch", "--color=never"]);
+  assert.throws(() => parseDiffArgs("--pr abc"), /numeric/u);
+});
+
+test("buildDiffWidget applies --file filtering before rendering the panel model", () => {
+  const widget = buildDiffWidget({ kind: "pr", label: "PR #20", pr: "20", file: "docs/new.txt" }, `${MODIFIED_DIFF}${RENAMED_DIFF}`);
+  assert.deepEqual(widget.files.map((file) => file.path), ["docs/new.txt"]);
+  assert.deepEqual(widget.navigation.files.map((file) => file.path), ["docs/new.txt"]);
+});
+
+test("SplitDiffOverlayComponent renders split panes with styled deletion and addition cells", () => {
+  const widget = buildDiffWidget({ kind: "range", label: "base..head", range: "base..head", file: "" }, MODIFIED_DIFF);
+  const component = new SplitDiffOverlayComponent(widget, { fg: (token, text) => `<${token}>${text}</${token}>` }, null, () => {});
+  const lines = component.render(180);
+
+  assert.ok(lines.some((line) => line.includes("OLD") && line.includes("NEW")));
+  assert.ok(lines.some((line) => line.includes("src/app.js")));
+  assert.ok(lines.some((line) => line.includes("<error>") && line.includes("const name = \"old\";")));
+  assert.ok(lines.some((line) => line.includes("<success>") && line.includes("const name = \"new\";")));
+  assert.ok(lines.at(-1).includes("[ ] file"));
+  assert.ok(lines.at(-1).includes("{ } hunk"));
+});
+
+test("SplitDiffOverlayComponent keeps narrow renders inside the requested width", () => {
+  const widget = buildDiffWidget({ kind: "range", label: "base..head", range: "base..head", file: "" }, MODIFIED_DIFF);
+  const component = new SplitDiffOverlayComponent(widget, null, null, () => {});
+  const lines = component.render(24);
+
+  assert.ok(lines.some((line) => line.includes("Widen terminal")));
+  for (const line of lines) assert.ok(line.length <= 24, line);
+});
+
+test("SplitDiffOverlayComponent supports scrolling, file navigation, hunk navigation, and close keys", () => {
+  const longContext = Array.from({ length: 22 }, (_value, index) => ` line${index + 1}();`).join("\n");
+  const longTwoHunkDiff = `diff --git a/src/two.js b/src/two.js
+index 1111111..2222222 100644
+--- a/src/two.js
++++ b/src/two.js
+@@ -1,22 +1,22 @@
+${longContext}
+@@ -40,2 +40,2 @@ tail
+ forty();
+-oldForty();
++newForty();
+`;
+  const widget = buildDiffWidget({ kind: "range", label: "base..head", range: "base..head", file: "" }, `${MODIFIED_DIFF}${longTwoHunkDiff}`);
+  let closed = "";
+  const component = new SplitDiffOverlayComponent(widget, null, null, (result) => {
+    closed = result;
+  });
+
+  component.handleInput("]");
+  assert.equal(component.currentFile().path, "src/two.js");
+  assert.equal(component.scroll, 0);
+  component.handleInput("j");
+  assert.equal(component.scroll, 1);
+  component.handleInput("}");
+  assert.ok(component.scroll > 1);
+  component.handleInput("{");
+  assert.equal(component.scroll, 0);
+  component.handleInput("q");
+  assert.equal(closed, "closed");
+});
+
+test("/diff registers and renders through ctx.ui.custom overlay", async () => {
   const commands = install();
   const state = context({
     async gitDiff(args) {
@@ -156,8 +258,9 @@ test("/diff registers and renders through ctx.ui.setDiffWidget", async () => {
   assert.equal(widget.title, "Diff: base..head · src/app.js");
   assert.equal(widget.mode, "split");
   assert.equal(widget.files.length, 1);
-  assert.equal(state.diffWidgets.length, 1);
-  assert.equal(state.diffWidgets[0].options.placement, "belowEditor");
+  assert.equal(state.customOverlays.length, 1);
+  assert.equal(state.customOverlays[0].options.overlay, true);
+  assert.equal(state.diffWidgets.length, 0);
   assert.equal(state.legacyWidgets.length, 0);
   assert.equal(state.notifications.at(-1).message, "Showing split diff for 1 file");
 });
@@ -187,31 +290,38 @@ test("/diff renders an explicit empty state for no changes", async () => {
 
   const widget = await commands.get("diff").handler("base..head", state.ctx);
   assert.deepEqual(widget.state, { kind: "empty", message: "No changes" });
-  assert.deepEqual(state.diffWidgets[0].widget.files, []);
+  assert.equal(state.customOverlays[0].component.widget.files.length, 0);
   assert.equal(state.notifications.at(-1).message, "No changes");
 });
 
-test("/diff clears stale diff UI with an error model on invalid git input", async () => {
+test("/diff replaces stale diff overlays on repeated render and invalid input", async () => {
   const commands = install();
   const state = context({
-    async gitDiff() {
-      throw new Error("fatal: bad revision 'missing..head'");
+    async gitDiff(args) {
+      if (args.includes("missing..head")) throw new Error("fatal: bad revision 'missing..head'");
+      return MODIFIED_DIFF;
     },
   });
 
+  await commands.get("diff").handler("base..head", state.ctx);
+  await commands.get("diff").handler("other..head", state.ctx);
+  assert.equal(state.customOverlays[0].result, "replaced");
+
   const widget = await commands.get("diff").handler("missing..head", state.ctx);
+  assert.equal(state.customOverlays[1].result, "replaced");
   assert.equal(widget.state.kind, "error");
   assert.match(widget.state.message, /bad revision/u);
-  assert.equal(state.diffWidgets.length, 1);
-  assert.equal(state.diffWidgets[0].widget.state.kind, "error");
+  assert.equal(state.customOverlays.at(-1).component.widget.state.kind, "error");
   assert.equal(state.notifications.at(-1).level, "error");
 });
 
-test("/diff reports the missing TUI primitive instead of falling back to setWidget", async () => {
+test("/diff uses a safe non-TUI fallback instead of requiring setDiffWidget", async () => {
   const notifications = [];
   const legacyWidgets = [];
   const result = await renderDiffCommand("base..head", {
     cwd: "/repo",
+    hasUI: false,
+    gitDiff: async () => MODIFIED_DIFF,
     ui: {
       async setWidget(lines) {
         legacyWidgets.push(lines);
@@ -221,8 +331,8 @@ test("/diff reports the missing TUI primitive instead of falling back to setWidg
       },
     },
   });
-  assert.deepEqual(result, []);
-  assert.equal(legacyWidgets.length, 0);
-  assert.equal(notifications.at(-1).level, "error");
-  assert.match(notifications.at(-1).message, /setDiffWidget is required/u);
+  assert.equal(result.files.length, 1);
+  assert.equal(legacyWidgets.length, 1);
+  assert.match(legacyWidgets[0][1], /Open an interactive TUI/u);
+  assert.equal(notifications.at(-1).level, "info");
 });
