@@ -56,7 +56,7 @@ function contextLines(ctx = {}) {
 }
 
 async function render(ctx, lines, message, level = "info") {
-  await ctx?.ui?.setWidget?.(lines, { placement: "belowEditor" });
+  await ctx?.ui?.setWidget?.("workflow-cockpit", lines, { placement: "belowEditor" });
   ctx?.ui?.notify?.(message, level);
   return lines;
 }
