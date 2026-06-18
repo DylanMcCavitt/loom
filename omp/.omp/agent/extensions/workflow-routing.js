@@ -46,6 +46,11 @@ const ROUTE_RULES = [
     any: ["openai docs", "responses api", "agents sdk", "apps sdk", "realtime api"],
   },
   {
+    route: "execute-plan",
+    reason: "Execute-plan owns explicit go-ahead requests for the current plan.",
+    any: ["go ahead", "execute the plan", "proceed", "stop discussing and implement", "ship the current plan", "current plan"],
+  },
+  {
     route: "agent-recipes",
     reason: "Agent-recipes owns turning short spawn intents into complete task assignments.",
     any: ["spawn review", "spawn agents", "/spawn", "subagent recipe", "agent recipe", "parallel implementation"],

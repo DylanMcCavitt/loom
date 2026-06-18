@@ -38,5 +38,10 @@
     "input": "/spawn review agents",
     "expectedRoutes": ["agent-recipes"],
     "forbiddenRoutes": ["handoff", "diagnose", "tdd", "to-issues", "to-prd", "execute-plan", "issue-autopilot"]
+  },
+  {
+    "input": "go ahead and do the current plan",
+    "expectedRoutes": ["execute-plan"],
+    "forbiddenRoutes": ["handoff", "diagnose", "tdd", "to-issues", "to-prd", "issue-autopilot", "agent-recipes"]
   }
 ]
