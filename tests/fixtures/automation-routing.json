@@ -48,5 +48,10 @@
     "input": "split the current plan into implementation tickets",
     "expectedRoutes": ["to-issues"],
     "forbiddenRoutes": ["execute-plan", "issue-autopilot", "agent-recipes"]
+  },
+  {
+    "input": "start issue 42 and work it to PR",
+    "expectedRoutes": ["issue-autopilot"],
+    "forbiddenRoutes": ["handoff", "diagnose", "tdd", "to-issues", "to-prd", "execute-plan", "agent-recipes"]
   }
 ]
