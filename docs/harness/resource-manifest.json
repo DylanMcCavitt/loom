@@ -42,12 +42,26 @@
         "~/.omp/agent/workflow-kit/",
         "repo:omp/.omp/agent/AGENTS.md",
         "repo:omp/.omp/agent/RULES.md",
-        "repo:omp/.omp/agent/config.yml"
+        "repo:omp/.omp/agent/config.yml",
+        "repo:omp/.omp/agent/config.example.yml"
       ],
       "discoverySource": "Repo-tracked OMP config under omp/.omp/agent plus live OMP workflow-kit category under ~/.omp/agent/workflow-kit/.",
       "intendedRepoTarget": "omp/.omp/agent/ and docs/harness/omp/",
       "disposition": "track",
-      "migrationNotes": "Track declarative config and workflow-kit guidance only. Do not read, copy, or normalize private runtime artifacts when comparing live and repo resources."
+      "migrationNotes": "Track declarative config and workflow-kit guidance only. omp/.omp/agent/config.yml is portable base source; config.example.yml documents the local overlay shape. Personal model role selections, ignored-skill preferences, and autoqa consent live only in gitignored config.local.yml. Do not read, copy, or normalize private runtime artifacts when comparing live and repo resources."
+    },
+    {
+      "id": "omp-personal-local-overrides",
+      "sourceHarness": "omp",
+      "resourceCategory": "personal local config overlay",
+      "currentLivePath": [
+        "~/.omp/agent/config.local.yml",
+        "~/.omp/agent/*.local.yml"
+      ],
+      "discoverySource": "Gitignored local OMP config overlays matched by *.local.yml; presence may be reported by path pattern, but contents are personal and not tracked.",
+      "intendedRepoTarget": "none",
+      "disposition": "local-only",
+      "migrationNotes": "Keep operator-specific modelRoles, skills.ignoredSkills, and dev.autoqa.consent out of tracked source. Future renderers may consume an operator-provided local overlay at apply time, but the overlay is local-only and never committed."
     },
     {
       "id": "omp-runtime-state",

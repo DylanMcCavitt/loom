@@ -3,46 +3,9 @@ providers:
 theme: 
   dark: dark-tundra
 setupVersion: 1
-modelRoles: 
-  smol: openai-codex/gpt-5.5:xhigh
-  slow: openai-codex/gpt-5.5:xhigh
-  designer: anthropic/claude-opus-4-8:high
 disabledProviders: 
   - claude-plugins
   - opencode
-skills: 
-  ignoredSkills: 
-    - using-superpowers
-    - orca-pi-harness
-    - caveman
-    - codex-*
-    - devenv
-    - doc
-    - excalidraw-diagrams
-    - find-skills
-    - fleet-status
-    - gh-issue-thread-chain
-    - graduate
-    - html-*
-    - inspo
-    - jupyter-notebook
-    - learn
-    - loading
-    - mocking
-    - orca-cli
-    - pdf
-    - quick
-    - repo-workflow-bootstrap
-    - security-*
-    - summarize-youtube-videos
-    - swiftui-pro
-    - theme-factory
-    - vault-note
-    - write-a-skill
-    - writing-hookify-rules
-    - skill-creator
-    - sentry-*
-    - ai-gateway
 disabledExtensions: 
   - context-file:user:CLAUDE.md
 statusLine: 
@@ -58,9 +21,6 @@ mcp:
 advisor: 
   enabled: true
   subagents: false
-dev: 
-  autoqa: 
-    consent: granted
 github: 
   enabled: true
 inspect_image: 

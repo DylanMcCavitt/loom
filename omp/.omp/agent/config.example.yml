@@ -1,0 +1,11 @@
+# Copy this file to config.local.yml and fill in operator-specific values.
+# The tracked config.yml stays portable; this example only shows overlay shape.
+modelRoles:
+  smol: null
+  slow: null
+  designer: null
+skills:
+  ignoredSkills: []
+dev:
+  autoqa:
+    consent: null

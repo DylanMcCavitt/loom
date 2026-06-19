@@ -15,7 +15,7 @@ The manifest is category-level by design. It records source harness, resource ca
 
 - OMP built-ins and installed package resources are represented as `reference-only`.
 - OMP bundled agents, built-in command sources, prompt categories, and built-in default rules are snapshotted under `docs/harness/omp-builtins/` by issue #39.
-- OMP user/project resources and workflow-kit categories are represented as `track`.
+- OMP user/project resources and workflow-kit categories are represented as `track`, with personal OMP config overlays separated as `local-only`.
 - Codex config/profile surfaces are `reference-only`, while Codex agents and skill roots are `adapt`; issue #41 documents the Codex-side adapter plan in `docs/harness/codex-adapter-plan.md`.
 - Claude agents, skills, and settings are `adapt`, with local settings and runtime state separated as `local-only`; issue #42 documents the Claude-side adapter plan in `docs/harness/claude-adapter-plan.md`.
 - Duplicate skill roots across shared, Codex, Claude, OMP workflow-kit, and repo-local skill locations are represented at category level for a later audit.
@@ -40,6 +40,16 @@ node scripts/validate-omp-builtins-snapshot.mjs --check-live
 ## Explicit Local-Only Surfaces
 
 The manifest marks runtime sessions, database files, blobs, terminal state, auth/cache data, plugin cache, logs, local settings, and private history as `local-only`. The dry-run inventory may report path patterns and dispositions, but it does not read or copy those contents.
+
+## OMP Agent Config Split
+
+Issue #52 records `omp/.omp/agent/` as parameterized appliable source: the portable base remains tracked, while operator-specific overlay values are local-only.
+
+- `omp/.omp/agent/config.yml`: tracked portable base config.
+- `omp/.omp/agent/config.example.yml`: tracked overlay shape with no personal values.
+- `omp/.omp/agent/config.local.yml`: gitignored local-only overlay for `modelRoles`, `skills.ignoredSkills`, and `dev.autoqa.consent`.
+
+The reference-only snapshot alternative is rejected in `docs/decisions/0001-omp-agent-parameterized-source.md` because future render/apply tooling needs an explicit source/overlay boundary.
 
 ## Codex Adapter Plan
 
