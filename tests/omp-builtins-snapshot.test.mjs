@@ -1,0 +1,96 @@
+import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
+import { test } from "node:test";
+
+const snapshotDir = new URL("../docs/harness/omp-builtins/", import.meta.url).pathname;
+const sourcePath = new URL("../docs/harness/omp-builtins/source.json", import.meta.url).pathname;
+const commandsPath = new URL("../docs/harness/omp-builtins/commands.json", import.meta.url).pathname;
+const resourceIndexPath = new URL("../docs/harness/omp-builtins/resource-index.json", import.meta.url).pathname;
+const validator = new URL("../scripts/validate-omp-builtins-snapshot.mjs", import.meta.url).pathname;
+const refresh = new URL("../scripts/refresh-omp-builtins-snapshot.mjs", import.meta.url).pathname;
+
+const source = JSON.parse(readFileSync(sourcePath, "utf8"));
+const commands = JSON.parse(readFileSync(commandsPath, "utf8"));
+const resourceIndex = JSON.parse(readFileSync(resourceIndexPath, "utf8"));
+const hasOmp = spawnSync("which", ["omp"]).status === 0;
+
+function runNode(script, args = []) {
+  return spawnSync(process.execPath, [script, ...args], { encoding: "utf8" });
+}
+
+test("OMP built-ins snapshot validator accepts the checked-in files", () => {
+  const result = runNode(validator);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /OMP built-ins snapshot validation passed/u);
+});
+
+test("bundled OMP task agents are snapshotted with source metadata", () => {
+  assert.equal(source.source.packageName, "@oh-my-pi/pi-coding-agent");
+  assert.match(source.source.cliVersion, /^omp\/\d+\.\d+\.\d+/u);
+  const expected = ["designer", "explore", "librarian", "oracle", "plan", "quick_task", "reviewer", "task"];
+  assert.deepEqual(source.expectedBundledAgents, expected);
+  assert.deepEqual(source.agents.map(agent => agent.name), expected);
+  for (const agent of source.agents) {
+    assert.ok(existsSync(path.join(snapshotDir, agent.file)), `${agent.file} missing`);
+    assert.match(agent.sha256, /^[a-f0-9]{64}$/u);
+  }
+});
+
+test("built-in command registry distinguishes portable indexes from OMP runtime commands", () => {
+  assert.ok(commands.commands.length >= 40, "expected source registry, not terminal autocomplete subset");
+  assert.ok(commands.commands.some(command => command.portabilityClass === "omp-acp-text-and-tui-runtime"));
+  assert.ok(commands.commands.some(command => command.portabilityClass === "omp-tui-runtime-only"));
+  for (const command of commands.commands) {
+    assert.equal(command.sourceType, "builtin-slash-command");
+    assert.ok(Array.isArray(command.aliases), `${command.name} aliases should be an array`);
+  }
+});
+
+test("built-in command registry preserves representative aliases, subcommands, and portability", () => {
+  const byName = new Map(commands.commands.map(command => [command.name, command]));
+  assert.deepEqual(byName.get("model")?.aliases, ["models"]);
+  assert.equal(byName.get("model")?.portabilityClass, "omp-acp-text-and-tui-runtime");
+  assert.equal(byName.get("model")?.advertisedInAcp, true);
+  assert.equal(byName.get("settings")?.portabilityClass, "omp-tui-runtime-only");
+  assert.equal(byName.get("settings")?.advertisedInAcp, false);
+  assert.deepEqual(byName.get("force")?.aliases, ["force:"]);
+  assert.equal(byName.get("force")?.allowsArgs, true);
+  assert.equal(byName.get("force")?.inputHint, "<tool-name> [prompt]");
+  assert.ok(byName.get("mcp")?.subcommands.includes("resources"));
+  assert.ok(byName.get("mcp")?.subcommands.includes("prompts"));
+});
+
+test("built-in prompt and rule indexes contain path-level drift metadata only", () => {
+  assert.ok(resourceIndex.portableResources.promptCategories.some(category => category.category === "agents"));
+  assert.ok(resourceIndex.portableResources.builtInRules.length >= 10);
+  for (const category of resourceIndex.portableResources.promptCategories) {
+    assert.match(category.combinedSha256, /^[a-f0-9]{64}$/u);
+    for (const file of category.files) {
+      assert.match(file.path, /^src\/prompts\//u);
+      assert.match(file.sha256, /^[a-f0-9]{64}$/u);
+    }
+  }
+  assert.ok(resourceIndex.runtimeOnlySurfaces.some(surface => surface.portabilityClass === "omp-tui-runtime-only"));
+  assert.ok(resourceIndex.excludedRuntimeState.some(item => item.includes("terminal-sessions")));
+});
+
+test("snapshot refresh dry run reports no drift when OMP is installed", { skip: !hasOmp }, () => {
+  const result = runNode(refresh);
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+  assert.match(result.stdout, /Mutation: disabled/u);
+  assert.match(result.stdout, /Drift: none/u);
+});
+
+test("snapshot refresh write mode refuses custom live-like targets", { skip: !hasOmp }, () => {
+  const result = runNode(refresh, ["--write", "--snapshot-dir", ".omp"]);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /--snapshot-dir only supports the checked-in snapshot directory/u);
+});
+
+test("snapshot validator refuses custom live-like targets before walking files", () => {
+  const result = runNode(validator, ["--snapshot-dir", ".omp"]);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /--snapshot-dir only supports the checked-in snapshot directory/u);
+});

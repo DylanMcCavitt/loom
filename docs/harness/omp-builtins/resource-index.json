@@ -1,0 +1,955 @@
+{
+  "schemaVersion": 1,
+  "generatedForIssue": 39,
+  "source": {
+    "packageName": "@oh-my-pi/pi-coding-agent",
+    "packageVersion": "16.0.5",
+    "cliVersion": "omp/16.0.5",
+    "packageRoot": "~/.bun/install/global/node_modules/@oh-my-pi/pi-coding-agent",
+    "packageJsonPath": "~/.bun/install/global/node_modules/@oh-my-pi/pi-coding-agent/package.json"
+  },
+  "portableResources": {
+    "bundledAgents": [
+      {
+        "name": "designer",
+        "file": "agents/designer.md",
+        "bytes": 4228,
+        "sha256": "856aad7ddad0b0703d95bdcb5dbdeba1ddd7c2ec1dcd700643f1843f2b8ea447",
+        "frontmatterKeys": [
+          "name",
+          "description",
+          "model"
+        ],
+        "description": "UI/UX specialist for design implementation, review, visual refinement"
+      },
+      {
+        "name": "explore",
+        "file": "agents/explore.md",
+        "bytes": 2144,
+        "sha256": "7fac3c6895abe0ba029dec7a5930164989ba4aac199e0144ff45b2a8ba8fd358",
+        "frontmatterKeys": [
+          "name",
+          "description",
+          "tools",
+          "model",
+          "thinkingLevel",
+          "output"
+        ],
+        "description": "Fast read-only codebase scout returning compressed context for handoff"
+      },
+      {
+        "name": "librarian",
+        "file": "agents/librarian.md",
+        "bytes": 5614,
+        "sha256": "c6e62b3bd08dbb12ae66729fdea1761f66a7f9e751ab1d64850540de6650bec0",
+        "frontmatterKeys": [
+          "name",
+          "description",
+          "tools",
+          "model",
+          "thinkingLevel",
+          "output"
+        ],
+        "description": "Researches external libraries and APIs by reading source code. Returns definitive, source-verified answers."
+      },
+      {
+        "name": "oracle",
+        "file": "agents/oracle.md",
+        "bytes": 3822,
+        "sha256": "1626f18eca0c7549a6c5e637774f591ed30f8595d873fe9dc54615f26a61f7aa",
+        "frontmatterKeys": [
+          "name",
+          "description",
+          "spawns",
+          "model",
+          "thinkingLevel"
+        ],
+        "description": "Wise senior engineer to consult or delegate work to — debugging, architecture, second opinions, and hands-on implementation when asked."
+      },
+      {
+        "name": "plan",
+        "file": "agents/plan.md",
+        "bytes": 1809,
+        "sha256": "06613abea7f52974f56608862db99329b0326047ce113069001e195e0aa104ca",
+        "frontmatterKeys": [
+          "name",
+          "description",
+          "tools",
+          "spawns",
+          "model",
+          "thinkingLevel"
+        ],
+        "description": "Software architect for complex multi-file architectural decisions. NOT for simple tasks, single-file changes, or tasks completable in <5 tool calls."
+      },
+      {
+        "name": "quick_task",
+        "file": "agents/quick_task.md",
+        "bytes": 1432,
+        "sha256": "b47bb545b070d62924b35b420d4546d683c798e1ac5ab75455f10264039755b1",
+        "frontmatterKeys": [
+          "name",
+          "description",
+          "model",
+          "thinkingLevel"
+        ],
+        "description": "Low-reasoning agent for strictly mechanical updates or data collection only"
+      },
+      {
+        "name": "reviewer",
+        "file": "agents/reviewer.md",
+        "bytes": 5296,
+        "sha256": "f6d94c4b5e725476675b5ab1e75fbae6bad7f66221ee8671a9fd4a042bc30087",
+        "frontmatterKeys": [
+          "name",
+          "description",
+          "tools",
+          "spawns",
+          "model",
+          "thinkingLevel",
+          "output"
+        ],
+        "description": "Code review specialist for quality/security analysis"
+      },
+      {
+        "name": "task",
+        "file": "agents/task.md",
+        "bytes": 1419,
+        "sha256": "a1a06d5eaa41d21d60f1c317d78b5dfb1ad1bd977e130536ea713b57a36336e6",
+        "frontmatterKeys": [
+          "name",
+          "description",
+          "spawns",
+          "model"
+        ],
+        "description": "General-purpose subagent with full capabilities for delegated multi-step tasks"
+      }
+    ],
+    "promptCategories": [
+      {
+        "category": "advisor",
+        "files": [
+          {
+            "path": "src/prompts/advisor/advise-tool.md",
+            "bytes": 121,
+            "sha256": "929822f80d6bbc75abe2af64653348b961fabb642e049d82be7af29dcbc41ba2"
+          },
+          {
+            "path": "src/prompts/advisor/system.md",
+            "bytes": 2450,
+            "sha256": "37badd9e59655b3b6ed55484e76c55cefcb5e5dc5f4ddad88efc22f9b4c0bac5"
+          }
+        ],
+        "bytes": 2571,
+        "combinedSha256": "869f5ecb3a545ff47dae17c4ff2f5ebb90aab75c50ca46648cd361020b24e81e"
+      },
+      {
+        "category": "agents",
+        "files": [
+          {
+            "path": "src/prompts/agents/designer.md",
+            "bytes": 4221,
+            "sha256": "2a95b24197d6b8460789c3b403828ccc1eba25d43851770c5c8250ca4cb9425e"
+          },
+          {
+            "path": "src/prompts/agents/explore.md",
+            "bytes": 2122,
+            "sha256": "86f1d8f250decd6b6a40296103e8877ebd4597dcc678fa2befdd2609221edc43"
+          },
+          {
+            "path": "src/prompts/agents/frontmatter.md",
+            "bytes": 387,
+            "sha256": "09637691082a4387ff08b48e442917c8e2ff3b0a340941014484a7038d502b03"
+          },
+          {
+            "path": "src/prompts/agents/init.md",
+            "bytes": 1529,
+            "sha256": "62ff5cad55dc6c302ed7711ddc93f1deb14163dfd61218513e8da727335ed04b"
+          },
+          {
+            "path": "src/prompts/agents/librarian.md",
+            "bytes": 5550,
+            "sha256": "a286c7fd7ba5a42c813721e0eea84690b95f8c6e0c5b35ab0f6f503d90a67a17"
+          },
+          {
+            "path": "src/prompts/agents/oracle.md",
+            "bytes": 3811,
+            "sha256": "8615ab9934cab67e2f58fc7b2f4e3ebbb5eff3a25d403be09f53c2ce0cd2c5b1"
+          },
+          {
+            "path": "src/prompts/agents/plan.md",
+            "bytes": 1762,
+            "sha256": "8ea73a0f549e26aa08650f6bf3dab1f35fe83270a05d5e8cefc79a01aed0584b"
+          },
+          {
+            "path": "src/prompts/agents/reviewer.md",
+            "bytes": 5198,
+            "sha256": "b42e299dbe1c9a2ca4417efcb681d8ccacf8155971e7e99501384f8d908ecba0"
+          },
+          {
+            "path": "src/prompts/agents/task.md",
+            "bytes": 1275,
+            "sha256": "6124defc70d765bbeaefa6f13e719653539ac264e3d7f086d83923206c154a61"
+          }
+        ],
+        "bytes": 25855,
+        "combinedSha256": "35f7378fd10e1c9733d062b74722a5939aa32efaf4957887838df01a6e25657f"
+      },
+      {
+        "category": "goals",
+        "files": [
+          {
+            "path": "src/prompts/goals/goal-budget-limit.md",
+            "bytes": 673,
+            "sha256": "3ada5f1e7981a95c608bc222cb2a29413707da54042857fd9102ab3e434fe675"
+          },
+          {
+            "path": "src/prompts/goals/goal-continuation.md",
+            "bytes": 2063,
+            "sha256": "711a9ee06c2045d5178f57a7e811d026d9c08eef8218865b283da61e9a8773cf"
+          },
+          {
+            "path": "src/prompts/goals/goal-mode-active.md",
+            "bytes": 1033,
+            "sha256": "195110103b1cb7029d026bc00d769343b2b257dbd7f7615103933be6f17ee4a6"
+          },
+          {
+            "path": "src/prompts/goals/guided-goal-interview.md",
+            "bytes": 304,
+            "sha256": "53aaa61f8a32a988b538cf3a031a53a1663d0b38ad86d16e47c081449addb965"
+          },
+          {
+            "path": "src/prompts/goals/guided-goal-system.md",
+            "bytes": 805,
+            "sha256": "85e2156e6f278defb44c5fddd4eda5bcf42c37fb0b5967a64465fe2892aa5aa7"
+          }
+        ],
+        "bytes": 4878,
+        "combinedSha256": "d0fff1160ac85c704d8f40437d9bb6ec93568d6fff31d775c7da9196eefd7bff"
+      },
+      {
+        "category": "memories",
+        "files": [
+          {
+            "path": "src/prompts/memories/consolidation_system.md",
+            "bytes": 153,
+            "sha256": "7e0853712d2e7d4db85aa2da99d0b2b6af27a60edd2a70df5715b7bdfdc91549"
+          },
+          {
+            "path": "src/prompts/memories/consolidation.md",
+            "bytes": 1115,
+            "sha256": "817a2ba3f17ce899299714da2699ca9e4fa9c286e7e9af51d826164aed3d7941"
+          },
+          {
+            "path": "src/prompts/memories/read-path.md",
+            "bytes": 986,
+            "sha256": "263a574bac9de64e6c913f020ff9fe3784fa1b681daa8a47eeb8e44316fab037"
+          },
+          {
+            "path": "src/prompts/memories/stage_one_input.md",
+            "bytes": 123,
+            "sha256": "a6438b75075cc75295f5d1858911ada9c91f9a7353d5cb823254acf647ccd3c6"
+          },
+          {
+            "path": "src/prompts/memories/stage_one_system.md",
+            "bytes": 827,
+            "sha256": "4bbda3bf47a7b5b81bb799b0249a2ee4eac8dbe420d37956a4d7e0d18fb3aacf"
+          }
+        ],
+        "bytes": 3204,
+        "combinedSha256": "622529c4a984756ef8e42573e948d221d60b55aa4f7809115f78c4f54e741dfe"
+      },
+      {
+        "category": "root",
+        "files": [
+          {
+            "path": "src/prompts/bench.md",
+            "bytes": 1971,
+            "sha256": "a48a499003b7509614017c3bc2a9bc2e8eaca84957acdf07ab4e2daa489c90c5"
+          },
+          {
+            "path": "src/prompts/ci-green-request.md",
+            "bytes": 1660,
+            "sha256": "dce154aeea522d288c32816bad7f85db14d44502f14a65a8b366b34fe63c85dd"
+          },
+          {
+            "path": "src/prompts/dry-balance-bench.md",
+            "bytes": 439,
+            "sha256": "baa58c74eef6b854f3f57df53609910297d85526e64d181e49b46ed7edec1ab0"
+          },
+          {
+            "path": "src/prompts/review-custom-request.md",
+            "bytes": 526,
+            "sha256": "f35318ac124ddcbe50359deefc861b3551ed578877c9cc488bcf8f1bd3699dba"
+          },
+          {
+            "path": "src/prompts/review-headless-request.md",
+            "bytes": 258,
+            "sha256": "e67ef2839b65190f1aa6704e477df40a05b010873acf2f9b6923ee04f051b053"
+          },
+          {
+            "path": "src/prompts/review-request.md",
+            "bytes": 1569,
+            "sha256": "510db8c3e72d22f89e700195daacfcb91abd3ad7a09df2f091d02ebedcf7a9ea"
+          }
+        ],
+        "bytes": 6423,
+        "combinedSha256": "cddd96257da85a67a0abe0cf12a0c2529444c1840fd9dc7e01ad488e6c113faa"
+      },
+      {
+        "category": "steering",
+        "files": [
+          {
+            "path": "src/prompts/steering/user-interjection.md",
+            "bytes": 330,
+            "sha256": "0abe9f7e4096a518410d0b4e18aedbb5f9c6896106ba245b69217d0c5a9ce474"
+          }
+        ],
+        "bytes": 330,
+        "combinedSha256": "470a2c4cd2317e0e2a2779c11e0ea30a79d0f9358139300edf0418c492ba456c"
+      },
+      {
+        "category": "system",
+        "files": [
+          {
+            "path": "src/prompts/system/agent-creation-architect.md",
+            "bytes": 3052,
+            "sha256": "4dd43b17a07101c631e47e173ce5225dbf696e9a9b1c390b2e4e0939f20bc922"
+          },
+          {
+            "path": "src/prompts/system/agent-creation-user.md",
+            "bytes": 164,
+            "sha256": "8fb2a7ad1adbacea73128380f7981ac96eb989baeed57fa5676c2e14d38ee8fe"
+          },
+          {
+            "path": "src/prompts/system/auto-continue.md",
+            "bytes": 321,
+            "sha256": "766a66610877f9cb9cdc95418c2af9e76d26a48683836666eb199982f61ca352"
+          },
+          {
+            "path": "src/prompts/system/auto-thinking-difficulty-local.md",
+            "bytes": 464,
+            "sha256": "bac4b4d5eabe6a734bba819d4dd3bad14dc777f9117d234a0ecd69048ea8caee"
+          },
+          {
+            "path": "src/prompts/system/auto-thinking-difficulty.md",
+            "bytes": 1100,
+            "sha256": "e5f31d62569804d68fd69f784a6e33df39655e719986f717c5926d7c40829803"
+          },
+          {
+            "path": "src/prompts/system/autolearn-guidance-learn.md",
+            "bytes": 297,
+            "sha256": "fc3265fe03f183ca56a14bfa409cfb35dbc4dfbf0623ab71bbf4667dbf3d1c66"
+          },
+          {
+            "path": "src/prompts/system/autolearn-guidance.md",
+            "bytes": 794,
+            "sha256": "d0d462e5162d15bc9f0281908d91b206010b3b3235bb9fde09fca7ecbc288894"
+          },
+          {
+            "path": "src/prompts/system/autolearn-nudge.md",
+            "bytes": 359,
+            "sha256": "840eee8eb1795092f3532f866f18da7022cd43d2626ea1822ff5d240345bbf91"
+          },
+          {
+            "path": "src/prompts/system/background-tan-dispatch.md",
+            "bytes": 727,
+            "sha256": "1983535f3e031518fa4250bbdb8a9e5dff92bec2d108ed50e14bc78f742f1dba"
+          },
+          {
+            "path": "src/prompts/system/btw-user.md",
+            "bytes": 233,
+            "sha256": "745fda0e4cd3f8f69e54b4a74e34f656c2648eec48708b31aed02eefa4e913f3"
+          },
+          {
+            "path": "src/prompts/system/commit-message-system.md",
+            "bytes": 688,
+            "sha256": "1209439c1f6fcd271fad32869e13529ec4a57098f7a94cb5d0aaad81196fe37b"
+          },
+          {
+            "path": "src/prompts/system/custom-system-prompt.md",
+            "bytes": 1661,
+            "sha256": "d8dabf9f5612725eba9d9507a9633348edc6b23cff761b16a337ffb4e6c57453"
+          },
+          {
+            "path": "src/prompts/system/eager-task.md",
+            "bytes": 569,
+            "sha256": "1d818c317412e5a71f361514238771538311a65ee4f8218483feec285e74b29b"
+          },
+          {
+            "path": "src/prompts/system/eager-todo.md",
+            "bytes": 1292,
+            "sha256": "ec984c577a735c337518d022868d991f99be004af6d8ad4ba13b2e7310fca5d5"
+          },
+          {
+            "path": "src/prompts/system/empty-stop-retry.md",
+            "bytes": 129,
+            "sha256": "448ffc5d6ddfe197c1c284ecb3ca779960b5e094fdc45216fce2a771229bba23"
+          },
+          {
+            "path": "src/prompts/system/irc-autoreply.md",
+            "bytes": 360,
+            "sha256": "4e2273f55e6d37fc7bda45c7054c81a2026f0c9821e75ba197487f793c813390"
+          },
+          {
+            "path": "src/prompts/system/irc-incoming.md",
+            "bytes": 571,
+            "sha256": "88103fe3b69dfcf885fe82c3ac651ee560d1d6345771028adfc60185ce074cf1"
+          },
+          {
+            "path": "src/prompts/system/manual-continue.md",
+            "bytes": 300,
+            "sha256": "7d94355e3c62fe7bd78449964faac54ac691c85f9831395153d61d5511f1a7bf"
+          },
+          {
+            "path": "src/prompts/system/memory-consolidation-system.md",
+            "bytes": 416,
+            "sha256": "41c41b925b800df737732dcd51ed963b124808775f64971d00fbb337f9c77dd5"
+          },
+          {
+            "path": "src/prompts/system/memory-extraction-system.md",
+            "bytes": 900,
+            "sha256": "e1f1230ef29fff40e59d7c0380c3921e02da92133a049b0c504f34eff94566f6"
+          },
+          {
+            "path": "src/prompts/system/omfg-user.md",
+            "bytes": 2656,
+            "sha256": "8d67249f45560d05fa6c79fafb7bf7bcbcdd865e86644462521a8eed3e1a1a86"
+          },
+          {
+            "path": "src/prompts/system/orchestrate-notice.md",
+            "bytes": 5549,
+            "sha256": "054eb2f40b550433cad6c78964f5740ff2b0aa2c57e1e76309c0994e6dff2626"
+          },
+          {
+            "path": "src/prompts/system/personalities/default.md",
+            "bytes": 1277,
+            "sha256": "49e62eef4900cd0be86a83274347791a06fcc351d2cbd288ce7ba55a27bfed08"
+          },
+          {
+            "path": "src/prompts/system/personalities/friendly.md",
+            "bytes": 1145,
+            "sha256": "2ca235fb3609303204fc2095c698957c140b8a55f42c16f3c01726d3496d895e"
+          },
+          {
+            "path": "src/prompts/system/personalities/pragmatic.md",
+            "bytes": 1109,
+            "sha256": "1a80a4c26b22584a7c4d5396fd35a2f7341e19e162d73a8740cd0d7d2c9e72ef"
+          },
+          {
+            "path": "src/prompts/system/plan-mode-active.md",
+            "bytes": 9472,
+            "sha256": "6151a10c0101230597875733682c51f0f8e2ed6be0c7b660ae07a3604035ce25"
+          },
+          {
+            "path": "src/prompts/system/plan-mode-approved.md",
+            "bytes": 815,
+            "sha256": "e4ed7f73614d75dfbf18c9f39d3775d7a1d2ca3050d30040d1b93892b4bffa89"
+          },
+          {
+            "path": "src/prompts/system/plan-mode-compact-instructions.md",
+            "bytes": 688,
+            "sha256": "857357375d16b20ce6423e9168771a68a9787be269e53777f51edd3108c9c16f"
+          },
+          {
+            "path": "src/prompts/system/plan-mode-reference.md",
+            "bytes": 335,
+            "sha256": "536fd17a774b80d61d9a39460bc463db081bd42a1887b0cbb4c9858dae51bf53"
+          },
+          {
+            "path": "src/prompts/system/plan-mode-subagent.md",
+            "bytes": 868,
+            "sha256": "721244c6cb48d00a8c76de98e0a1059388e2f9ded9d06106bf80d2089f9cfc50"
+          },
+          {
+            "path": "src/prompts/system/plan-mode-tool-decision-reminder.md",
+            "bytes": 409,
+            "sha256": "7965e15c6cc3a29be229d3c172fc06f92eaddbaa05d8a91841090374e53d28d2"
+          },
+          {
+            "path": "src/prompts/system/project-prompt.md",
+            "bytes": 1726,
+            "sha256": "7ce9feeffaf7feef9ee863475977abe7d6ec14d6e391ba6bbb7d99e140af7117"
+          },
+          {
+            "path": "src/prompts/system/snapcompact-context-frames-note.md",
+            "bytes": 120,
+            "sha256": "9900e4052bda13e8d5260d7cdf5610abd96d3c3495e4f6043700fa30dcafa1e3"
+          },
+          {
+            "path": "src/prompts/system/snapcompact-context-stub.md",
+            "bytes": 250,
+            "sha256": "fd8c3a59d2c51bb223fea9707b587065273f6ca9b3044f41bb98762355f84b66"
+          },
+          {
+            "path": "src/prompts/system/snapcompact-system-frames-note.md",
+            "bytes": 81,
+            "sha256": "da62eaed7d77f3725ce346b29de1749adb34bd5092ae8103b37ecc8813414bb4"
+          },
+          {
+            "path": "src/prompts/system/snapcompact-system-stub.md",
+            "bytes": 220,
+            "sha256": "2f2741635a4516e70efc457e4eb42d5955070981c74dc1ac86c7cd7fdf5cea50"
+          },
+          {
+            "path": "src/prompts/system/snapcompact-toolresult-note.md",
+            "bytes": 273,
+            "sha256": "e6f7669f9e130972501ffb924960f8c16da6643ddd4b454b49bd935e6fabefd8"
+          },
+          {
+            "path": "src/prompts/system/subagent-system-prompt.md",
+            "bytes": 2780,
+            "sha256": "a5df1d87fbafb4c5d4ad24f9974d65884c3962421cbdbf244ede1a1ed9813c69"
+          },
+          {
+            "path": "src/prompts/system/subagent-user-prompt.md",
+            "bytes": 59,
+            "sha256": "5c70b2bb75cd295d830a6ba94ead5b9d49dda819ff6e8055bec518186e9f23b4"
+          },
+          {
+            "path": "src/prompts/system/subagent-yield-reminder.md",
+            "bytes": 972,
+            "sha256": "33d0a11f0ab722e0a461b5f962b31dbcdb4f886379e777f19ed10f7d1e1efe97"
+          },
+          {
+            "path": "src/prompts/system/system-prompt.md",
+            "bytes": 17395,
+            "sha256": "bfb1c9d128aea0519feb54ef49a8edd1b0f7b7582021d1ca8ae5b9e1f088e992"
+          },
+          {
+            "path": "src/prompts/system/tiny-title-system.md",
+            "bytes": 361,
+            "sha256": "cfacdb7af57269b8e9f1b76e991c5f454aedce8968d009d509c44fd02bf35461"
+          },
+          {
+            "path": "src/prompts/system/title-marker-instruction.md",
+            "bytes": 229,
+            "sha256": "dc2e210c7d09e9f1c5abd5e71260c1d11a2f1ed7624b4ff9f715c5ec0f42e1bf"
+          },
+          {
+            "path": "src/prompts/system/title-system-marker.md",
+            "bytes": 1255,
+            "sha256": "8ec7a8df53a07d420d6838dab4f946fb94a2b4503363105c44b63eceed04072a"
+          },
+          {
+            "path": "src/prompts/system/title-system.md",
+            "bytes": 1195,
+            "sha256": "7226e9bba1120033f95c03242dc7c18b38d1e5ea1f2e3fefdd7ff4ffa779402c"
+          },
+          {
+            "path": "src/prompts/system/ttsr-interrupt.md",
+            "bytes": 308,
+            "sha256": "56d71da1726f714c56e0268167486ee996c72a5b945e4265fa62d2ce41b3304c"
+          },
+          {
+            "path": "src/prompts/system/ttsr-tool-reminder.md",
+            "bytes": 394,
+            "sha256": "d0617191747aaa7e1e3e994acd203f30a538ba1d6e2249b948c774cf7c572b38"
+          },
+          {
+            "path": "src/prompts/system/ultrathink-notice.md",
+            "bytes": 129,
+            "sha256": "5d7c5132d370041726ade6c8511bd90b0a65b5afb73c8518e66a346aed7056cb"
+          },
+          {
+            "path": "src/prompts/system/unexpected-stop-classifier.md",
+            "bytes": 635,
+            "sha256": "22551bc5ec97a817dfb391d4fa0e1597fbd27931894a29f465c5f42abcf4bb4d"
+          },
+          {
+            "path": "src/prompts/system/unexpected-stop-retry.md",
+            "bytes": 160,
+            "sha256": "36d5c56ac9e8f41abbe7d556afcc849b74ff75e3c417d46f75e1754d3065f650"
+          },
+          {
+            "path": "src/prompts/system/web-search.md",
+            "bytes": 1312,
+            "sha256": "e836f7e1bc66f86073cbed260f663dc512d386c9bbba1f4a09e7cb2266ba69f6"
+          },
+          {
+            "path": "src/prompts/system/workflow-notice.md",
+            "bytes": 7966,
+            "sha256": "e0b12433a15721c67f948ad092b9dc83b1f7d6c2b15eab9aeacb92ccbe0cdb42"
+          }
+        ],
+        "bytes": 76540,
+        "combinedSha256": "67c54f64514b61b108cc8aef9a6af30d7e347caa5f5d757705b017b59008ed14"
+      },
+      {
+        "category": "tools",
+        "files": [
+          {
+            "path": "src/prompts/tools/apply-patch.md",
+            "bytes": 2903,
+            "sha256": "8d2da4eb6bcabe446b0d3d3dfc11f6efee20ebd02271572e2bc42aff942687cc"
+          },
+          {
+            "path": "src/prompts/tools/ask.md",
+            "bytes": 1137,
+            "sha256": "d6e7239f4f0aea2fd48da1c0fa4e6707e90e1e928c60d8804e53a14a7c34192b"
+          },
+          {
+            "path": "src/prompts/tools/ast-edit.md",
+            "bytes": 1940,
+            "sha256": "177e92521715ddbd64b7ede86158598f225f54debb106a68dd65914aafedc167"
+          },
+          {
+            "path": "src/prompts/tools/ast-grep.md",
+            "bytes": 2750,
+            "sha256": "da86ef68b93c73bbcbd698123ad614c695ff8983b3b3bd5b3a550da48fbb855b"
+          },
+          {
+            "path": "src/prompts/tools/async-result.md",
+            "bytes": 417,
+            "sha256": "553d779b3a8e61022edbb0e2278b7fc56168c8fa91b1c18e18e87dc99b88330b"
+          },
+          {
+            "path": "src/prompts/tools/bash.md",
+            "bytes": 3907,
+            "sha256": "8957220986605b73bfd3899b062f16d8199b625c6d5bdefbe9eb6f360a1ae153"
+          },
+          {
+            "path": "src/prompts/tools/browser.md",
+            "bytes": 4093,
+            "sha256": "04f275aff7e74419a9b4bf04ab9df98153002af98e591b2ec254358365e6e4ab"
+          },
+          {
+            "path": "src/prompts/tools/checkpoint.md",
+            "bytes": 727,
+            "sha256": "3b039549f0833905ff1c5264f4685f66b4361732f0d983674cad52455831040b"
+          },
+          {
+            "path": "src/prompts/tools/debug.md",
+            "bytes": 2331,
+            "sha256": "e296d7efe8ab0a1fb2f5c7b839c877f7eedef8d9ac659946b40af50c931143b9"
+          },
+          {
+            "path": "src/prompts/tools/eval.md",
+            "bytes": 6423,
+            "sha256": "280381e5644eb699fa401827211bc9124b78542aaa7b6a79d628ecd0d881b2ac"
+          },
+          {
+            "path": "src/prompts/tools/find.md",
+            "bytes": 1667,
+            "sha256": "341e57e50f9c77ebec66508987b1d0e3d5b7e7d4ce5226acc33ac6204bdc8a8c"
+          },
+          {
+            "path": "src/prompts/tools/github.md",
+            "bytes": 3737,
+            "sha256": "3d82e9d636e5eadf49107fb4fe2aa97f1255ed669f9e80de42fb7bcb6724dc77"
+          },
+          {
+            "path": "src/prompts/tools/goal.md",
+            "bytes": 903,
+            "sha256": "c4722a8cbdbab0d93e4f5c7437d28f815ed87cc1027d4b8e9db383cb5753bae7"
+          },
+          {
+            "path": "src/prompts/tools/image-attachment-describe-system.md",
+            "bytes": 782,
+            "sha256": "e9853e61405ed3100d2e70cbeb98bb707becc52576576023c23468a2d0658e16"
+          },
+          {
+            "path": "src/prompts/tools/image-attachment-describe.md",
+            "bytes": 565,
+            "sha256": "83e99ddee0277e1d93108120f80a32ddf9025d738ce4cf0c9f83a548ec184123"
+          },
+          {
+            "path": "src/prompts/tools/image-gen.md",
+            "bytes": 440,
+            "sha256": "de3a189daa8c5cd137ccda3e831326fcb6ba9b65b90e22a8a62a877974cea596"
+          },
+          {
+            "path": "src/prompts/tools/inspect-image-system.md",
+            "bytes": 766,
+            "sha256": "736b00f75842bb396a3df1ce1f0d934f7fc70fbf9e1ca272688107d790394750"
+          },
+          {
+            "path": "src/prompts/tools/inspect-image.md",
+            "bytes": 1027,
+            "sha256": "f085bb135426f9177a5071bdd328b1488c88084a7bee2da69807a0821292a3cf"
+          },
+          {
+            "path": "src/prompts/tools/irc.md",
+            "bytes": 3794,
+            "sha256": "2e5a78579d44da024011c3436f842167ec6fe6520c4caeb43ee5a691103bb3ff"
+          },
+          {
+            "path": "src/prompts/tools/job.md",
+            "bytes": 1080,
+            "sha256": "c47dc9912df193197810fee42f92a566f20a382ba5e730adceb01449ee93890e"
+          },
+          {
+            "path": "src/prompts/tools/learn.md",
+            "bytes": 992,
+            "sha256": "26bb3c51a5395ff252d0f600e9db0d3526b4478c7c43e68fdbe7a718927e39ed"
+          },
+          {
+            "path": "src/prompts/tools/lsp-late-diagnostic.md",
+            "bytes": 332,
+            "sha256": "0ef2768be663ffbc070cd3c86f09417285107474c9254fb0407f7598a4b51f73"
+          },
+          {
+            "path": "src/prompts/tools/lsp.md",
+            "bytes": 3743,
+            "sha256": "d4fbade8e064a270a41e175e1aae6031d7a1e85d586d4fb9a9e69cf8fa08cf05"
+          },
+          {
+            "path": "src/prompts/tools/manage-skill.md",
+            "bytes": 983,
+            "sha256": "b62c9d829255cb028ee7de0c916969723c0f42627c7955f99316f89d65bb639d"
+          },
+          {
+            "path": "src/prompts/tools/memory-edit.md",
+            "bytes": 466,
+            "sha256": "58c509e9f40b3ef7c9146d6ab2c8ecabe949fe8b27a193c6dbcacfa4ff8c6779"
+          },
+          {
+            "path": "src/prompts/tools/patch.md",
+            "bytes": 2765,
+            "sha256": "7febd0389ff6f3f295aa6b7d2936b4682dc485f43ba8f74f5a37cce6d05a2a0d"
+          },
+          {
+            "path": "src/prompts/tools/read.md",
+            "bytes": 4450,
+            "sha256": "b6837999d18cff3c20878607e063b69f17840f2a2f64200a3bd65034f9bb365f"
+          },
+          {
+            "path": "src/prompts/tools/recall.md",
+            "bytes": 431,
+            "sha256": "0e043205e5fd60fdc7995b082aeac8f19898827b653afe19e6d458f4fb911196"
+          },
+          {
+            "path": "src/prompts/tools/reflect.md",
+            "bytes": 390,
+            "sha256": "9d0adf59f4d65b30a8a0f5a873b00f19c8f0747863e5f04a7e9bbab748db3e97"
+          },
+          {
+            "path": "src/prompts/tools/replace.md",
+            "bytes": 1395,
+            "sha256": "b244ff7680aeecb8305651ea73afd0988c7a31a4978bbec82235a6b2da6598da"
+          },
+          {
+            "path": "src/prompts/tools/resolve.md",
+            "bytes": 760,
+            "sha256": "7ee35f3b9c02f27499450967894e5e4e52d4c60112bbedc32d16c3a479859310"
+          },
+          {
+            "path": "src/prompts/tools/retain.md",
+            "bytes": 410,
+            "sha256": "85063279606e09613ac276315cea95baa5607acec5d50a2e479041b986697b27"
+          },
+          {
+            "path": "src/prompts/tools/rewind.md",
+            "bytes": 554,
+            "sha256": "4e185209b7a67649c8b263f57c52ee880335fe7d59c1700471094f0606214f07"
+          },
+          {
+            "path": "src/prompts/tools/search-tool-bm25.md",
+            "bytes": 1333,
+            "sha256": "db54aa366eec2d09fcffeaaf1b0a3e3910c485f153b7b7b0b7184128c8f606e1"
+          },
+          {
+            "path": "src/prompts/tools/search.md",
+            "bytes": 1660,
+            "sha256": "73c1f49201d8c6260340f0dd72c05a86f88afe838e828345cfe69a8efbb5180b"
+          },
+          {
+            "path": "src/prompts/tools/ssh.md",
+            "bytes": 840,
+            "sha256": "fbfd2be4592f719cbbf2a7e5ea888499c5b030ef5e46ed55640e1d89f03c2836"
+          },
+          {
+            "path": "src/prompts/tools/task-summary.md",
+            "bytes": 394,
+            "sha256": "185f7e2da97029f8a62d474037f01658ae7977845581c8ce9a9f051a25818eb1"
+          },
+          {
+            "path": "src/prompts/tools/task.md",
+            "bytes": 8050,
+            "sha256": "01689ed404daf6641fc47a5962149ee1bb500140a24f77b11c4a40f3be52a293"
+          },
+          {
+            "path": "src/prompts/tools/todo.md",
+            "bytes": 2463,
+            "sha256": "90153ba9ec8cc27e1ac56773ce6f4a3d87fdb5ea5f5a1e2eaa8ce8e02ab35c7d"
+          },
+          {
+            "path": "src/prompts/tools/web-search.md",
+            "bytes": 403,
+            "sha256": "d0a34691ec45db28c4c32fc13c89c8be427776fd4030c78b5541fa5ed38984cb"
+          },
+          {
+            "path": "src/prompts/tools/write.md",
+            "bytes": 674,
+            "sha256": "6c71346a7cf4907b94429d02b1dfcb8ff2d2e13f7216eee872ef0c558f3ab016"
+          }
+        ],
+        "bytes": 74877,
+        "combinedSha256": "635040290cd361c9cebb33b78e3ac57d86850ed1287b3d15296dc47722f97bb5"
+      }
+    ],
+    "builtInRules": [
+      {
+        "name": "rs-box-leak",
+        "path": "src/discovery/builtin-rules/rs-box-leak.md",
+        "sourceType": "builtin-default-rule",
+        "portabilityClass": "portable-rule-reference",
+        "bytes": 1278,
+        "sha256": "79a041881de2b48123b173944a5a8f3a3bd5978a5bdd23c33b389620303f7884"
+      },
+      {
+        "name": "rs-future-prelude",
+        "path": "src/discovery/builtin-rules/rs-future-prelude.md",
+        "sourceType": "builtin-default-rule",
+        "portabilityClass": "portable-rule-reference",
+        "bytes": 873,
+        "sha256": "448d3335ca7a7ad9a64525d799660bde1cbd7b25ca4a8bf233ad9b33fd3dbb69"
+      },
+      {
+        "name": "rs-lazylock",
+        "path": "src/discovery/builtin-rules/rs-lazylock.md",
+        "sourceType": "builtin-default-rule",
+        "portabilityClass": "portable-rule-reference",
+        "bytes": 1387,
+        "sha256": "c46ce6b48e280958cbdf739a18efbeff4645c01bf46f165ee9d9575de79fdf33"
+      },
+      {
+        "name": "rs-match-ergonomics",
+        "path": "src/discovery/builtin-rules/rs-match-ergonomics.md",
+        "sourceType": "builtin-default-rule",
+        "portabilityClass": "portable-rule-reference",
+        "bytes": 1099,
+        "sha256": "676682facf3dedde7265c3be4e1b285659f8bb89d59d1d9c2c2ea61837def368"
+      },
+      {
+        "name": "rs-parking-lot",
+        "path": "src/discovery/builtin-rules/rs-parking-lot.md",
+        "sourceType": "builtin-default-rule",
+        "portabilityClass": "portable-rule-reference",
+        "bytes": 1126,
+        "sha256": "3fb0d1bdc24e2a55b5edcc10d6d0842032c734158e75ad07efea22fb0e55934f"
+      },
+      {
+        "name": "rs-result-type",
+        "path": "src/discovery/builtin-rules/rs-result-type.md",
+        "sourceType": "builtin-default-rule",
+        "portabilityClass": "portable-rule-reference",
+        "bytes": 507,
+        "sha256": "8a0e81e94f080154259db619657069772b434832113eb06c40bae78a6cadca1b"
+      },
+      {
+        "name": "ts-bare-catch",
+        "path": "src/discovery/builtin-rules/ts-bare-catch.md",
+        "sourceType": "builtin-default-rule",
+        "portabilityClass": "portable-rule-reference",
+        "bytes": 683,
+        "sha256": "cd63505fd668b3667a0fd2952dddb0088e55e355e745366b851565f0514dcdc7"
+      },
+      {
+        "name": "ts-import-type",
+        "path": "src/discovery/builtin-rules/ts-import-type.md",
+        "sourceType": "builtin-default-rule",
+        "portabilityClass": "portable-rule-reference",
+        "bytes": 1285,
+        "sha256": "9692073c971d47917974f9b59bbcf2f7b04dd458c24a0bdf8f00fba56bf429fd"
+      },
+      {
+        "name": "ts-no-any",
+        "path": "src/discovery/builtin-rules/ts-no-any.md",
+        "sourceType": "builtin-default-rule",
+        "portabilityClass": "portable-rule-reference",
+        "bytes": 1483,
+        "sha256": "eb3ef76afbcf8b75d7a1bd04ae6674848bbfd373a5e383946579d1f77331893b"
+      },
+      {
+        "name": "ts-no-deprecated-leftovers",
+        "path": "src/discovery/builtin-rules/ts-no-deprecated-leftovers.md",
+        "sourceType": "builtin-default-rule",
+        "portabilityClass": "portable-rule-reference",
+        "bytes": 1686,
+        "sha256": "3d08aca07e1e3d1754c200f2a27a267f98b9255f4b2652602ce95cb473b1f42e"
+      },
+      {
+        "name": "ts-no-dynamic-import",
+        "path": "src/discovery/builtin-rules/ts-no-dynamic-import.md",
+        "sourceType": "builtin-default-rule",
+        "portabilityClass": "portable-rule-reference",
+        "bytes": 1181,
+        "sha256": "48f0dc08c95724fd01c259b2323587b3670c8cb208c1ae2c12ef9517338dfac3"
+      },
+      {
+        "name": "ts-no-return-type",
+        "path": "src/discovery/builtin-rules/ts-no-return-type.md",
+        "sourceType": "builtin-default-rule",
+        "portabilityClass": "portable-rule-reference",
+        "bytes": 1287,
+        "sha256": "634c372f5131c9a10c87f2f5c751870d6895c91f45ccc01635ed96837cc8b914"
+      },
+      {
+        "name": "ts-no-test-timers",
+        "path": "src/discovery/builtin-rules/ts-no-test-timers.md",
+        "sourceType": "builtin-default-rule",
+        "portabilityClass": "portable-rule-reference",
+        "bytes": 1903,
+        "sha256": "77ab6da5389ace3c75ecb28a30474577e1fc2d292579f5b6fc19a617dc758634"
+      },
+      {
+        "name": "ts-no-tiny-functions",
+        "path": "src/discovery/builtin-rules/ts-no-tiny-functions.md",
+        "sourceType": "builtin-default-rule",
+        "portabilityClass": "portable-rule-reference",
+        "bytes": 1496,
+        "sha256": "982f50bf12a01f3d4359e0ece871f6bad7abfb3a362f4a123cf3afa3797ff34a"
+      },
+      {
+        "name": "ts-promise-with-resolvers",
+        "path": "src/discovery/builtin-rules/ts-promise-with-resolvers.md",
+        "sourceType": "builtin-default-rule",
+        "portabilityClass": "portable-rule-reference",
+        "bytes": 1580,
+        "sha256": "3aa0f89ef818a0238d04ccf2ebcdac4fbf8c27b267e76fa93fd78e23d61f9da7"
+      },
+      {
+        "name": "ts-redundant-clear-guard",
+        "path": "src/discovery/builtin-rules/ts-redundant-clear-guard.md",
+        "sourceType": "builtin-default-rule",
+        "portabilityClass": "portable-rule-reference",
+        "bytes": 2821,
+        "sha256": "de969912a8ac2eccc5b5d07bf543b8c750b1d52b5332b7a78379b62a68a228c1"
+      },
+      {
+        "name": "ts-set-map",
+        "path": "src/discovery/builtin-rules/ts-set-map.md",
+        "sourceType": "builtin-default-rule",
+        "portabilityClass": "portable-rule-reference",
+        "bytes": 833,
+        "sha256": "c4be54385d99bdf1bdef734231f6b0d753559a7625195db70e0e7840634b1702"
+      }
+    ]
+  },
+  "runtimeOnlySurfaces": [
+    {
+      "sourceType": "builtin-slash-command",
+      "portabilityClass": "omp-tui-runtime-only",
+      "note": "Commands without a text/ACP handle require the OMP TUI runtime and are indexed but not treated as portable resources."
+    },
+    {
+      "sourceType": "mcp_prompt",
+      "portabilityClass": "mcp-runtime-only",
+      "note": "MCP prompt commands depend on connected runtime servers and are not snapshotted."
+    },
+    {
+      "sourceType": "extension",
+      "portabilityClass": "omp-runtime-extension",
+      "note": "Extension command registration is runtime state and plugin-owned."
+    }
+  ],
+  "excludedRuntimeState": [
+    "~/.omp/agent/sessions/",
+    "~/.omp/agent/terminal-sessions/",
+    "~/.omp/agent/blobs/",
+    "~/.omp/agent/cache/",
+    "~/.omp/agent/logs/",
+    "~/.omp/agent/*.db",
+    "~/.omp/agent/*.sqlite"
+  ]
+}

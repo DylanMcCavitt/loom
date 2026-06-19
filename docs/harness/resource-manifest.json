@@ -27,9 +27,9 @@
       "resourceCategory": "built-ins and package resources",
       "currentLivePath": [],
       "discoverySource": "Installed OMP package resource discovery via package-manager and runtime import lookup; command sources are referenced, not copied, in issue #38.",
-      "intendedRepoTarget": "docs/harness/omp-builtins/ (future issue #39 snapshot only)",
+      "intendedRepoTarget": "docs/harness/omp-builtins/",
       "disposition": "reference-only",
-      "migrationNotes": "Model legacy or internal package paths as OMP resources. Distinguish built-in runtime commands from portable agents, prompts, and skills before adapter work."
+      "migrationNotes": "Issue #39 snapshots portable bundled agents and indexes built-in command, prompt, and rule sources. Runtime-only commands remain reference-only and are not made portable."
     },
     {
       "id": "omp-user-project-resources",

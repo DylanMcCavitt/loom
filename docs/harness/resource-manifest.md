@@ -14,10 +14,28 @@ The manifest is category-level by design. It records source harness, resource ca
 ## Coverage
 
 - OMP built-ins and installed package resources are represented as `reference-only`.
+- OMP bundled agents, built-in command sources, prompt categories, and built-in default rules are snapshotted under `docs/harness/omp-builtins/` by issue #39.
 - OMP user/project resources and workflow-kit categories are represented as `track`.
 - Codex config/profile surfaces are `reference-only`, while Codex agents and skill roots are `adapt`.
 - Claude agents, skills, and settings are `adapt`, with local settings and runtime state separated as `local-only`.
 - Duplicate skill roots across shared, Codex, Claude, OMP workflow-kit, and repo-local skill locations are represented at category level for a later audit.
+
+## OMP Built-ins Snapshot
+
+Issue #39 adds a versioned, non-live reference snapshot at `docs/harness/omp-builtins/`:
+
+- `agents/`: portable bundled task agents exported with `omp agents unpack --dir <target> --json`.
+- `source.json`: OMP package/version metadata, expected agent names, file hashes, and refresh commands.
+- `commands.json`: built-in slash command registry indexed by command name, aliases, source type, and portability class.
+- `resource-index.json`: built-in prompt category hashes, built-in default rule hashes, and runtime-only surface classifications.
+
+Refresh or compare the snapshot from the repo root:
+
+```sh
+node scripts/refresh-omp-builtins-snapshot.mjs
+node scripts/refresh-omp-builtins-snapshot.mjs --write
+node scripts/validate-omp-builtins-snapshot.mjs --check-live
+```
 
 ## Explicit Local-Only Surfaces
 
