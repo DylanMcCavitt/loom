@@ -1,0 +1,224 @@
+{
+  "schemaVersion": 1,
+  "generatedForIssue": 45,
+  "name": "harness-dry-run-link-plan",
+  "description": "Read-only plan for checking future OMP, Codex, and Claude harness link/render operations before any live config is modified.",
+  "manifestPath": "docs/harness/resource-manifest.json",
+  "codexAdapterPlanPath": "docs/harness/codex-adapter-plan/adapter-plan.json",
+  "claudeAdapterPlanPath": "docs/harness/claude-adapter-plan/adapter-plan.json",
+  "panelPrototypeOptIn": false,
+  "candidateLinks": [
+    {
+      "id": "omp-global-agents-md",
+      "sourceHarness": "omp",
+      "sourceResource": "omp-user-project-resources",
+      "mode": "candidate-symlink",
+      "livePath": "~/.omp/agent/AGENTS.md",
+      "proposedTarget": "repo:omp/.omp/agent/AGENTS.md",
+      "disposition": "track",
+      "notes": "Report the existing live path and planned repo-owned source only. Do not mutate the link in this issue."
+    },
+    {
+      "id": "omp-global-rules-md",
+      "sourceHarness": "omp",
+      "sourceResource": "omp-user-project-resources",
+      "mode": "candidate-symlink",
+      "livePath": "~/.omp/agent/RULES.md",
+      "proposedTarget": "repo:omp/.omp/agent/RULES.md",
+      "disposition": "track",
+      "notes": "Report the existing live path and planned repo-owned source only. Do not mutate the link in this issue."
+    },
+    {
+      "id": "omp-global-config-yml",
+      "sourceHarness": "omp",
+      "sourceResource": "omp-user-project-resources",
+      "mode": "candidate-symlink",
+      "livePath": "~/.omp/agent/config.yml",
+      "proposedTarget": "repo:omp/.omp/agent/config.yml",
+      "disposition": "track",
+      "notes": "Report the existing live path and planned repo-owned source only. Do not mutate the link in this issue."
+    },
+    {
+      "id": "codex-shared-skills-root",
+      "sourceHarness": "codex",
+      "sourceResource": "codex-agents-skills",
+      "mode": "candidate-symlink",
+      "livePath": "~/.agents/skills/",
+      "proposedTarget": "repo:.agents/skills/",
+      "disposition": "adapt",
+      "notes": "Shared skill roots require explicit approval before any live link operation."
+    },
+    {
+      "id": "codex-user-skills-root",
+      "sourceHarness": "codex",
+      "sourceResource": "codex-agents-skills",
+      "mode": "report-only",
+      "livePath": "~/.codex/skills/",
+      "proposedTarget": null,
+      "disposition": "adapt",
+      "notes": "Report current path and symlink status only; individual skill deduplication is deferred."
+    },
+    {
+      "id": "claude-user-skills-root",
+      "sourceHarness": "claude",
+      "sourceResource": "claude-agents-skills-settings",
+      "mode": "report-only",
+      "livePath": "~/.claude/skills/",
+      "proposedTarget": null,
+      "disposition": "adapt",
+      "notes": "Report current path and symlink status only. Issue #42 forbids whole-root skill symlinks; future Claude skill links must be curated per-skill candidates."
+    },
+    {
+      "id": "claude-user-agents-root",
+      "sourceHarness": "claude",
+      "sourceResource": "claude-agents-skills-settings",
+      "mode": "report-only",
+      "livePath": "~/.claude/agents/",
+      "proposedTarget": null,
+      "disposition": "adapt",
+      "notes": "Report current path and symlink status only; no Claude adapter files are generated in this issue."
+    }
+  ],
+  "generatedConfigDestinations": [
+    {
+      "id": "codex-project-base-config",
+      "sourceHarness": "codex",
+      "operation": "render-file",
+      "destination": ".codex/config.toml",
+      "sourceTemplate": "docs/harness/codex-adapter-plan/templates/base.config.template.toml",
+      "status": "dry-run-only",
+      "approval": "future-issue-required",
+      "notes": "Report overwrite risk only. Future renderers must use a temp render and explicit human approval."
+    },
+    {
+      "id": "codex-user-omp-profile",
+      "sourceHarness": "codex",
+      "operation": "render-file",
+      "destination": "~/.codex/omp-harness.config.toml",
+      "sourceTemplate": "docs/harness/codex-adapter-plan/templates/profile.omp-harness.config.template.toml",
+      "status": "dry-run-only",
+      "approval": "future-issue-required",
+      "notes": "Report overwrite risk only. Do not change the default Codex provider, model, auth, trust, or telemetry settings."
+    },
+    {
+      "id": "codex-project-custom-agents",
+      "sourceHarness": "codex",
+      "operation": "render-glob",
+      "destination": ".codex/agents/*.toml",
+      "sourceTemplate": "docs/harness/codex-adapter-plan/templates/agents/*.toml",
+      "status": "dry-run-only",
+      "approval": "future-issue-required",
+      "notes": "Report destination pattern only; do not create project-scoped custom agents in this issue."
+    },
+    {
+      "id": "codex-user-custom-agents",
+      "sourceHarness": "codex",
+      "operation": "render-glob",
+      "destination": "~/.codex/agents/*.toml",
+      "sourceTemplate": "docs/harness/codex-adapter-plan/templates/agents/*.toml",
+      "status": "dry-run-only",
+      "approval": "future-issue-required",
+      "notes": "Report destination pattern only; do not create user-scoped custom agents in this issue."
+    },
+    {
+      "id": "codex-user-skills-config-entries",
+      "sourceHarness": "codex",
+      "operation": "merge-entries",
+      "destination": "~/.codex/config.toml skills.config entries",
+      "sourceTemplate": "docs/harness/codex-adapter-plan/templates/skills.config.template.toml",
+      "status": "dry-run-only",
+      "approval": "future-issue-required",
+      "notes": "Report merge target overwrite risk only. Future renderers must not delete, copy, remove, or vendor duplicate skills."
+    },
+    {
+      "id": "claude-project-instructions",
+      "sourceHarness": "claude",
+      "operation": "render-file",
+      "destination": ".claude/CLAUDE.md",
+      "sourceTemplate": "docs/harness/claude-adapter-plan/templates/instructions/CLAUDE.md.template.md",
+      "status": "dry-run-only",
+      "approval": "future-issue-required",
+      "notes": "Report overwrite risk only. Future renderers must preserve the instruction bridge boundary."
+    },
+    {
+      "id": "claude-user-instructions",
+      "sourceHarness": "claude",
+      "operation": "render-file",
+      "destination": "~/.claude/CLAUDE.md",
+      "sourceTemplate": "docs/harness/claude-adapter-plan/templates/instructions/CLAUDE.md.template.md",
+      "status": "dry-run-only",
+      "approval": "future-issue-required",
+      "notes": "Report overwrite risk only. User-scope apply requires explicit approval."
+    },
+    {
+      "id": "claude-project-settings",
+      "sourceHarness": "claude",
+      "operation": "render-file",
+      "destination": ".claude/settings.json",
+      "sourceTemplate": "docs/harness/claude-adapter-plan/templates/settings.template.json",
+      "status": "dry-run-only",
+      "approval": "future-issue-required",
+      "notes": "Report overwrite risk only. Shareable settings must not include auth, env, MCP, model, hook, or local override keys."
+    },
+    {
+      "id": "claude-user-settings",
+      "sourceHarness": "claude",
+      "operation": "render-file",
+      "destination": "~/.claude/settings.json",
+      "sourceTemplate": "docs/harness/claude-adapter-plan/templates/settings.template.json",
+      "status": "dry-run-only",
+      "approval": "future-issue-required",
+      "notes": "Report overwrite risk only. Future live merge must preserve existing local settings."
+    },
+    {
+      "id": "claude-project-agents",
+      "sourceHarness": "claude",
+      "operation": "render-glob",
+      "destination": ".claude/agents/*.md",
+      "sourceTemplate": "docs/harness/claude-adapter-plan/templates/agents/*.md",
+      "status": "dry-run-only",
+      "approval": "future-issue-required",
+      "notes": "Report destination pattern only; do not create project-scoped Claude agents in this issue."
+    },
+    {
+      "id": "claude-user-agents",
+      "sourceHarness": "claude",
+      "operation": "render-glob",
+      "destination": "~/.claude/agents/*.md",
+      "sourceTemplate": "docs/harness/claude-adapter-plan/templates/agents/*.md",
+      "status": "dry-run-only",
+      "approval": "future-issue-required",
+      "notes": "Report destination pattern only; do not create user-scoped Claude agents in this issue."
+    },
+    {
+      "id": "claude-project-skills",
+      "sourceHarness": "claude",
+      "operation": "render-glob",
+      "destination": ".claude/skills/*/SKILL.md",
+      "sourceTemplate": "docs/harness/claude-adapter-plan/templates/skills/*/SKILL.md",
+      "status": "dry-run-only",
+      "approval": "future-issue-required",
+      "notes": "Report destination pattern only; future apply must use curated per-skill review."
+    },
+    {
+      "id": "claude-user-skills",
+      "sourceHarness": "claude",
+      "operation": "render-glob",
+      "destination": "~/.claude/skills/*/SKILL.md",
+      "sourceTemplate": "docs/harness/claude-adapter-plan/templates/skills/*/SKILL.md",
+      "status": "dry-run-only",
+      "approval": "future-issue-required",
+      "notes": "Report destination pattern only; future apply must use curated per-skill review."
+    },
+    {
+      "id": "claude-per-skill-symlink-manifest",
+      "sourceHarness": "claude",
+      "operation": "render-manifest",
+      "destination": "per-skill symlink manifest",
+      "sourceTemplate": "docs/harness/claude-adapter-plan/templates/skill-symlinks.template.json",
+      "status": "dry-run-only",
+      "approval": "future-issue-required",
+      "notes": "Report the candidate manifest only. Whole-root Claude skill symlinks remain forbidden."
+    }
+  ]
+}

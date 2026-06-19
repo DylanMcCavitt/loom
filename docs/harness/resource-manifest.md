@@ -53,6 +53,14 @@ Issue #42 adds `docs/harness/claude-adapter-plan.md` and structured plan data un
 
 The Claude adapter plan is dry-run-only. It includes parseable templates for future instruction, settings, agent, skill, and per-skill symlink candidate surfaces, but this issue does not write or merge those templates into live `~/.claude` or project `.claude`.
 
+## Dry-Run Safety Gate
+
+Issue #45 adds `docs/harness/dry-run-link-plan.json` and `scripts/dry-run-harness-safety-gate.mjs` as the read-only gate before any future live install, link, or render operation. It reads both the Codex adapter plan and the Claude adapter plan so generated-surface reporting stays aligned with issues #41 and #42.
+
+The gate reports OMP, Codex, and Claude candidate live paths, planned repo targets, generated config destinations, local-only skipped surfaces, panel/prototype exclusions, duplicate candidate paths, and overwrite risk. It exits non-zero when a plan proposes runtime databases, blobs, sessions, histories, auth/cache files, local settings, logs, secret-looking values, local-only paths as symlink targets, or whole-root Claude skill symlinks.
+
+The gate does not modify live `~/.omp`, `~/.codex`, `~/.claude`, `.agents`, or repo config. With `--check-live`, it only reads path metadata and symlink targets.
+
 ## Excluded Surface
 
 Active panel, side-panel, and prototype work is listed under `excludedSurfaces`. It is intentionally ignored for this harness manifest and remains owned by its own issue sequence.
@@ -66,7 +74,9 @@ node scripts/validate-harness-manifest.mjs
 node scripts/validate-codex-adapter-plan.mjs
 node scripts/validate-claude-adapter-plan.mjs
 node scripts/dry-run-harness-inventory.mjs
+node scripts/dry-run-harness-safety-gate.mjs --check-live
 node --test tests/harness-manifest.test.mjs
 node --test tests/codex-adapter-plan.test.mjs
 node --test tests/claude-adapter-plan.test.mjs
+node --test tests/harness-safety-gate.test.mjs
 ```
