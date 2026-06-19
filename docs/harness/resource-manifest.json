@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "generatedForIssue": 38,
+  "name": "unified-harness-resource-manifest",
+  "description": "Read-only category manifest for OMP, Codex, and Claude harness resources. This file records resource surfaces and migration intent without copying runtime state.",
+  "allowedDispositions": [
+    "track",
+    "adapt",
+    "reference-only",
+    "local-only"
+  ],
+  "excludedSurfaces": [
+    {
+      "id": "panel-prototype-work",
+      "reason": "Issue #38 ignores active panel, side-panel, and prototype work. These files remain governed by their own issues and are not normalized into this harness manifest.",
+      "paths": [
+        "omp/.omp/agent/extensions/github-issues-panel.js",
+        "omp/.omp/agent/extensions/split-diff.js",
+        "omp/.omp/agent/extensions/workflow-cockpit.js"
+      ]
+    }
+  ],
+  "resources": [
+    {
+      "id": "omp-built-in-runtime-resources",
+      "sourceHarness": "omp",
+      "resourceCategory": "built-ins and package resources",
+      "currentLivePath": [],
+      "discoverySource": "Installed OMP package resource discovery via package-manager and runtime import lookup; command sources are referenced, not copied, in issue #38.",
+      "intendedRepoTarget": "docs/harness/omp-builtins/ (future issue #39 snapshot only)",
+      "disposition": "reference-only",
+      "migrationNotes": "Model legacy or internal package paths as OMP resources. Distinguish built-in runtime commands from portable agents, prompts, and skills before adapter work."
+    },
+    {
+      "id": "omp-user-project-resources",
+      "sourceHarness": "omp",
+      "resourceCategory": "user/project resources and workflow kit",
+      "currentLivePath": [
+        "~/.omp/agent/AGENTS.md",
+        "~/.omp/agent/RULES.md",
+        "~/.omp/agent/config.yml",
+        "~/.omp/agent/workflow-kit/",
+        "repo:omp/.omp/agent/AGENTS.md",
+        "repo:omp/.omp/agent/RULES.md",
+        "repo:omp/.omp/agent/config.yml"
+      ],
+      "discoverySource": "Repo-tracked OMP config under omp/.omp/agent plus live OMP workflow-kit category under ~/.omp/agent/workflow-kit/.",
+      "intendedRepoTarget": "omp/.omp/agent/ and docs/harness/omp/",
+      "disposition": "track",
+      "migrationNotes": "Track declarative config and workflow-kit guidance only. Do not read, copy, or normalize private runtime artifacts when comparing live and repo resources."
+    },
+    {
+      "id": "omp-runtime-state",
+      "sourceHarness": "omp",
+      "resourceCategory": "runtime sessions, database files, blobs, terminal state, cache, logs, and private history",
+      "currentLivePath": [
+        "~/.omp/agent/sessions/",
+        "~/.omp/agent/terminal-sessions/",
+        "~/.omp/agent/blobs/",
+        "~/.omp/agent/cache/",
+        "~/.omp/agent/logs/",
+        "~/.omp/agent/*.db",
+        "~/.omp/agent/*.sqlite"
+      ],
+      "discoverySource": "Directory and filename patterns only; no runtime files are read or copied.",
+      "intendedRepoTarget": "none",
+      "disposition": "local-only",
+      "migrationNotes": "Runtime state stays local. Future dry runs may report presence by path pattern, but never copy session, database, blob, terminal, cache, log, or history contents."
+    },
+    {
+      "id": "codex-config-profiles",
+      "sourceHarness": "codex",
+      "resourceCategory": "config and model profile surfaces",
+      "currentLivePath": [
+        "~/.codex/config.toml",
+        "~/.codex/AGENTS.md"
+      ],
+      "discoverySource": "Codex home config paths by convention; record key categories only.",
+      "intendedRepoTarget": "docs/harness/codex-adapter-plan.md (future issue #41)",
+      "disposition": "reference-only",
+      "migrationNotes": "Reference profile and instruction categories without copying provider credentials, local overrides, or private model history."
+    },
+    {
+      "id": "codex-agents-skills",
+      "sourceHarness": "codex",
+      "resourceCategory": "agents and skills",
+      "currentLivePath": [
+        "~/.codex/skills/",
+        "~/.agents/skills/",
+        "repo:.agents/skills/"
+      ],
+      "discoverySource": "Codex and shared skill roots by directory name; individual skill deduplication is deferred.",
+      "intendedRepoTarget": ".agents/skills/ and docs/harness/codex-adapter-plan.md",
+      "disposition": "adapt",
+      "migrationNotes": "Adapt only explicit project skills and reusable agent guidance. Do not vendor plugin-provided skills or global caches as part of this manifest."
+    },
+    {
+      "id": "codex-runtime-state",
+      "sourceHarness": "codex",
+      "resourceCategory": "runtime sessions, database files, blobs, auth/cache data, plugin cache, and private history",
+      "currentLivePath": [
+        "~/.codex/sessions/",
+        "~/.codex/blobs/",
+        "~/.codex/plugins/cache/",
+        "~/.codex/history.jsonl",
+        "~/.codex/auth.json",
+        "~/.codex/*.db",
+        "~/.codex/*.sqlite"
+      ],
+      "discoverySource": "Codex runtime path patterns only; no file contents are read or copied.",
+      "intendedRepoTarget": "none",
+      "disposition": "local-only",
+      "migrationNotes": "Keep sessions, local databases, auth material, plugin cache, generated blobs, and private history outside the repo."
+    },
+    {
+      "id": "claude-agents-skills-settings",
+      "sourceHarness": "claude",
+      "resourceCategory": "agents, skills, and settings",
+      "currentLivePath": [
+        "~/.claude/agents/",
+        "~/.claude/skills/",
+        "~/.claude/settings.json"
+      ],
+      "discoverySource": "Claude home resource categories by directory name; settings are referenced by category only.",
+      "intendedRepoTarget": "docs/harness/claude-adapter-plan.md (future issue #42)",
+      "disposition": "adapt",
+      "migrationNotes": "Adapt reusable agents and skills deliberately. Settings may contain local machine policy, so future work should document categories and redactions before copying any value."
+    },
+    {
+      "id": "claude-runtime-state",
+      "sourceHarness": "claude",
+      "resourceCategory": "runtime sessions, terminal state, auth/cache data, plugin cache, local settings, and private history",
+      "currentLivePath": [
+        "~/.claude/projects/",
+        "~/.claude/shell-snapshots/",
+        "~/.claude/statsig/",
+        "~/.claude/todos/",
+        "~/.claude/plugins/",
+        "~/.claude/settings.local.json",
+        "~/.claude/*.log"
+      ],
+      "discoverySource": "Claude runtime path patterns only; no transcript, project, terminal, auth, plugin, or local settings contents are read or copied.",
+      "intendedRepoTarget": "none",
+      "disposition": "local-only",
+      "migrationNotes": "Private project history, shell state, local overrides, plugin downloads, and cache/auth surfaces are local-only."
+    },
+    {
+      "id": "duplicate-skill-roots",
+      "sourceHarness": "cross-harness",
+      "resourceCategory": "duplicate skill roots",
+      "currentLivePath": [
+        "~/.agents/skills/",
+        "~/.codex/skills/",
+        "~/.claude/skills/",
+        "repo:.agents/skills/",
+        "~/.omp/agent/workflow-kit/"
+      ],
+      "discoverySource": "Known overlapping global, harness-specific, and repo-local skill roots; this issue records categories only.",
+      "intendedRepoTarget": "docs/harness/skill-root-audit.md (future issue #43)",
+      "disposition": "reference-only",
+      "migrationNotes": "Do not deduplicate in issue #38. Future audit should compare names, triggers, and ownership without copying package/plugin caches."
+    }
+  ]
+}
