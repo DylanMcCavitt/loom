@@ -1,0 +1,70 @@
+{
+  "dryRunOnly": true,
+  "bulkRootActionsForbidden": [
+    "copy ~/.claude",
+    "symlink ~/.claude",
+    "replace ~/.claude/skills"
+  ],
+  "candidates": [
+    {
+      "name": "omp-btw",
+      "sharedSource": ".agents/skills/omp-btw",
+      "candidateDestinations": [
+        "~/.claude/skills/omp-btw",
+        ".claude/skills/omp-btw"
+      ],
+      "status": "candidate-only",
+      "requiresHumanApproval": true
+    },
+    {
+      "name": "omp-guided-goal",
+      "sharedSource": ".agents/skills/omp-guided-goal",
+      "candidateDestinations": [
+        "~/.claude/skills/omp-guided-goal",
+        ".claude/skills/omp-guided-goal"
+      ],
+      "status": "candidate-only",
+      "requiresHumanApproval": true
+    },
+    {
+      "name": "omp-handoff",
+      "sharedSource": ".agents/skills/omp-handoff",
+      "candidateDestinations": [
+        "~/.claude/skills/omp-handoff",
+        ".claude/skills/omp-handoff"
+      ],
+      "status": "candidate-only",
+      "requiresHumanApproval": true
+    },
+    {
+      "name": "omp-complaint-to-rule",
+      "sharedSource": ".agents/skills/omp-complaint-to-rule",
+      "candidateDestinations": [
+        "~/.claude/skills/omp-complaint-to-rule",
+        ".claude/skills/omp-complaint-to-rule"
+      ],
+      "status": "candidate-only",
+      "requiresHumanApproval": true
+    },
+    {
+      "name": "omp-plan",
+      "sharedSource": ".agents/skills/omp-plan",
+      "candidateDestinations": [
+        "~/.claude/skills/omp-plan",
+        ".claude/skills/omp-plan"
+      ],
+      "status": "candidate-only",
+      "requiresHumanApproval": true
+    },
+    {
+      "name": "omp-tangent",
+      "sharedSource": ".agents/skills/omp-tangent",
+      "candidateDestinations": [
+        "~/.claude/skills/omp-tangent",
+        ".claude/skills/omp-tangent"
+      ],
+      "status": "candidate-only",
+      "requiresHumanApproval": true
+    }
+  ]
+}

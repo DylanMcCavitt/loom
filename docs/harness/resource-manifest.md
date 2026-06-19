@@ -17,7 +17,7 @@ The manifest is category-level by design. It records source harness, resource ca
 - OMP bundled agents, built-in command sources, prompt categories, and built-in default rules are snapshotted under `docs/harness/omp-builtins/` by issue #39.
 - OMP user/project resources and workflow-kit categories are represented as `track`.
 - Codex config/profile surfaces are `reference-only`, while Codex agents and skill roots are `adapt`; issue #41 documents the Codex-side adapter plan in `docs/harness/codex-adapter-plan.md`.
-- Claude agents, skills, and settings are `adapt`, with local settings and runtime state separated as `local-only`.
+- Claude agents, skills, and settings are `adapt`, with local settings and runtime state separated as `local-only`; issue #42 documents the Claude-side adapter plan in `docs/harness/claude-adapter-plan.md`.
 - Duplicate skill roots across shared, Codex, Claude, OMP workflow-kit, and repo-local skill locations are represented at category level for a later audit.
 
 ## OMP Built-ins Snapshot
@@ -47,6 +47,12 @@ Issue #41 adds `docs/harness/codex-adapter-plan.md` and structured plan data und
 
 The Codex adapter plan is dry-run-only. It includes parseable TOML templates for future base config, optional profile, project/user custom agents under `.codex/agents/` or `~/.codex/agents/`, and `skills.config` entries, but this issue does not write or merge those templates into live `~/.codex`.
 
+## Claude Adapter Plan
+
+Issue #42 adds `docs/harness/claude-adapter-plan.md` and structured plan data under `docs/harness/claude-adapter-plan/`. The plan maps OMP bundled agents into Claude agent candidates, native/default keep decisions, or drop decisions; records future shared skill candidates from the issue #40 portability matrix; defines Markdown and JSON template boundaries; documents duplicate skill-root risks across Claude, Codex, shared, and repo-local skill roots; and marks live `~/.claude` project/session/history/cache/daemon/auth-adjacent/local settings surfaces as local-only.
+
+The Claude adapter plan is dry-run-only. It includes parseable templates for future instruction, settings, agent, skill, and per-skill symlink candidate surfaces, but this issue does not write or merge those templates into live `~/.claude` or project `.claude`.
+
 ## Excluded Surface
 
 Active panel, side-panel, and prototype work is listed under `excludedSurfaces`. It is intentionally ignored for this harness manifest and remains owned by its own issue sequence.
@@ -58,7 +64,9 @@ Run these checks from the repo root:
 ```sh
 node scripts/validate-harness-manifest.mjs
 node scripts/validate-codex-adapter-plan.mjs
+node scripts/validate-claude-adapter-plan.mjs
 node scripts/dry-run-harness-inventory.mjs
 node --test tests/harness-manifest.test.mjs
 node --test tests/codex-adapter-plan.test.mjs
+node --test tests/claude-adapter-plan.test.mjs
 ```

@@ -123,27 +123,43 @@
         "~/.claude/settings.json"
       ],
       "discoverySource": "Claude home resource categories by directory name; settings are referenced by category only.",
-      "intendedRepoTarget": "docs/harness/claude-adapter-plan.md (future issue #42)",
+      "intendedRepoTarget": "docs/harness/claude-adapter-plan.md",
       "disposition": "adapt",
-      "migrationNotes": "Adapt reusable agents and skills deliberately. Settings may contain local machine policy, so future work should document categories and redactions before copying any value."
+      "migrationNotes": "Issue #42 documents dry-run instruction, settings, agent, skill, and per-skill symlink candidates. Adapt reusable agents and skills deliberately. Settings may contain local machine policy, so the plan documents categories and redactions without copying live values."
     },
     {
       "id": "claude-runtime-state",
       "sourceHarness": "claude",
       "resourceCategory": "runtime sessions, terminal state, auth/cache data, plugin cache, local settings, and private history",
       "currentLivePath": [
+        "~/.claude/history.jsonl",
         "~/.claude/projects/",
+        "~/.claude/sessions/",
+        "~/.claude/session-env/",
         "~/.claude/shell-snapshots/",
+        "~/.claude/tasks/",
+        "~/.claude/teams/",
+        "~/.claude/jobs/",
+        "~/.claude/file-history/",
+        "~/.claude/cache/",
+        "~/.claude/paste-cache/",
         "~/.claude/statsig/",
         "~/.claude/todos/",
-        "~/.claude/plugins/",
+        "~/.claude/plugins/cache/",
+        "~/.claude/plugins/data/",
+        "~/.claude/daemon/",
+        "~/.claude/daemon-auth-*",
         "~/.claude/settings.local.json",
-        "~/.claude/*.log"
+        "~/.claude/*.log",
+        "~/.claude/backups/",
+        "~/.claude/workflows/",
+        "~/.claude/*.db",
+        "~/.claude/*.sqlite*"
       ],
       "discoverySource": "Claude runtime path patterns only; no transcript, project, terminal, auth, plugin, or local settings contents are read or copied.",
       "intendedRepoTarget": "none",
       "disposition": "local-only",
-      "migrationNotes": "Private project history, shell state, local overrides, plugin downloads, and cache/auth surfaces are local-only."
+      "migrationNotes": "Private project/session history, shell state, local task/job state, local overrides, daemon state, plugin downloads/data, caches, backups, logs, and cache/auth surfaces are local-only."
     },
     {
       "id": "duplicate-skill-roots",
