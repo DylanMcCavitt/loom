@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, lstatSync, readFileSync, readlinkSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync, readlinkSync, readdirSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -13,6 +13,7 @@ const USAGE = [
   "  [--check-live]",
   "  [--include-panel-prototypes]",
   "  [--skip-git-tracked-check]",
+  "  [--source-root <dir>]",
 ].join(" ");
 
 const DEFAULT_MANIFEST = "docs/harness/resource-manifest.json";
@@ -50,6 +51,7 @@ const REQUIRED_GENERATED_FIELDS = [
   "approval",
 ];
 const REQUIRED_HARNESSES = ["omp", "codex", "claude"];
+const PRIVATE_HOME_PATH_PATTERN = /\/Users\/[^/\s"]+/u;
 
 const SECRET_PATTERNS = [
   /\bgh[pousr]_[A-Za-z0-9_]{20,}\b/u,
@@ -90,6 +92,20 @@ const DANGEROUS_PATH_RULES = [
     allow: /\.example$/iu,
   },
 ];
+const SOURCE_SCAN_SCOPES = [
+  /^autoresearch\.sh$/u,
+  /^docs\//u,
+  /^omp\/\.omp\/agent\//u,
+  /^scripts\//u,
+];
+const SOURCE_SCAN_PATTERN_DEFINITIONS = new Set([
+  "scripts/dry-run-harness-safety-gate.mjs",
+  "scripts/validate-claude-adapter-plan.mjs",
+  "scripts/validate-codex-adapter-plan.mjs",
+  "scripts/validate-harness-manifest.mjs",
+  "scripts/validate-omp-builtins-snapshot.mjs",
+  "scripts/validate-skills.mjs",
+]);
 
 function readArgs(argv) {
   const options = {
@@ -100,6 +116,7 @@ function readArgs(argv) {
     checkLive: false,
     includePanelPrototypes: false,
     skipGitTrackedCheck: false,
+    sourceRoot: null,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -120,7 +137,7 @@ function readArgs(argv) {
       options.skipGitTrackedCheck = true;
       continue;
     }
-    if (!["--manifest", "--plan", "--codex-plan", "--claude-plan"].includes(arg)) {
+    if (!["--manifest", "--plan", "--codex-plan", "--claude-plan", "--source-root"].includes(arg)) {
       throw new Error(`Unknown option: ${arg}`);
     }
     const next = argv[index + 1];
@@ -131,6 +148,7 @@ function readArgs(argv) {
     if (arg === "--plan") options.plan = next;
     if (arg === "--codex-plan") options.codexPlan = next;
     if (arg === "--claude-plan") options.claudePlan = next;
+    if (arg === "--source-root") options.sourceRoot = next;
     index += 1;
   }
   return options;
@@ -271,7 +289,7 @@ function pathMatchesLocalOnly(value, localOnlyPatterns) {
 }
 
 function containsPrivateHomePath(label, value) {
-  if (/\/Users\/[^/\s"]+/u.test(textOf(value))) {
+  if (PRIVATE_HOME_PATH_PATTERN.test(textOf(value))) {
     return `${label}: must use home-relative or repo-relative paths instead of absolute private home paths`;
   }
   return null;
@@ -617,6 +635,86 @@ function trackedPathErrors() {
   return errors;
 }
 
+function normalizeRelativePath(filePath) {
+  return filePath.replaceAll(path.sep, "/");
+}
+
+function isInSourceScanScope(relativePath) {
+  return SOURCE_SCAN_SCOPES.some((scope) => scope.test(relativePath));
+}
+
+function collectSourceRootFiles(root, current = root) {
+  const files = [];
+  for (const entry of readdirSync(current, { withFileTypes: true })) {
+    if (entry.name === ".git" || entry.name === ".DS_Store") continue;
+    const fullPath = path.join(current, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...collectSourceRootFiles(root, fullPath));
+    } else if (entry.isFile()) {
+      files.push(normalizeRelativePath(path.relative(root, fullPath)));
+    }
+  }
+  return files.sort((left, right) => left.localeCompare(right));
+}
+
+function isAllowedPatternDefinitionLine(relativePath, line) {
+  if (!SOURCE_SCAN_PATTERN_DEFINITIONS.has(relativePath)) return false;
+  return /PRIVATE_HOME_PATH_PATTERN\s*=|\/\\bgh\[pousr\]|\/\\bgithub_pat_|\/\\bsk-|\/\\bAKIA|api\[_-\]\?key/u.test(line);
+}
+
+function listSourceScanFiles(options) {
+  if (options.sourceRoot) {
+    const root = path.resolve(options.sourceRoot);
+    return {
+      errors: [],
+      root,
+      files: collectSourceRootFiles(root).filter(isInSourceScanScope),
+    };
+  }
+  const result = spawnSync("git", ["ls-files", "-z"], { encoding: "utf8" });
+  if (result.status !== 0) {
+    return {
+      errors: [`tracked source scan failed: ${result.stderr || result.stdout}`],
+      root: process.cwd(),
+      files: [],
+    };
+  }
+  return {
+    errors: [],
+    root: process.cwd(),
+    files: result.stdout.split("\0").filter(Boolean).map(normalizeRelativePath).filter(isInSourceScanScope),
+  };
+}
+
+function trackedSourceErrors(options) {
+  const listing = listSourceScanFiles(options);
+  const errors = [...listing.errors];
+  let scannedFiles = 0;
+  for (const relativePath of listing.files) {
+    const filePath = path.join(listing.root, relativePath);
+    let content = "";
+    try {
+      content = readFileSync(filePath, "utf8");
+    } catch (error) {
+      errors.push(`tracked source scan failed for ${relativePath}: ${error.message}`);
+      continue;
+    }
+    if (content.includes("\u0000")) continue;
+    scannedFiles += 1;
+    const lines = content.split(/\r?\n/u);
+    for (const [lineIndex, line] of lines.entries()) {
+      const location = `${relativePath}:${lineIndex + 1}`;
+      if (PRIVATE_HOME_PATH_PATTERN.test(line) && !isAllowedPatternDefinitionLine(relativePath, line)) {
+        errors.push(`${location}: tracked source contains absolute private home path`);
+      }
+      if (SECRET_PATTERNS.some((pattern) => pattern.test(line)) && !isAllowedPatternDefinitionLine(relativePath, line)) {
+        errors.push(`${location}: tracked source contains API-key/token/secret-looking text`);
+      }
+    }
+  }
+  return { errors, scannedFiles };
+}
+
 function printLink(link, options) {
   const live = inspectPath(link.livePath, options.checkLive);
   const target = inspectPath(link.proposedTarget, options.checkLive);
@@ -640,7 +738,7 @@ function printGenerated(destination, options) {
   console.log(`  approval: ${destination.approval}`);
 }
 
-function printReport(options, manifestInfo, codexInfo, claudeInfo, planInfo) {
+function printReport(options, manifestInfo, codexInfo, claudeInfo, planInfo, sourceInfo) {
   console.log("Harness dry-run safety gate");
   console.log(`Manifest: ${options.manifest}`);
   console.log(`Plan: ${options.plan}`);
@@ -653,6 +751,7 @@ function printReport(options, manifestInfo, codexInfo, claudeInfo, planInfo) {
   console.log(`Manifest validation: passed (${manifestInfo.resources.length} resources)`);
   console.log(`Local-only symlink target guard: passed (${planInfo.localOnlyPatterns.length} patterns blocked)`);
   console.log(`Generated surface sync: passed (${codexInfo.generatedSurfaces.length} Codex surfaces, ${claudeInfo.generatedSurfaces.length} Claude surfaces covered)`);
+  console.log(`Tracked source content scan: passed (${sourceInfo.scannedFiles} files scanned)`);
   console.log("");
 
   console.log("[candidate live links]");
@@ -715,7 +814,9 @@ try {
   const claudeInfo = validateClaudePlan(claudePlan);
   const planInfo = validatePlan(plan, manifestInfo, codexInfo, claudeInfo, options);
   const errors = [...manifestInfo.errors, ...codexInfo.errors, ...claudeInfo.errors, ...planInfo.errors];
-  if (!options.skipGitTrackedCheck) errors.push(...trackedPathErrors());
+  if (!options.skipGitTrackedCheck && !options.sourceRoot) errors.push(...trackedPathErrors());
+  const sourceInfo = trackedSourceErrors(options);
+  errors.push(...sourceInfo.errors);
 
   if (errors.length > 0) {
     console.error("Harness dry-run safety gate failed:");
@@ -724,7 +825,7 @@ try {
     process.exit(1);
   }
 
-  printReport(options, manifestInfo, codexInfo, claudeInfo, planInfo);
+  printReport(options, manifestInfo, codexInfo, claudeInfo, planInfo, sourceInfo);
 } catch (error) {
   console.error(error.message);
   console.error(USAGE);

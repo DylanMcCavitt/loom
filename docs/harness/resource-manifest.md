@@ -57,7 +57,7 @@ The Claude adapter plan is dry-run-only. It includes parseable templates for fut
 
 Issue #45 adds `docs/harness/dry-run-link-plan.json` and `scripts/dry-run-harness-safety-gate.mjs` as the read-only gate before any future live install, link, or render operation. It reads both the Codex adapter plan and the Claude adapter plan so generated-surface reporting stays aligned with issues #41 and #42.
 
-The gate reports OMP, Codex, and Claude candidate live paths, planned repo targets, generated config destinations, local-only skipped surfaces, panel/prototype exclusions, duplicate candidate paths, and overwrite risk. It exits non-zero when a plan proposes runtime databases, blobs, sessions, histories, auth/cache files, local settings, logs, secret-looking values, local-only paths as symlink targets, or whole-root Claude skill symlinks.
+The gate reports OMP, Codex, and Claude candidate live paths, planned repo targets, generated config destinations, local-only skipped surfaces, panel/prototype exclusions, duplicate candidate paths, overwrite risk, and the tracked-source content scan. It exits non-zero when a plan proposes runtime databases, blobs, sessions, histories, auth/cache files, local settings, logs, secret-looking values, local-only paths as symlink targets, or whole-root Claude skill symlinks. It also exits non-zero when in-scope tracked source contains absolute private home paths or secret-looking values.
 
 The gate does not modify live `~/.omp`, `~/.codex`, `~/.claude`, `.agents`, or repo config. With `--check-live`, it only reads path metadata and symlink targets.
 
@@ -79,4 +79,10 @@ node --test tests/harness-manifest.test.mjs
 node --test tests/codex-adapter-plan.test.mjs
 node --test tests/claude-adapter-plan.test.mjs
 node --test tests/harness-safety-gate.test.mjs
+```
+
+Full-flow traceability benchmark, distinct from the dry-run gate:
+
+```sh
+bash scripts/autoresearch.sh
 ```

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
@@ -25,6 +25,19 @@ function withTempPlan(mutator) {
   };
 }
 
+function withTempSourceRoot(files) {
+  const tempRoot = mkdtempSync(path.join(tmpdir(), "harness-source-scan-"));
+  for (const [relativePath, content] of Object.entries(files)) {
+    const filePath = path.join(tempRoot, relativePath);
+    mkdirSync(path.dirname(filePath), { recursive: true });
+    writeFileSync(filePath, content);
+  }
+  return {
+    path: tempRoot,
+    cleanup: () => rmSync(tempRoot, { recursive: true, force: true }),
+  };
+}
+
 test("dry-run safety gate reports checked-in plan without mutation", () => {
   const result = runGate(["--check-live"]);
   assert.equal(result.status, 0, result.stderr);
@@ -36,11 +49,58 @@ test("dry-run safety gate reports checked-in plan without mutation", () => {
   assert.match(result.stdout, /\[claude\]/u);
   assert.match(result.stdout, /Local-only symlink target guard: passed/u);
   assert.match(result.stdout, /5 Codex surfaces, 9 Claude surfaces/u);
+  assert.match(result.stdout, /Tracked source content scan: passed/u);
   assert.match(result.stdout, /\[generated config destinations\]/u);
   assert.match(result.stdout, /codex-runtime-state/u);
   assert.match(result.stdout, /claude-runtime-state/u);
   assert.match(result.stdout, /panel-prototype-work: skipped/u);
   assert.match(result.stdout, /Result: passed/u);
+});
+
+test("tracked source scan accepts tokenized source fixture", () => {
+  const temp = withTempSourceRoot({
+    "docs/good.md": "Use `~/.omp/agent/workflow-kit/README.md` and `~/.agents/skills/`.\n",
+    "omp/.omp/agent/AGENTS.md": "Project-specific skills live in `<repo>/.agents/skills/`.\n",
+    "scripts/good.mjs": "const kitRoot = process.env.KIT_ROOT || 'home-relative fallback';\n",
+  });
+  try {
+    const result = runGate(["--source-root", temp.path]);
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /Tracked source content scan: passed \(3 files scanned\)/u);
+  } finally {
+    temp.cleanup();
+  }
+});
+
+test("tracked source scan rejects hardcoded private home paths", () => {
+  const temp = withTempSourceRoot({
+    "docs/bad-private-path.md": "Use /Users/example/.omp/agent/workflow-kit/README.md for setup.\n",
+  });
+  try {
+    const result = runGate(["--source-root", temp.path, "--skip-git-tracked-check"]);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /docs\/bad-private-path\.md:1: tracked source contains absolute private home path/u);
+  } finally {
+    temp.cleanup();
+  }
+});
+
+test("tracked source scan rejects fake secret-looking values", () => {
+  const temp = withTempSourceRoot({
+    "scripts/bad-secret.mjs": [
+      "const token = 'ghp_12345678901234567890';",
+      "const config = 'api_key = abcdefghijklmnop';",
+      "",
+    ].join("\n"),
+  });
+  try {
+    const result = runGate(["--source-root", temp.path]);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /scripts\/bad-secret\.mjs:1: tracked source contains API-key\/token\/secret-looking text/u);
+    assert.match(result.stderr, /scripts\/bad-secret\.mjs:2: tracked source contains API-key\/token\/secret-looking text/u);
+  } finally {
+    temp.cleanup();
+  }
 });
 
 test("checked-in dry-run plan covers OMP, Codex, and Claude candidates", () => {

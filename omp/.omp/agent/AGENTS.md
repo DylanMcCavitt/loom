@@ -2,7 +2,7 @@
 
 ## Workflow kit
 
-Use `/Users/dylanmccavitt/.omp/agent/workflow-kit/` as the reusable workflow kit for global and per-project agent setup.
+Use `~/.omp/agent/workflow-kit/` as the reusable workflow kit for global and per-project agent setup.
 
 ## Default workflow
 
@@ -16,6 +16,6 @@ Use `/Users/dylanmccavitt/.omp/agent/workflow-kit/` as the reusable workflow kit
 
 ## Skill authoring
 
-Global reusable skills live in `/Users/dylanmccavitt/.agents/skills/`.
+Global reusable skills live in `~/.agents/skills/`.
 Project-specific skills live in `<repo>/.agents/skills/`.
 Each skill must be one directory containing `SKILL.md` with `name` and `description` frontmatter.

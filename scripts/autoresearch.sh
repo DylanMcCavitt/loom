@@ -4,10 +4,10 @@ set -euo pipefail
 node --input-type=module <<'NODE'
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { tmpdir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 
-const kitRoot = '/Users/dylanmccavitt/.omp/agent/workflow-kit';
+const kitRoot = process.env.KIT_ROOT || join(homedir(), '.omp/agent/workflow-kit');
 const templates = join(kitRoot, 'templates');
 const scripts = join(kitRoot, 'scripts');
 

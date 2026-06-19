@@ -25,7 +25,7 @@ Add a validation path that checks future automation skills under the version-con
 
 ### Relevant files / areas
 
-- `/Users/dylanmccavitt/.omp/agent/workflow-kit/README.md` for workflow-kit skill rules.
+- `~/.omp/agent/workflow-kit/README.md` for workflow-kit skill rules.
 - `omp/.omp/agent/` for the current repo-local agent configuration tree.
 - Existing global skills, especially `handoff`, for collision checks.
 
@@ -249,7 +249,7 @@ Add a version-controlled `issue-autopilot` skill that starts or finishes one iss
 ### Relevant files / areas
 
 - `omp/.omp/agent/AGENTS.md` for the one issue/task to one branch/worktree to one PR rule and verification expectations.
-- `/Users/dylanmccavitt/.omp/agent/workflow-kit/README.md` for project-layer workflow-kit guidance.
+- `~/.omp/agent/workflow-kit/README.md` for project-layer workflow-kit guidance.
 - Routing fixtures from issue 2.
 
 ### Test / check expectations
@@ -376,24 +376,24 @@ main
 
 ### What to build
 
-Add a separate benchmark suite for automation workflow friction so it does not get mixed with the existing/current `autoresearch.sh` traceability benchmark.
+Add a separate benchmark suite for automation workflow friction so it does not get mixed with the existing/current `scripts/autoresearch.sh` traceability benchmark.
 
 ### Acceptance criteria
 
 - [ ] Primary metric is `automation_workflow_friction`.
 - [ ] Metrics include `automation_command_count`, `route_accuracy_score`, `duplicate_skill_overlap_count`, `context_visibility_score`, `new_thread_reuses_handoff_skill`, `unsafe_autonomy_violations`, `spawn_recipe_count`, `commands_to_start_issue`, and `commands_to_safe_handoff`.
 - [ ] Hard checks require `duplicate_skill_overlap_count=0`, `unsafe_autonomy_violations=0`, and `new_thread_reuses_handoff_skill=1`.
-- [ ] The suite is separate from the current `autoresearch.sh` unless execution explicitly chooses to replace that script.
-- [ ] The current `autoresearch.sh` remains treated as a full-flow traceability benchmark, not the harness-friction benchmark described in `/tmp/oh-my-pi-harness-benchmark-handoff.md`.
+- [ ] The suite is separate from the current `scripts/autoresearch.sh` unless execution explicitly chooses to replace that script.
+- [ ] The current `scripts/autoresearch.sh` remains treated as a full-flow traceability benchmark, not the harness-friction benchmark described in `/tmp/oh-my-pi-harness-benchmark-handoff.md`.
 
 ### Non-goals
 
-- Do not replace `autoresearch.sh` unless the issue implementer explicitly chooses and documents that migration.
+- Do not replace `scripts/autoresearch.sh` unless the issue implementer explicitly chooses and documents that migration.
 - Do not optimize benchmark scores by weakening hard checks.
 
 ### Relevant files / areas
 
-- `autoresearch.sh` for the current full-flow traceability benchmark boundary.
+- `scripts/autoresearch.sh` for the current full-flow traceability benchmark boundary.
 - `/tmp/oh-my-pi-harness-benchmark-handoff.md` for prior harness benchmark context.
 - Workflow cockpit extension from issues 7 and 8.
 - Skill validation and routing fixtures from issues 1 and 2.
