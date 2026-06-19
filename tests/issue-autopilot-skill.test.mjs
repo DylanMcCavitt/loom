@@ -31,3 +31,10 @@ test("issue-autopilot routes to specialized skills", () => {
 test("issue-autopilot does not create branches during validation", () => {
   assert.match(skill, /does not create branches, worktrees, issues, or PRs while being validated/u);
 });
+
+test("issue-autopilot uses efficient reviewer fanout", () => {
+  assert.match(skill, /The main agent owns issue intake, implementation, integration, fixing review findings, final verification, commit, push, and PR/u);
+  assert.match(skill, /Main agent runs focused checks and prepares a review packet/u);
+  assert.match(skill, /Do not spawn separate subagents for "read issue", "implement", "review findings", and "fix findings" by default/u);
+  assert.match(skill, /acceptance\/spec versus safety\/privacy\/maintainability/u);
+});

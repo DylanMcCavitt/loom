@@ -16,8 +16,16 @@ test("execute-plan requires todos for explicit checklists", () => {
 });
 
 test("execute-plan requires delegation and verification", () => {
-  assert.match(skill, /Delegate parallelizable multi-file work/u);
+  assert.match(skill, /Delegate only when it is efficient/u);
+  assert.match(skill, /disjoint implementation write scopes/u);
   assert.match(skill, /Verify the affected behavior before yielding/u);
+});
+
+test("execute-plan keeps main as integrator", () => {
+  assert.match(skill, /The main agent remains the integrator/u);
+  assert.match(skill, /Main agent implements the first pass/u);
+  assert.match(skill, /One or two reviewers inspect distinct scopes/u);
+  assert.match(skill, /avoid separate "review issue", "implement", "review findings", and "fix findings" agents/u);
 });
 
 test("execute-plan asks only for missing external decisions", () => {

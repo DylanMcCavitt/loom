@@ -15,6 +15,13 @@ test("agent-recipes tells main to batch independent tasks", () => {
   assert.match(skill, /Always batch independent tasks in one `task` call/u);
 });
 
+test("agent-recipes keeps main agent as integrator", () => {
+  assert.match(skill, /The main agent owns issue intake, implementation, integration, fixing review findings, final checks, commit, push, and PR/u);
+  assert.match(skill, /Do not create separate subagents for "read the issue", "implement", "review findings", and "fix findings"/u);
+  assert.match(skill, /Before review fanout, the main agent should prepare a review packet/u);
+  assert.match(skill, /Split reviewer scopes by question, not just by title/u);
+});
+
 test("each recipe has target change acceptance and no project-wide gates", () => {
   const recipeNames = ["Review", "Debug", "Tests", "Parallel implementation", "Issue work"];
   for (const recipeName of recipeNames) {
@@ -28,4 +35,11 @@ test("each recipe has target change acceptance and no project-wide gates", () =>
     assert.match(block, /# Acceptance/u, `${recipeName} acceptance missing`);
     assert.match(block, /Do not run project-wide gates, formatters, build, lint, or tests\./u, `${recipeName} no-gates instruction missing`);
   }
+});
+
+test("issue work recipe does not own PR closeout", () => {
+  const start = skill.indexOf("## Issue work recipe");
+  const block = skill.slice(start);
+  assert.match(block, /Do not own final issue integration or PR closeout/u);
+  assert.match(block, /scout, isolated implementation, targeted tests, or scoped review/u);
 });

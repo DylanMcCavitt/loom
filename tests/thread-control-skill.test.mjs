@@ -24,8 +24,11 @@ test("thread-control lists every context-risk signal", () => {
     "Stale verification",
     "Unresolved decisions",
     "Active subagents with divergent scope",
+    "Duplicate subagents",
+    "Subagent findings",
     "Issue/branch mismatch",
     "Stale file assumptions",
+    "Side-conversation boundary",
   ]) {
     assert.match(skill, new RegExp(signal, "u"));
   }
@@ -34,4 +37,10 @@ test("thread-control lists every context-risk signal", () => {
 test("thread-control emits a visible next-thread starter", () => {
   assert.match(skill, /## Next-thread starter/u);
   assert.match(skill, /Use the handoff skill to resume this work/u);
+});
+
+test("thread-control names overlapping subagent scope risk", () => {
+  assert.match(skill, /Subagent cleanup note/u);
+  assert.match(skill, /If two agents were given overlapping scopes/u);
+  assert.match(skill, /collapsing future review into one reviewer or splitting lenses/u);
 });
