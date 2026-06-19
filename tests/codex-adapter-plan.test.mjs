@@ -84,6 +84,21 @@ test("Codex adapter plan references current official Codex doc topics", () => {
   }
 });
 
+test("Codex adapter plan treats workflow-kit as the repo workflow nucleus", () => {
+  assert.ok(plan.sourceInputs.includes("~/.omp/agent/workflow-kit"));
+  assert.equal(plan.repositoryWorkflowNucleus.source, "~/.omp/agent/workflow-kit");
+  assert.equal(plan.repositoryWorkflowNucleus.status, "reference-only");
+  const policy = plan.repositoryWorkflowNucleus.portablePolicy.join("\n");
+  for (const marker of ["global layer", "project layer", "idempotent", "one issue/worktree/PR", ".agents/skills", "Use when", "GitHub"]) {
+    assert.match(policy, new RegExp(marker.replace("/", "\\/"), "u"));
+  }
+  const translation = plan.repositoryWorkflowNucleus.codexTranslation.join("\n");
+  assert.match(translation, /harnesses/u);
+  assert.match(translation, /dry-run manifests/u);
+  assert.ok(plan.humanDecisionResolutions.some(decision => /workflow-kit split/u.test(decision.resolution)));
+  assert.ok(plan.liveConfigApprovalPolicyOptions.some(option => option.id === "strict-manual" && option.recommended));
+});
+
 test("Codex adapter templates parse and avoid forbidden live/provider/auth settings", () => {
   const files = walkFiles(templatesDir, file => file.endsWith(".toml"));
   assert.ok(files.length >= 5);

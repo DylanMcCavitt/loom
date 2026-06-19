@@ -4,6 +4,8 @@ Issue #41 defines the Codex-side adapter plan for the unified OMP/Codex/Claude h
 
 Canonical data lives in `docs/harness/codex-adapter-plan/adapter-plan.json`. Parseable dry-run templates live under `docs/harness/codex-adapter-plan/templates/`.
 
+The reusable repo workflow source for the harness nucleus is the OMP workflow-kit at `~/.omp/agent/workflow-kit`. This issue treats it as a reference-only source: translate the workflow into Codex-native instructions, config, custom agents, and skills, but do not copy live OMP runtime state into `~/.codex`.
+
 ## Official Codex Docs Used
 
 The plan was checked against the current Codex manual fetched from `https://developers.openai.com/codex/codex-manual.md` and references these official OpenAI Codex docs:
@@ -16,6 +18,26 @@ The plan was checked against the current Codex manual fetched from `https://deve
 - [Agent skills](https://developers.openai.com/codex/skills): skill folder shape, discovery roots, progressive disclosure, and `skills.config` entries.
 - [AGENTS.md guidance](https://developers.openai.com/codex/guides/agents-md): global and project instruction discovery.
 - [Authentication](https://developers.openai.com/codex/auth): credential cache handling and why `auth.json` is local-only.
+
+## Repository Workflow Nucleus
+
+The nucleus workflow should follow the OMP workflow-kit repo model, expressed in whatever language each harness can use.
+
+Portable policy:
+
+- Keep a global layer for default workflow instructions, sticky safety rules, and reusable skills.
+- Keep a project layer for repo-local instructions, repo config, `docs/agents` guidance, scope ledger, handoffs, issue/PR templates, labels, and project skills.
+- Preserve full-flow traceability from grilled plan to PRD, issues, triage, one issue/worktree/PR implementation, verification evidence, and handoff when blocked.
+- Use an idempotent apply/check model where a marker manifest defines what "applied" means and existing files are not overwritten.
+- Keep project skills exactly one directory below `.agents/skills`, with `SKILL.md` frontmatter and concrete `Use when ...` triggers.
+- Treat GitHub issue/PR templates and standard workflow labels as repo workflow surfaces when a repo uses GitHub.
+
+Codex translation:
+
+- Project-specific workflow policy belongs in repo-local instruction/config candidates and shared `.agents/skills` where it is useful across harnesses.
+- General reusable workflow policy belongs in user-level instruction or skill surfaces, such as `~/.agents/skills`, plus optional Codex profile/custom-agent templates.
+- Codex custom agents are role adapters. They do not replace the workflow-kit issue lifecycle.
+- Future renderers must produce dry-run manifests before writing live `~/.codex` or repo config.
 
 ## OMP Agent Mapping
 
@@ -129,10 +151,11 @@ Before any live Codex modification is allowed:
 1. Render templates into a temporary directory, never directly into `~/.codex`.
 2. Parse all rendered TOML with Python `tomllib` or an equivalent TOML parser.
 3. Compare OMP agent mapping rows against `docs/harness/omp-builtins/source.json`; fail when a bundled agent is missing or duplicated.
-4. Reject rendered content containing absolute private home paths, API key/token-looking text, provider routing keys, auth cache destinations, or default model changes in the base template.
-5. Validate official Codex references cover config, profiles, custom agents/subagents, skills, `AGENTS.md`, and auth/local credential boundaries.
-6. Print a dry-run manifest showing candidate destination paths, required human approvals, and skipped local-only surfaces.
-7. Require a future issue and PR before writing to live `~/.codex`, `.codex/agents`, or `.agents/skills`.
+4. Validate that the Codex adapter preserves the workflow-kit repo lifecycle as portable policy rather than copying live OMP runtime files.
+5. Reject rendered content containing absolute private home paths, API key/token-looking text, provider routing keys, auth cache destinations, or default model changes in the base template.
+6. Validate official Codex references cover config, profiles, custom agents/subagents, skills, `AGENTS.md`, and auth/local credential boundaries.
+7. Print a dry-run manifest showing candidate destination paths, required human approvals, and skipped local-only surfaces.
+8. Require a future issue and PR before writing to live `~/.codex`, `.codex/agents`, or `.agents/skills`.
 
 Run local validation:
 
@@ -143,8 +166,16 @@ node --test tests/codex-adapter-plan.test.mjs
 
 ## Human Decisions Before Implementation
 
-- Which adapted OMP agents should become project-scoped .codex/agents versus user-scoped ~/.codex/agents?
-- Should the designer, librarian, planner, and reviewer candidates pin reasoning effort or inherit the parent session?
-- Which skill candidates should be repo-local .agents/skills versus personal ~/.agents/skills?
-- Should the optional omp-harness profile set sandbox/approval defaults, or should it only document recommended CLI flags?
-- What review/approval policy is required before merging any generated template into live ~/.codex/config.toml?
+| Decision | Resolution |
+| --- | --- |
+| Which adapted OMP agents should become project-scoped .codex/agents versus user-scoped ~/.codex/agents? | Project-specific agents should be project-scoped under `.codex/agents`; general reusable agents should be user-scoped under `~/.codex/agents`. |
+| Should the designer, librarian, planner, and reviewer candidates pin reasoning effort or inherit the parent session? | Pin reasoning effort for adapted candidates so generated adapters remain predictable. |
+| Which skill candidates should be repo-local .agents/skills versus personal ~/.agents/skills? | Use the OMP workflow-kit split: repo workflow and domain skills go in `.agents/skills`; general reusable workflow skills go in `~/.agents/skills`; inspect the active OMP skill roots before final placement. |
+| Should the optional omp-harness profile set sandbox/approval defaults, or should it only document recommended CLI flags? | The optional `omp-harness` profile should set sandbox and approval defaults. |
+| What review/approval policy is required before merging any generated template into live ~/.codex/config.toml? | Default to a strict manual gate: separate issue/PR, dry-run rendered diff, dangerous-key validation, backup of the live file, and explicit human approval before any write. |
+
+Approval policy options for a future live config issue:
+
+- `strict-manual` (recommended): separate issue/PR, dry-run diff, validation pass, live-file backup, and explicit human approval before writing `~/.codex/config.toml`.
+- `checked-local-apply`: allow a local apply command only after the dry-run checker passes and creates a backup; still forbid provider, auth, trust, telemetry, and default-model changes.
+- `docs-only`: never write live config from the harness; render instructions and let the human manually copy reviewed entries.

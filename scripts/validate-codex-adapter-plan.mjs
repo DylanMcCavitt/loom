@@ -277,6 +277,35 @@ function validateGeneratedSurfaces(plan, errors) {
   }
 }
 
+function validateWorkflowNucleus(plan, errors) {
+  if (!(plan.sourceInputs ?? []).includes("~/.omp/agent/workflow-kit")) {
+    errors.push("source inputs: missing workflow-kit reference");
+  }
+  const nucleus = plan.repositoryWorkflowNucleus ?? {};
+  if (nucleus.source !== "~/.omp/agent/workflow-kit") {
+    errors.push("workflow nucleus: source must be ~/.omp/agent/workflow-kit");
+  }
+  if (nucleus.status !== "reference-only") {
+    errors.push("workflow nucleus: status must be reference-only");
+  }
+  const policy = JSON.stringify(nucleus.portablePolicy ?? []);
+  for (const marker of [
+    "global layer",
+    "project layer",
+    "idempotent",
+    "one issue/worktree/PR",
+    ".agents/skills",
+    "Use when",
+    "GitHub",
+  ]) {
+    if (!policy.includes(marker)) errors.push(`workflow nucleus: missing ${marker}`);
+  }
+  const translation = JSON.stringify(nucleus.codexTranslation ?? []);
+  for (const marker of ["Project-specific", "General reusable", "custom agents", "dry-run manifests"]) {
+    if (!translation.includes(marker)) errors.push(`workflow nucleus translation: missing ${marker}`);
+  }
+}
+
 function validateMarkdown(plan, errors) {
   const md = readFileSync(PLAN_MD_PATH, "utf8");
   const digest = createHash("sha256").update(md).digest("hex").slice(0, 12);
@@ -291,6 +320,9 @@ function validateMarkdown(plan, errors) {
   }
   if (!md.includes("https://developers.openai.com/codex/config-basic")) {
     errors.push("markdown: missing official Codex docs links");
+  }
+  if (!md.includes("Repository Workflow Nucleus") || !md.includes("~/.omp/agent/workflow-kit")) {
+    errors.push("markdown: missing workflow-kit nucleus section");
   }
   return digest;
 }
@@ -312,6 +344,7 @@ try {
   validateTemplateBoundaries(plan, templateFiles, errors);
   validateLocalOnly(plan, errors);
   validateGeneratedSurfaces(plan, errors);
+  validateWorkflowNucleus(plan, errors);
   validateNoSecretsOrPrivatePaths(checkedFiles, errors);
   dryRunRenderTemplates(templateFiles, errors);
   const markdownDigest = validateMarkdown(plan, errors);
@@ -321,6 +354,12 @@ try {
   }
   if (!Array.isArray(plan.humanDecisionsBeforeImplementation) || plan.humanDecisionsBeforeImplementation.length < 5) {
     errors.push("adapter plan must list human decisions before implementation");
+  }
+  if (!Array.isArray(plan.humanDecisionResolutions) || plan.humanDecisionResolutions.length < 5) {
+    errors.push("adapter plan must list human decision resolutions");
+  }
+  if (!(plan.liveConfigApprovalPolicyOptions ?? []).some(option => option.id === "strict-manual" && option.recommended)) {
+    errors.push("adapter plan must recommend strict-manual live config approval");
   }
 
   if (errors.length > 0) {

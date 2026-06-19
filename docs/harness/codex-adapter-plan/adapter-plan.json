@@ -4,7 +4,8 @@
   "sourceInputs": [
     "docs/harness/resource-manifest.json",
     "docs/harness/omp-builtins/source.json",
-    "docs/harness/omp-builtins/portability-matrix.json"
+    "docs/harness/omp-builtins/portability-matrix.json",
+    "~/.omp/agent/workflow-kit"
   ],
   "officialCodexDocs": [
     {
@@ -48,6 +49,25 @@
       "usedFor": "Credential cache handling and why auth.json is local-only."
     }
   ],
+  "repositoryWorkflowNucleus": {
+    "source": "~/.omp/agent/workflow-kit",
+    "status": "reference-only",
+    "summary": "Use the OMP workflow-kit repo operating model as the harness nucleus workflow. Translate it into each harness's native instruction, config, agent, and skill language instead of copying live OMP runtime state.",
+    "portablePolicy": [
+      "Keep a global layer for default workflow instructions, sticky safety rules, and reusable skills.",
+      "Keep a project layer for repo-local instructions, repo config, issue-tracker guidance, triage labels, domain guidance, scope ledger, handoffs, and project skills.",
+      "Use an idempotent apply/check model where a marker manifest defines what applied means and existing files are not overwritten.",
+      "Preserve the full workflow trace from grilled plan to PRD, issues, triage, one issue/worktree/PR implementation, verification evidence, and handoff when blocked.",
+      "Require project skills to live one directory below .agents/skills with SKILL.md frontmatter and concrete Use when triggers.",
+      "Treat GitHub issue/PR templates and workflow labels as repo workflow surfaces when the repo uses GitHub."
+    ],
+    "codexTranslation": [
+      "Project-specific workflow policy belongs in repo-local AGENTS.md/.codex/config candidates and .agents/skills where it is useful across harnesses.",
+      "General reusable workflow policy belongs in user-level instruction or skill surfaces such as ~/.agents/skills and optional Codex profile/custom-agent templates.",
+      "Codex custom agents are role adapters, not replacements for the workflow-kit issue lifecycle.",
+      "Future renderers must produce dry-run manifests before writing live ~/.codex or repo config."
+    ]
+  },
   "templateBoundaries": [
     {
       "id": "base-config",
@@ -389,10 +409,50 @@
     "Render templates into a temporary directory, never directly into ~/.codex.",
     "Parse every rendered TOML template with Python tomllib or an equivalent TOML parser.",
     "Compare OMP agent mapping rows against docs/harness/omp-builtins/source.json and fail when a bundled agent is unmapped.",
+    "Validate that the Codex adapter preserves the workflow-kit repo lifecycle as portable policy rather than copying live OMP runtime files.",
     "Reject rendered files containing absolute private home paths, API key/token-looking text, auth cache names as destinations, provider routing keys, or model default changes in the base template.",
     "Validate that official Codex doc references cover config, profiles, custom agents/subagents, skills, AGENTS.md, and auth/local credential boundaries.",
     "Print a dry-run manifest of candidate destination paths, required human approvals, and skipped local-only surfaces before any live ~/.codex modification is allowed.",
     "Require a separate future issue/PR to perform any write into ~/.codex, .codex/agents, or .agents/skills."
+  ],
+  "humanDecisionResolutions": [
+    {
+      "question": "Which adapted OMP agents should become project-scoped .codex/agents versus user-scoped ~/.codex/agents?",
+      "resolution": "Project-specific agents should be project-scoped under .codex/agents; general reusable agents should be user-scoped under ~/.codex/agents."
+    },
+    {
+      "question": "Should the designer, librarian, planner, and reviewer candidates pin reasoning effort or inherit the parent session?",
+      "resolution": "Pin reasoning effort for adapted candidates so generated adapters remain predictable."
+    },
+    {
+      "question": "Which skill candidates should be repo-local .agents/skills versus personal ~/.agents/skills?",
+      "resolution": "Use the OMP workflow-kit split: repo workflow and domain skills go in .agents/skills; general reusable workflow skills go in ~/.agents/skills; inspect the active OMP skill roots before final placement."
+    },
+    {
+      "question": "Should the optional omp-harness profile set sandbox/approval defaults, or should it only document recommended CLI flags?",
+      "resolution": "The optional omp-harness profile should set sandbox and approval defaults."
+    },
+    {
+      "question": "What review/approval policy is required before merging any generated template into live ~/.codex/config.toml?",
+      "resolution": "Default to a strict manual gate: separate issue/PR, dry-run rendered diff, dangerous-key validation, backup of the live file, and explicit human approval before any write."
+    }
+  ],
+  "liveConfigApprovalPolicyOptions": [
+    {
+      "id": "strict-manual",
+      "recommended": true,
+      "policy": "Require a separate issue/PR, dry-run diff, validation pass, live-file backup, and explicit human approval before writing ~/.codex/config.toml."
+    },
+    {
+      "id": "checked-local-apply",
+      "recommended": false,
+      "policy": "Allow a local apply command only after the dry-run checker passes and creates a backup; still forbid provider, auth, trust, telemetry, and default-model changes."
+    },
+    {
+      "id": "docs-only",
+      "recommended": false,
+      "policy": "Never write live config from the harness; render instructions and let the human manually copy reviewed entries."
+    }
   ],
   "humanDecisionsBeforeImplementation": [
     "Which adapted OMP agents should become project-scoped .codex/agents versus user-scoped ~/.codex/agents?",
