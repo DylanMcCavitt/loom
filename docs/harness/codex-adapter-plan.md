@@ -1,0 +1,150 @@
+# Codex Adapter Plan
+
+Issue #41 defines the Codex-side adapter plan for the unified OMP/Codex/Claude harness nucleus. This slice is a plan and validation package only. It does not write to live `~/.codex`, does not change the Codex default model/provider, does not remove duplicate skills, and does not modify active panel or side-panel prototype work.
+
+Canonical data lives in `docs/harness/codex-adapter-plan/adapter-plan.json`. Parseable dry-run templates live under `docs/harness/codex-adapter-plan/templates/`.
+
+## Official Codex Docs Used
+
+The plan was checked against the current Codex manual fetched from `https://developers.openai.com/codex/codex-manual.md` and references these official OpenAI Codex docs:
+
+- [Config basics](https://developers.openai.com/codex/config-basic): config precedence, user config, project `.codex/config.toml`, and trust boundaries.
+- [Advanced config profiles](https://developers.openai.com/codex/config-advanced#profiles): `~/.codex/<profile>.config.toml` naming and profile overlays.
+- [Project config boundaries](https://developers.openai.com/codex/config-advanced#project-config-files-codexconfigtoml): project-local keys Codex ignores for provider/auth/profile/telemetry control.
+- [Custom agents](https://developers.openai.com/codex/subagents#custom-agents): custom agent TOML locations, required fields, and inherited optional settings.
+- [Subagent concepts](https://developers.openai.com/codex/concepts/subagents): parallel subagent tradeoffs and explicit triggering.
+- [Agent skills](https://developers.openai.com/codex/skills): skill folder shape, discovery roots, progressive disclosure, and `skills.config` entries.
+- [AGENTS.md guidance](https://developers.openai.com/codex/guides/agents-md): global and project instruction discovery.
+- [Authentication](https://developers.openai.com/codex/auth): credential cache handling and why `auth.json` is local-only.
+
+## OMP Agent Mapping
+
+The #39 snapshot contains eight bundled OMP agents. The Codex plan maps each one deliberately instead of copying OMP frontmatter directly.
+
+| OMP agent | Recommendation | Codex target | Candidate | Rationale |
+| --- | --- | --- | --- | --- |
+| `designer` | adapt | custom agent | `omp-designer` | UI/UX review is a narrow reusable role. |
+| `explore` | keep | native subagent | `explorer` | Codex already ships a read-heavy explorer role. |
+| `librarian` | adapt | custom agent or paired skill | `omp-librarian` | Source-verified library/API research is distinct enough to preserve. |
+| `oracle` | drop | native default/worker | none | Broad senior-engineer behavior overlaps native Codex defaults and would add routing ambiguity. |
+| `plan` | adapt | custom agent | `omp-planner` | Complex architectural planning benefits from a high-reasoning role. |
+| `quick_task` | keep | native worker/profile choice | `worker` | Mechanical low-reasoning work maps to native worker and optional profile/model choice. |
+| `reviewer` | adapt | custom agent | `omp-reviewer` | Review discipline can be preserved with a focused custom agent. |
+| `task` | keep | native worker/default | `worker` | General-purpose delegated execution is already native Codex behavior. |
+
+The candidate TOML templates included in this slice are examples for `omp-designer`, `omp-planner`, and `omp-reviewer`. `omp-librarian` should wait for a separate product decision because it may be better as a skill plus MCP/docs dependency than a standalone custom agent.
+
+## Skill Candidate Mapping
+
+Issue #40 identified six OMP command behaviors that can become shared harness skills. Issue #41 keeps them as future plan rows only:
+
+| OMP command | Future Codex skill | Boundary |
+| --- | --- | --- |
+| `btw` | `omp-btw` | Port side-question discipline, not OMP ephemeral runtime subthreads. |
+| `guided-goal` | `omp-guided-goal` | Port objective interview flow, not persistent OMP goal state. |
+| `handoff` | `omp-handoff` | Port handoff-writing discipline, not OMP session spawning. |
+| `omfg` | `omp-complaint-to-rule` | Port complaint-to-rule drafting, not automatic rule installation. |
+| `plan` | `omp-plan` | Port plan-before-execute guidance when a custom planning agent is too heavy. |
+| `tan` | `omp-tangent` | Port tangential delegation prompts, not OMP background agent launch. |
+
+No Codex or Claude skill ports are created in this issue.
+
+## TOML Template Boundaries
+
+### Base Config Template
+
+Template: `docs/harness/codex-adapter-plan/templates/base.config.template.toml`
+
+Allowed content:
+
+- project instruction fallback filenames
+- project instruction byte budget
+- safe feature toggles such as `features.multi_agent`
+
+Forbidden content:
+
+- `model`, `model_provider`, `model_providers`
+- `openai_base_url`, `chatgpt_base_url`
+- `profile`, `profiles`
+- auth, telemetry, notification, trusted-project, or machine-local path values
+
+### Optional Profile Template
+
+Template: `docs/harness/codex-adapter-plan/templates/profile.omp-harness.config.template.toml`
+
+Candidate destination after explicit approval: `~/.codex/omp-harness.config.toml`.
+
+Profiles may tune review effort, sandbox, approval policy, or feature toggles. They must not redirect provider routing, credentials, or default model/provider behavior.
+
+### Custom Agent Templates
+
+Templates:
+
+- `docs/harness/codex-adapter-plan/templates/agents/omp-designer.toml`
+- `docs/harness/codex-adapter-plan/templates/agents/omp-planner.toml`
+- `docs/harness/codex-adapter-plan/templates/agents/omp-reviewer.toml`
+
+Candidate destinations after explicit approval:
+
+- project-scoped `.codex/agents/*.toml`
+- user-scoped `~/.codex/agents/*.toml`
+
+Required custom agent fields are `name`, `description`, and `developer_instructions`. Optional settings such as `model_reasoning_effort`, `sandbox_mode`, and `skills.config` must remain narrow and reviewable.
+
+### Skill Enable/Disable Template
+
+Template: `docs/harness/codex-adapter-plan/templates/skills.config.template.toml`
+
+Candidate destination after explicit approval: merge entries into `~/.codex/config.toml`.
+
+These examples show only explicit `[[skills.config]]` toggles. They must not delete duplicate skill directories, copy plugin caches, vendor global skills, or modify live config without a future dry-run renderer and human approval.
+
+## Current `~/.codex` Boundary
+
+Live `~/.codex` inspection for this issue was path/category-only and read-only. The plan treats these surfaces as local-only:
+
+- credential/auth cache: `~/.codex/auth.json` or OS keychain material
+- session state: `~/.codex/sessions/`, `~/.codex/archived_sessions/`, `~/.codex/session_index.jsonl`
+- prompt/history state: `~/.codex/history.jsonl`
+- logs and diagnostics: `~/.codex/log/`
+- app/cache/plugin state: `~/.codex/cache/`, `~/.codex/.tmp/`, `~/.codex/plugins/cache/`
+- generated or user-provided artifacts: `~/.codex/attachments/`, `~/.codex/generated_images/`, `~/.codex/blobs/`
+- local databases: `~/.codex/*.sqlite*`
+- app/server state: `~/.codex/*state*.json`
+- local automation state: `~/.codex/automations/`
+- browser/computer-use state: `~/.codex/browser/`, `~/.codex/computer-use/`
+- shell and memory state: `~/.codex/shell_snapshots/`, `~/.codex/memories/`
+
+Generated candidates are dry-run-only in this issue:
+
+- `.codex/config.toml` from the base template
+- `~/.codex/omp-harness.config.toml` from the profile template
+- `.codex/agents/*.toml` or `~/.codex/agents/*.toml` from custom agent templates
+- future `skills.config` entries merged into `~/.codex/config.toml`
+
+## Dry-Run Render And Validation Strategy
+
+Before any live Codex modification is allowed:
+
+1. Render templates into a temporary directory, never directly into `~/.codex`.
+2. Parse all rendered TOML with Python `tomllib` or an equivalent TOML parser.
+3. Compare OMP agent mapping rows against `docs/harness/omp-builtins/source.json`; fail when a bundled agent is missing or duplicated.
+4. Reject rendered content containing absolute private home paths, API key/token-looking text, provider routing keys, auth cache destinations, or default model changes in the base template.
+5. Validate official Codex references cover config, profiles, custom agents/subagents, skills, `AGENTS.md`, and auth/local credential boundaries.
+6. Print a dry-run manifest showing candidate destination paths, required human approvals, and skipped local-only surfaces.
+7. Require a future issue and PR before writing to live `~/.codex`, `.codex/agents`, or `.agents/skills`.
+
+Run local validation:
+
+```sh
+node scripts/validate-codex-adapter-plan.mjs
+node --test tests/codex-adapter-plan.test.mjs
+```
+
+## Human Decisions Before Implementation
+
+- Which adapted OMP agents should become project-scoped .codex/agents versus user-scoped ~/.codex/agents?
+- Should the designer, librarian, planner, and reviewer candidates pin reasoning effort or inherit the parent session?
+- Which skill candidates should be repo-local .agents/skills versus personal ~/.agents/skills?
+- Should the optional omp-harness profile set sandbox/approval defaults, or should it only document recommended CLI flags?
+- What review/approval policy is required before merging any generated template into live ~/.codex/config.toml?

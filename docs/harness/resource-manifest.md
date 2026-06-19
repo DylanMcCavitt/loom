@@ -16,7 +16,7 @@ The manifest is category-level by design. It records source harness, resource ca
 - OMP built-ins and installed package resources are represented as `reference-only`.
 - OMP bundled agents, built-in command sources, prompt categories, and built-in default rules are snapshotted under `docs/harness/omp-builtins/` by issue #39.
 - OMP user/project resources and workflow-kit categories are represented as `track`.
-- Codex config/profile surfaces are `reference-only`, while Codex agents and skill roots are `adapt`.
+- Codex config/profile surfaces are `reference-only`, while Codex agents and skill roots are `adapt`; issue #41 documents the Codex-side adapter plan in `docs/harness/codex-adapter-plan.md`.
 - Claude agents, skills, and settings are `adapt`, with local settings and runtime state separated as `local-only`.
 - Duplicate skill roots across shared, Codex, Claude, OMP workflow-kit, and repo-local skill locations are represented at category level for a later audit.
 
@@ -41,6 +41,12 @@ node scripts/validate-omp-builtins-snapshot.mjs --check-live
 
 The manifest marks runtime sessions, database files, blobs, terminal state, auth/cache data, plugin cache, logs, local settings, and private history as `local-only`. The dry-run inventory may report path patterns and dispositions, but it does not read or copy those contents.
 
+## Codex Adapter Plan
+
+Issue #41 adds `docs/harness/codex-adapter-plan.md` and structured plan data under `docs/harness/codex-adapter-plan/`. The plan maps OMP bundled agents into Codex custom-agent candidates, native agents, or drop decisions; records future skill candidates from the issue #40 portability matrix; defines TOML template boundaries; and marks live `~/.codex` auth, sessions, caches, plugin cache, generated artifacts, app state, logs, databases, and private memory as local-only.
+
+The Codex adapter plan is dry-run-only. It includes parseable TOML templates for future base config, optional profile, project/user custom agents under `.codex/agents/` or `~/.codex/agents/`, and `skills.config` entries, but this issue does not write or merge those templates into live `~/.codex`.
+
 ## Excluded Surface
 
 Active panel, side-panel, and prototype work is listed under `excludedSurfaces`. It is intentionally ignored for this harness manifest and remains owned by its own issue sequence.
@@ -51,6 +57,8 @@ Run these checks from the repo root:
 
 ```sh
 node scripts/validate-harness-manifest.mjs
+node scripts/validate-codex-adapter-plan.mjs
 node scripts/dry-run-harness-inventory.mjs
 node --test tests/harness-manifest.test.mjs
+node --test tests/codex-adapter-plan.test.mjs
 ```

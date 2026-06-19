@@ -1,0 +1,9 @@
+# Codex harness base config template.
+# Dry-run only: render into a temporary directory before any live .codex/config.toml use.
+# Do not set model, model_provider, providers, auth, telemetry, notifications, or machine-local paths here.
+
+project_doc_fallback_filenames = ["AGENTS.md", "RULES.md"]
+project_doc_max_bytes = 65536
+
+[features]
+multi_agent = true

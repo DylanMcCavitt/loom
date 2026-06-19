@@ -1,0 +1,404 @@
+{
+  "schemaVersion": 1,
+  "generatedForIssue": 41,
+  "sourceInputs": [
+    "docs/harness/resource-manifest.json",
+    "docs/harness/omp-builtins/source.json",
+    "docs/harness/omp-builtins/portability-matrix.json"
+  ],
+  "officialCodexDocs": [
+    {
+      "topic": "config",
+      "url": "https://developers.openai.com/codex/config-basic",
+      "usedFor": "Codex config precedence, user config, project .codex/config.toml, and trust boundary."
+    },
+    {
+      "topic": "profiles",
+      "url": "https://developers.openai.com/codex/config-advanced#profiles",
+      "usedFor": "Profile file naming and profile overlay behavior."
+    },
+    {
+      "topic": "project-config-boundaries",
+      "url": "https://developers.openai.com/codex/config-advanced#project-config-files-codexconfigtoml",
+      "usedFor": "Project config restrictions for provider, auth, profile, notification, and telemetry keys."
+    },
+    {
+      "topic": "custom-agents-subagents",
+      "url": "https://developers.openai.com/codex/subagents#custom-agents",
+      "usedFor": "Custom agent TOML location, required keys, inheritance, and optional fields."
+    },
+    {
+      "topic": "subagent-concepts",
+      "url": "https://developers.openai.com/codex/concepts/subagents",
+      "usedFor": "Parallel subagent workflow boundaries and delegation tradeoffs."
+    },
+    {
+      "topic": "skills",
+      "url": "https://developers.openai.com/codex/skills",
+      "usedFor": "Skill folder shape, discovery roots, progressive disclosure, and skills.config disable entries."
+    },
+    {
+      "topic": "agents-md",
+      "url": "https://developers.openai.com/codex/guides/agents-md",
+      "usedFor": "Global and project instruction discovery via AGENTS.md."
+    },
+    {
+      "topic": "auth",
+      "url": "https://developers.openai.com/codex/auth",
+      "usedFor": "Credential cache handling and why auth.json is local-only."
+    }
+  ],
+  "templateBoundaries": [
+    {
+      "id": "base-config",
+      "templatePath": "docs/harness/codex-adapter-plan/templates/base.config.template.toml",
+      "candidateDestinations": [
+        ".codex/config.toml"
+      ],
+      "allowedKeys": [
+        "project_doc_fallback_filenames",
+        "project_doc_max_bytes",
+        "features.multi_agent"
+      ],
+      "forbiddenKeys": [
+        "model",
+        "model_provider",
+        "model_providers",
+        "openai_base_url",
+        "chatgpt_base_url",
+        "profile",
+        "profiles",
+        "notify",
+        "otel",
+        "auth",
+        "forced_login_method",
+        "forced_chatgpt_workspace_id",
+        "projects",
+        "trust_level",
+        "project_trust",
+        "trusted_projects"
+      ],
+      "boundary": "Tracked base templates may describe safe discovery and feature toggles only. They must not set default model/provider, auth, telemetry, notifications, trusted-project state, or machine-specific paths."
+    },
+    {
+      "id": "profile",
+      "templatePath": "docs/harness/codex-adapter-plan/templates/profile.omp-harness.config.template.toml",
+      "candidateDestinations": [
+        "~/.codex/omp-harness.config.toml"
+      ],
+      "allowedKeys": [
+        "model_reasoning_effort",
+        "approval_policy",
+        "sandbox_mode",
+        "features.multi_agent"
+      ],
+      "forbiddenKeys": [
+        "model_provider",
+        "model_providers",
+        "openai_base_url",
+        "chatgpt_base_url",
+        "auth",
+        "profile",
+        "profiles",
+        "projects",
+        "trust_level",
+        "project_trust",
+        "trusted_projects"
+      ],
+      "boundary": "Profile templates are optional user-level overlays selected by --profile. They may tune review effort or sandbox policy, but must not alter provider routing or credentials."
+    },
+    {
+      "id": "custom-agent",
+      "templatePath": "docs/harness/codex-adapter-plan/templates/agents/omp-reviewer.toml",
+      "candidateDestinations": [
+        ".codex/agents/*.toml",
+        "~/.codex/agents/*.toml"
+      ],
+      "allowedKeys": [
+        "name",
+        "description",
+        "developer_instructions",
+        "nickname_candidates",
+        "model_reasoning_effort",
+        "sandbox_mode",
+        "skills.config"
+      ],
+      "forbiddenKeys": [
+        "model_provider",
+        "model_providers",
+        "openai_base_url",
+        "chatgpt_base_url",
+        "auth",
+        "env_key",
+        "experimental_bearer_token",
+        "projects",
+        "trust_level",
+        "project_trust",
+        "trusted_projects"
+      ],
+      "boundary": "Custom agent TOML files may define role instructions and narrow runtime defaults. They must not embed credentials, provider routing, private MCP server config, or live machine paths."
+    },
+    {
+      "id": "skills-config",
+      "templatePath": "docs/harness/codex-adapter-plan/templates/skills.config.template.toml",
+      "candidateDestinations": [
+        "~/.codex/config.toml"
+      ],
+      "allowedKeys": [
+        "skills.config.path",
+        "skills.config.enabled"
+      ],
+      "forbiddenKeys": [
+        "delete",
+        "remove",
+        "copy",
+        "vendor"
+      ],
+      "boundary": "Skill enable/disable templates may show explicit path toggles only. They must not delete duplicate skills, vendor plugin caches, or copy private global skill contents."
+    }
+  ],
+  "ompAgentMappings": [
+    {
+      "ompAgent": "designer",
+      "sourceFile": "docs/harness/omp-builtins/agents/designer.md",
+      "recommendation": "adapt",
+      "codexSurface": "custom-agent",
+      "codexCandidate": "omp-designer",
+      "candidateTemplate": "docs/harness/codex-adapter-plan/templates/agents/omp-designer.toml",
+      "rationale": "Preserve the UI/UX review and refinement role as a narrow Codex custom agent with design-focused instructions."
+    },
+    {
+      "ompAgent": "explore",
+      "sourceFile": "docs/harness/omp-builtins/agents/explore.md",
+      "recommendation": "keep",
+      "codexSurface": "native-subagent",
+      "codexCandidate": "explorer",
+      "candidateTemplate": null,
+      "rationale": "Codex already has an explorer role for read-heavy codebase scouting; keep the native role unless a later review needs OMP-specific output formatting."
+    },
+    {
+      "ompAgent": "librarian",
+      "sourceFile": "docs/harness/omp-builtins/agents/librarian.md",
+      "recommendation": "adapt",
+      "codexSurface": "custom-agent",
+      "codexCandidate": "omp-librarian",
+      "candidateTemplate": null,
+      "rationale": "Source-verified library/API research is a distinct reusable role and should be adapted as a custom agent or paired skill with docs/source-reading constraints."
+    },
+    {
+      "ompAgent": "oracle",
+      "sourceFile": "docs/harness/omp-builtins/agents/oracle.md",
+      "recommendation": "drop",
+      "codexSurface": "native-default-or-worker",
+      "codexCandidate": null,
+      "candidateTemplate": null,
+      "rationale": "The broad senior-engineer role overlaps Codex default and worker agents; porting it would blur ownership and increase routing ambiguity."
+    },
+    {
+      "ompAgent": "plan",
+      "sourceFile": "docs/harness/omp-builtins/agents/plan.md",
+      "recommendation": "adapt",
+      "codexSurface": "custom-agent",
+      "codexCandidate": "omp-planner",
+      "candidateTemplate": "docs/harness/codex-adapter-plan/templates/agents/omp-planner.toml",
+      "rationale": "Architectural planning is distinct enough for a high-reasoning custom agent, while simple tasks should continue to use native flow."
+    },
+    {
+      "ompAgent": "quick_task",
+      "sourceFile": "docs/harness/omp-builtins/agents/quick_task.md",
+      "recommendation": "keep",
+      "codexSurface": "native-worker",
+      "codexCandidate": "worker",
+      "candidateTemplate": null,
+      "rationale": "Low-reasoning mechanical work maps to Codex worker or a lightweight model/profile choice; no OMP-specific role file is needed."
+    },
+    {
+      "ompAgent": "reviewer",
+      "sourceFile": "docs/harness/omp-builtins/agents/reviewer.md",
+      "recommendation": "adapt",
+      "codexSurface": "custom-agent",
+      "codexCandidate": "omp-reviewer",
+      "candidateTemplate": "docs/harness/codex-adapter-plan/templates/agents/omp-reviewer.toml",
+      "rationale": "Review discipline, security focus, and concise findings can be preserved as a Codex custom review agent."
+    },
+    {
+      "ompAgent": "task",
+      "sourceFile": "docs/harness/omp-builtins/agents/task.md",
+      "recommendation": "keep",
+      "codexSurface": "native-worker",
+      "codexCandidate": "worker",
+      "candidateTemplate": null,
+      "rationale": "General-purpose delegated execution is already the Codex worker/default surface; a direct port would duplicate native behavior."
+    }
+  ],
+  "skillCandidateMappings": [
+    {
+      "ompCommand": "btw",
+      "codexSurface": "skill",
+      "futureSkillName": "omp-btw",
+      "recommendation": "adapt",
+      "rationale": "Port only the bounded side-question workflow, not OMP's ephemeral runtime subthread."
+    },
+    {
+      "ompCommand": "guided-goal",
+      "codexSurface": "skill",
+      "futureSkillName": "omp-guided-goal",
+      "recommendation": "adapt",
+      "rationale": "Port the goal interview workflow; enabling persistent goal runtime state remains host-native."
+    },
+    {
+      "ompCommand": "handoff",
+      "codexSurface": "skill",
+      "futureSkillName": "omp-handoff",
+      "recommendation": "adapt",
+      "rationale": "Port the handoff-writing discipline, not automatic OMP session spawning."
+    },
+    {
+      "ompCommand": "omfg",
+      "codexSurface": "skill",
+      "futureSkillName": "omp-complaint-to-rule",
+      "recommendation": "adapt",
+      "rationale": "Port complaint-to-rule drafting as a reviewable workflow; do not install generated rules automatically."
+    },
+    {
+      "ompCommand": "plan",
+      "codexSurface": "skill",
+      "futureSkillName": "omp-plan",
+      "recommendation": "adapt",
+      "rationale": "Port plan-before-execute guidance where a custom planning agent is too heavy."
+    },
+    {
+      "ompCommand": "tan",
+      "codexSurface": "skill",
+      "futureSkillName": "omp-tangent",
+      "recommendation": "adapt",
+      "rationale": "Port tangential-work delegation prompts; do not claim to launch OMP background agents."
+    }
+  ],
+  "localOnlyCodexSurfaces": [
+    {
+      "pathPattern": "~/.codex/auth.json",
+      "reason": "Credential cache and refresh tokens; official auth docs require treating it as password-like local material."
+    },
+    {
+      "pathPattern": "~/.codex/sessions/",
+      "reason": "Private conversation transcripts and runtime state."
+    },
+    {
+      "pathPattern": "~/.codex/archived_sessions/",
+      "reason": "Archived private conversation transcripts."
+    },
+    {
+      "pathPattern": "~/.codex/session_index.jsonl",
+      "reason": "Private session index and history metadata."
+    },
+    {
+      "pathPattern": "~/.codex/history.jsonl",
+      "reason": "Prompt/history persistence."
+    },
+    {
+      "pathPattern": "~/.codex/log/",
+      "reason": "Local logs, including login diagnostics."
+    },
+    {
+      "pathPattern": "~/.codex/cache/",
+      "reason": "Machine-local caches and connector/app metadata."
+    },
+    {
+      "pathPattern": "~/.codex/.tmp/",
+      "reason": "Temporary plugin sync, cache, and staging state."
+    },
+    {
+      "pathPattern": "~/.codex/plugins/cache/",
+      "reason": "Downloaded plugin cache and marketplace artifacts."
+    },
+    {
+      "pathPattern": "~/.codex/blobs/",
+      "reason": "Generated blobs or binary state if present."
+    },
+    {
+      "pathPattern": "~/.codex/attachments/",
+      "reason": "User-provided attachments and pasted text metadata."
+    },
+    {
+      "pathPattern": "~/.codex/generated_images/",
+      "reason": "Generated media and app artifacts."
+    },
+    {
+      "pathPattern": "~/.codex/*.sqlite*",
+      "reason": "Local databases and WAL/SHM sidecars."
+    },
+    {
+      "pathPattern": "~/.codex/*state*.json",
+      "reason": "App/server state, reconciliation state, and private UI state."
+    },
+    {
+      "pathPattern": "~/.codex/automations/",
+      "reason": "User-specific schedules, monitors, and run state."
+    },
+    {
+      "pathPattern": "~/.codex/browser/",
+      "reason": "Browser integration configuration and runtime state."
+    },
+    {
+      "pathPattern": "~/.codex/computer-use/",
+      "reason": "Desktop-control app state and machine-specific binaries/config."
+    },
+    {
+      "pathPattern": "~/.codex/shell_snapshots/",
+      "reason": "Captured local shell environment snapshots."
+    },
+    {
+      "pathPattern": "~/.codex/memories/",
+      "reason": "Private memory store and rollout summaries."
+    }
+  ],
+  "generatedCandidateSurfaces": [
+    {
+      "surface": ".codex/config.toml",
+      "status": "dry-run-only",
+      "sourceTemplate": "docs/harness/codex-adapter-plan/templates/base.config.template.toml",
+      "notes": "May be rendered into a temp directory for validation; do not overwrite the project or user live file in this issue."
+    },
+    {
+      "surface": "~/.codex/omp-harness.config.toml",
+      "status": "dry-run-only",
+      "sourceTemplate": "docs/harness/codex-adapter-plan/templates/profile.omp-harness.config.template.toml",
+      "notes": "User-level profile candidate only after explicit approval; do not change Codex default provider/model."
+    },
+    {
+      "surface": ".codex/agents/*.toml",
+      "status": "dry-run-only",
+      "sourceTemplate": "docs/harness/codex-adapter-plan/templates/agents/*.toml",
+      "notes": "Project-scoped custom agents can be generated from adapted OMP roles after review."
+    },
+    {
+      "surface": "~/.codex/agents/*.toml",
+      "status": "dry-run-only",
+      "sourceTemplate": "docs/harness/codex-adapter-plan/templates/agents/*.toml",
+      "notes": "User-scoped custom agents can be generated from adapted OMP roles only after explicit approval; this issue renders templates for validation only."
+    },
+    {
+      "surface": "~/.codex/config.toml skills.config entries",
+      "status": "dry-run-only",
+      "sourceTemplate": "docs/harness/codex-adapter-plan/templates/skills.config.template.toml",
+      "notes": "Enable/disable examples must be merged by a future renderer and must never remove duplicate skill directories."
+    }
+  ],
+  "dryRunValidationStrategy": [
+    "Render templates into a temporary directory, never directly into ~/.codex.",
+    "Parse every rendered TOML template with Python tomllib or an equivalent TOML parser.",
+    "Compare OMP agent mapping rows against docs/harness/omp-builtins/source.json and fail when a bundled agent is unmapped.",
+    "Reject rendered files containing absolute private home paths, API key/token-looking text, auth cache names as destinations, provider routing keys, or model default changes in the base template.",
+    "Validate that official Codex doc references cover config, profiles, custom agents/subagents, skills, AGENTS.md, and auth/local credential boundaries.",
+    "Print a dry-run manifest of candidate destination paths, required human approvals, and skipped local-only surfaces before any live ~/.codex modification is allowed.",
+    "Require a separate future issue/PR to perform any write into ~/.codex, .codex/agents, or .agents/skills."
+  ],
+  "humanDecisionsBeforeImplementation": [
+    "Which adapted OMP agents should become project-scoped .codex/agents versus user-scoped ~/.codex/agents?",
+    "Should the designer, librarian, planner, and reviewer candidates pin reasoning effort or inherit the parent session?",
+    "Which skill candidates should be repo-local .agents/skills versus personal ~/.agents/skills?",
+    "Should the optional omp-harness profile set sandbox/approval defaults, or should it only document recommended CLI flags?",
+    "What review/approval policy is required before merging any generated template into live ~/.codex/config.toml?"
+  ]
+}

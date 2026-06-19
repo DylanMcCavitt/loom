@@ -76,7 +76,7 @@
         "~/.codex/AGENTS.md"
       ],
       "discoverySource": "Codex home config paths by convention; record key categories only.",
-      "intendedRepoTarget": "docs/harness/codex-adapter-plan.md (future issue #41)",
+      "intendedRepoTarget": "docs/harness/codex-adapter-plan.md",
       "disposition": "reference-only",
       "migrationNotes": "Reference profile and instruction categories without copying provider credentials, local overrides, or private model history."
     },
@@ -85,6 +85,7 @@
       "sourceHarness": "codex",
       "resourceCategory": "agents and skills",
       "currentLivePath": [
+        "~/.codex/agents/",
         "~/.codex/skills/",
         "~/.agents/skills/",
         "repo:.agents/skills/"
