@@ -12,6 +12,13 @@ const PORTABILITY_CLASSES = new Set([
   "omp-acp-text-runtime",
   "omp-tui-runtime-only",
 ]);
+const MATRIX_PORTABILITY_CLASSES = new Set([
+  "document",
+  "skill",
+  "cli-wrapper",
+  "adapter-required",
+  "omp-only",
+]);
 const SECRET_PATTERNS = [
   /\bgh[pousr]_[A-Za-z0-9_]{20,}\b/u,
   /\bgithub_pat_[A-Za-z0-9_]{20,}\b/u,
@@ -155,6 +162,105 @@ function validateCommands(commands, errors) {
   }
 }
 
+function validatePortabilityMatrix(commands, matrix, errors) {
+  if (matrix.schemaVersion !== 1) errors.push("portability-matrix.json: schemaVersion must be 1");
+  if (matrix.generatedForIssue !== 40) errors.push("portability-matrix.json: generatedForIssue must be 40");
+  if (matrix.sourceSnapshot !== "docs/harness/omp-builtins/commands.json") {
+    errors.push("portability-matrix.json: sourceSnapshot must point to docs/harness/omp-builtins/commands.json");
+  }
+  for (const className of MATRIX_PORTABILITY_CLASSES) {
+    if (typeof matrix.portabilityClasses?.[className] !== "string") {
+      errors.push(`portability-matrix.json: missing portability class definition ${className}`);
+    }
+  }
+  if (!Array.isArray(matrix.commands) || matrix.commands.length === 0) {
+    errors.push("portability-matrix.json: commands must be a non-empty array");
+    return;
+  }
+
+  const snapshotByName = new Map((commands.commands ?? []).map(command => [command.name, command]));
+  const matrixByName = new Map();
+  const classCounts = new Map([...MATRIX_PORTABILITY_CLASSES].map(className => [className, 0]));
+  let cliWrapperCount = 0;
+  let adapterRuntimeCount = 0;
+
+  for (const row of matrix.commands) {
+    if (!row.name || typeof row.name !== "string") {
+      errors.push("portability-matrix.json: row missing command name");
+      continue;
+    }
+    if (matrixByName.has(row.name)) errors.push(`portability-matrix.json: duplicate command ${row.name}`);
+    matrixByName.set(row.name, row);
+    const snapshot = snapshotByName.get(row.name);
+    if (!snapshot) errors.push(`portability-matrix.json: unknown command ${row.name}`);
+    if (!MATRIX_PORTABILITY_CLASSES.has(row.portabilityClass)) {
+      errors.push(`${row.name}: invalid matrix portabilityClass ${row.portabilityClass}`);
+    } else {
+      classCounts.set(row.portabilityClass, classCounts.get(row.portabilityClass) + 1);
+    }
+    for (const field of ["codexTarget", "claudeTarget", "ompTarget", "rationale"]) {
+      if (!row[field] || typeof row[field] !== "string") {
+        errors.push(`${row.name}: missing ${field}`);
+      }
+    }
+    if (typeof row.runtimeSessionCommand !== "boolean") {
+      errors.push(`${row.name}: runtimeSessionCommand must be boolean`);
+    }
+    if (row.portabilityClass === "cli-wrapper") {
+      cliWrapperCount += 1;
+      if (!row.stableCli || typeof row.stableCli !== "string" || !row.stableCli.startsWith("omp")) {
+        errors.push(`${row.name}: cli-wrapper rows must name a stable OMP CLI invocation`);
+      }
+    } else if (row.stableCli !== null) {
+      errors.push(`${row.name}: stableCli must be null unless portabilityClass is cli-wrapper`);
+    }
+    if (row.portabilityClass === "adapter-required") {
+      if (!/adapter/u.test(`${row.codexTarget} ${row.claudeTarget}`)) {
+        errors.push(`${row.name}: adapter-required rows must recommend an adapter target`);
+      }
+      if (row.runtimeSessionCommand) adapterRuntimeCount += 1;
+    }
+    if (row.portabilityClass === "skill" && row.runtimeSessionCommand && !/\bnot\b/u.test(row.rationale)) {
+      errors.push(`${row.name}: runtime-backed skill rows must explicitly say what the skill does not provide`);
+    }
+    if (snapshot?.tuiRuntimeOnly && row.portabilityClass === "document") {
+      errors.push(`${row.name}: TUI-runtime-only commands must not be reduced to document-only`);
+    }
+    if (snapshot?.tuiRuntimeOnly && row.runtimeSessionCommand !== true) {
+      errors.push(`${row.name}: TUI-runtime-only commands must be marked runtimeSessionCommand`);
+    }
+    if (
+      row.runtimeSessionCommand !== true &&
+      (
+        row.ompTarget === "in-session slash command" ||
+        /\bslash handlers?\b/u.test(row.rationale) ||
+        /\brunning OMP process\b/u.test(row.rationale)
+      )
+    ) {
+      errors.push(`${row.name}: in-session/runtime handler must be marked runtimeSessionCommand`);
+    }
+  }
+
+  for (const commandName of snapshotByName.keys()) {
+    if (!matrixByName.has(commandName)) {
+      errors.push(`portability-matrix.json: missing command ${commandName}`);
+    }
+  }
+  for (const [className, count] of classCounts.entries()) {
+    if (count === 0) errors.push(`portability-matrix.json: missing rows for class ${className}`);
+  }
+  if (cliWrapperCount < 5) errors.push("portability-matrix.json: expected multiple stable CLI-backed commands");
+  if (adapterRuntimeCount < 10) errors.push("portability-matrix.json: expected active runtime commands to require adapters");
+  if (!Array.isArray(matrix.openProductDecisions) || matrix.openProductDecisions.length < 5) {
+    errors.push("portability-matrix.json: open product decisions must be listed");
+  }
+  for (const decision of matrix.openProductDecisions ?? []) {
+    if (!decision.decision || !decision.question) {
+      errors.push("portability-matrix.json: malformed open product decision");
+    }
+  }
+}
+
 function validateResourceIndex(resources, errors) {
   if (resources.schemaVersion !== 1) errors.push("resource-index.json: schemaVersion must be 1");
   const prompts = resources.portableResources?.promptCategories;
@@ -205,9 +311,11 @@ try {
   const source = readJson(path.join(snapshotDir, "source.json"));
   const commands = readJson(path.join(snapshotDir, "commands.json"));
   const resources = readJson(path.join(snapshotDir, "resource-index.json"));
+  const portabilityMatrix = readJson(path.join(snapshotDir, "portability-matrix.json"));
 
   validateSource(snapshotDir, source, errors);
   validateCommands(commands, errors);
+  validatePortabilityMatrix(commands, portabilityMatrix, errors);
   validateResourceIndex(resources, errors);
   validateNoPrivateOrSecretText(snapshotDir, errors);
   if (options.checkLive) runLiveDriftCheck(errors);
@@ -218,7 +326,7 @@ try {
     process.exit(1);
   }
   console.log(
-    `OMP built-ins snapshot validation passed: ${source.agents.length} agents, ${commands.commands.length} commands, ${resources.portableResources.builtInRules.length} built-in rules`,
+    `OMP built-ins snapshot validation passed: ${source.agents.length} agents, ${commands.commands.length} commands, ${portabilityMatrix.commands.length} portability rows, ${resources.portableResources.builtInRules.length} built-in rules`,
   );
 } catch (error) {
   console.error(error.message);

@@ -5,6 +5,8 @@ This directory is a versioned, non-live reference snapshot of portable OMP built
 - `agents/` contains bundled task agents exported with `omp agents unpack --dir <temp> --json`.
 - `source.json` records source package metadata, expected agent names, hashes, and refresh commands.
 - `commands.json` indexes built-in slash commands by name, aliases, source type, and portability class.
+- `portability-matrix.json` assigns each indexed built-in command to the issue #40 cross-harness portability classes: `document`, `skill`, `cli-wrapper`, `adapter-required`, or `omp-only`.
+- `portability-matrix.md` summarizes the runtime boundary, stable CLI-backed command set, shared skill candidates, and open product decisions for review.
 - `resource-index.json` indexes built-in prompt categories and default rules by path and hash.
 
 Runtime-only surfaces are indexed but not copied. This snapshot must not include live `~/.omp/agent` sessions, terminal state, blobs, caches, logs, databases, auth state, or project `.omp/agents`.

@@ -7,12 +7,14 @@ import { test } from "node:test";
 const snapshotDir = new URL("../docs/harness/omp-builtins/", import.meta.url).pathname;
 const sourcePath = new URL("../docs/harness/omp-builtins/source.json", import.meta.url).pathname;
 const commandsPath = new URL("../docs/harness/omp-builtins/commands.json", import.meta.url).pathname;
+const portabilityMatrixPath = new URL("../docs/harness/omp-builtins/portability-matrix.json", import.meta.url).pathname;
 const resourceIndexPath = new URL("../docs/harness/omp-builtins/resource-index.json", import.meta.url).pathname;
 const validator = new URL("../scripts/validate-omp-builtins-snapshot.mjs", import.meta.url).pathname;
 const refresh = new URL("../scripts/refresh-omp-builtins-snapshot.mjs", import.meta.url).pathname;
 
 const source = JSON.parse(readFileSync(sourcePath, "utf8"));
 const commands = JSON.parse(readFileSync(commandsPath, "utf8"));
+const portabilityMatrix = JSON.parse(readFileSync(portabilityMatrixPath, "utf8"));
 const resourceIndex = JSON.parse(readFileSync(resourceIndexPath, "utf8"));
 const hasOmp = spawnSync("which", ["omp"]).status === 0;
 
@@ -60,6 +62,60 @@ test("built-in command registry preserves representative aliases, subcommands, a
   assert.equal(byName.get("force")?.inputHint, "<tool-name> [prompt]");
   assert.ok(byName.get("mcp")?.subcommands.includes("resources"));
   assert.ok(byName.get("mcp")?.subcommands.includes("prompts"));
+});
+
+test("portability matrix classifies every indexed OMP built-in command", () => {
+  const commandNames = commands.commands.map(command => command.name).sort();
+  const matrixNames = portabilityMatrix.commands.map(command => command.name).sort();
+  assert.deepEqual(matrixNames, commandNames);
+  assert.equal(portabilityMatrix.generatedForIssue, 40);
+  assert.deepEqual(Object.keys(portabilityMatrix.portabilityClasses).sort(), [
+    "adapter-required",
+    "cli-wrapper",
+    "document",
+    "omp-only",
+    "skill",
+  ]);
+  assert.ok(portabilityMatrix.openProductDecisions.length >= 5);
+});
+
+test("portability matrix spot-checks each issue 40 portability class", () => {
+  const byName = new Map(portabilityMatrix.commands.map(command => [command.name, command]));
+  assert.equal(byName.get("tools")?.portabilityClass, "document");
+  assert.match(byName.get("tools")?.rationale ?? "", /reference/u);
+  assert.equal(byName.get("handoff")?.portabilityClass, "skill");
+  assert.match(byName.get("handoff")?.codexTarget ?? "", /skill/u);
+  assert.equal(byName.get("usage")?.portabilityClass, "cli-wrapper");
+  assert.match(byName.get("usage")?.stableCli ?? "", /^omp usage/u);
+  assert.equal(byName.get("compact")?.portabilityClass, "adapter-required");
+  assert.equal(byName.get("compact")?.runtimeSessionCommand, true);
+  assert.equal(byName.get("copy")?.portabilityClass, "omp-only");
+  assert.equal(byName.get("copy")?.codexTarget, "none");
+});
+
+test("portability matrix separates stable CLI wrappers from in-session command handlers", () => {
+  const byName = new Map(portabilityMatrix.commands.map(command => [command.name, command]));
+  for (const name of ["agents", "export", "join", "marketplace", "model", "plugins", "resume", "settings", "setup", "ssh", "stats", "usage"]) {
+    assert.equal(byName.get(name)?.portabilityClass, "cli-wrapper", `${name} should be CLI-backed`);
+    assert.match(byName.get(name)?.stableCli ?? "", /^omp/u);
+  }
+  for (const name of ["advisor", "branch", "compact", "debug", "goal", "mcp", "memory", "plan-review", "retry", "session", "share", "switch"]) {
+    assert.equal(byName.get(name)?.portabilityClass, "adapter-required", `${name} should require adapter control`);
+    assert.equal(byName.get(name)?.stableCli, null);
+  }
+  for (const name of ["mcp", "memory", "reload-plugins", "todo"]) {
+    assert.equal(byName.get(name)?.runtimeSessionCommand, true, `${name} should be marked as a runtime handler`);
+  }
+});
+
+test("runtime-session skill candidates do not claim to be direct OMP runtime ports", () => {
+  for (const command of portabilityMatrix.commands.filter(row => row.portabilityClass === "skill")) {
+    assert.match(command.codexTarget, /skill/u);
+    assert.match(command.claudeTarget, /skill/u);
+    if (command.runtimeSessionCommand) {
+      assert.match(command.rationale, /\bnot\b/u, `${command.name} should call out the runtime gap`);
+    }
+  }
 });
 
 test("built-in prompt and rule indexes contain path-level drift metadata only", () => {
