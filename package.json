@@ -1,0 +1,13 @@
+{
+  "name": "oh-my-pi-config",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "validate": "sh -c 'set -e; for f in scripts/validate-*.mjs; do node \"$f\"; done; node scripts/dry-run-harness-inventory.mjs; node scripts/dry-run-harness-safety-gate.mjs'",
+    "check": "npm run validate && npm test"
+  }
+}

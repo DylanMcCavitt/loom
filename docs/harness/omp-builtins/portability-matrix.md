@@ -68,9 +68,8 @@ The `openProductDecisions` array in `portability-matrix.json` records the decisi
 - CLI wrapper permissions.
 - Transcript and share privacy.
 
-Validate this matrix from the repo root:
+Validate this matrix through the repo-wide offline checks:
 
 ```sh
-node scripts/validate-omp-builtins-snapshot.mjs
-node --test tests/omp-builtins-snapshot.test.mjs
+npm run check
 ```

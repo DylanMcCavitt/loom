@@ -157,11 +157,10 @@ Before any live Codex modification is allowed:
 7. Print a dry-run manifest showing candidate destination paths, required human approvals, and skipped local-only surfaces.
 8. Require a future issue and PR before writing to live `~/.codex`, `.codex/agents`, or `.agents/skills`.
 
-Run local validation:
+Run the repo-wide offline checks:
 
 ```sh
-node scripts/validate-codex-adapter-plan.mjs
-node --test tests/codex-adapter-plan.test.mjs
+npm run check
 ```
 
 ## Human Decisions Before Implementation

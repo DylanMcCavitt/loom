@@ -165,11 +165,10 @@ Before any live Claude modification is allowed:
 8. Print a dry-run manifest showing candidate destination paths, required human approvals, and skipped local-only surfaces.
 9. Require a separate future issue and PR before writing to live `~/.claude`, project `.claude`, or shared `.agents/skills`.
 
-Run local validation:
+Run the repo-wide offline checks:
 
 ```sh
-node scripts/validate-claude-adapter-plan.mjs
-node --test tests/claude-adapter-plan.test.mjs
+npm run check
 ```
 
 ## Human Decisions Before Implementation

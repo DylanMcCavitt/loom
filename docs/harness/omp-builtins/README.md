@@ -11,7 +11,7 @@ This directory is a versioned, non-live reference snapshot of portable OMP built
 
 Runtime-only surfaces are indexed but not copied. This snapshot must not include live `~/.omp/agent` sessions, terminal state, blobs, caches, logs, databases, auth state, or project `.omp/agents`.
 
-Compare the installed OMP package against this snapshot:
+Offline snapshot validation is part of `npm run check` from the repo root. Compare the installed OMP package against this snapshot manually:
 
 ```sh
 node scripts/refresh-omp-builtins-snapshot.mjs

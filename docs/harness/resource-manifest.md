@@ -29,7 +29,7 @@ Issue #39 adds a versioned, non-live reference snapshot at `docs/harness/omp-bui
 - `commands.json`: built-in slash command registry indexed by command name, aliases, source type, and portability class.
 - `resource-index.json`: built-in prompt category hashes, built-in default rule hashes, and runtime-only surface classifications.
 
-Refresh or compare the snapshot from the repo root:
+Offline snapshot validation is part of `npm run check` from the repo root. Live OMP refresh and compare commands are intentionally outside CI:
 
 ```sh
 node scripts/refresh-omp-builtins-snapshot.mjs
@@ -67,16 +67,15 @@ Active panel, side-panel, and prototype work is listed under `excludedSurfaces`.
 
 ## Checks
 
-Run these checks from the repo root:
+Run the offline validator and test suite from the repo root:
 
 ```sh
-node scripts/validate-harness-manifest.mjs
-node scripts/validate-codex-adapter-plan.mjs
-node scripts/validate-claude-adapter-plan.mjs
-node scripts/dry-run-harness-inventory.mjs
+npm run check
+```
+
+`npm run validate` discovers every `scripts/validate-*.mjs` file and then runs the offline dry-run inventory and safety gate. `refresh-*` scripts, `--check-live` checks, and benchmarks are intentionally excluded from CI. Optional live metadata checks remain manual:
+
+```sh
+node scripts/dry-run-harness-inventory.mjs --check-live
 node scripts/dry-run-harness-safety-gate.mjs --check-live
-node --test tests/harness-manifest.test.mjs
-node --test tests/codex-adapter-plan.test.mjs
-node --test tests/claude-adapter-plan.test.mjs
-node --test tests/harness-safety-gate.test.mjs
 ```
