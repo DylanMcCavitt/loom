@@ -33,3 +33,7 @@ blobs/
 !.env.*.example
 *.pem
 *.key
+
+# App-managed skill runtime state written via the symlinked skills dir
+# (e.g. Codex .system built-ins: skill-creator, plugin-creator, imagegen).
+.agents/skills/.system/

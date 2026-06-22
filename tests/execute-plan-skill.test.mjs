@@ -35,5 +35,5 @@ test("execute-plan asks only for missing external decisions", () => {
 
 test("execute-plan does not own issue closeout", () => {
   assert.match(skill, /not an issue closeout workflow/u);
-  assert.match(skill, /route to `triage`/u);
+  assert.match(skill, /route to `issue-execution`/u);
 });

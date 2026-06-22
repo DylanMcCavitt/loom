@@ -11,7 +11,8 @@
       "to-issues",
       "to-prd",
       "execute-plan",
-      "agent-recipes"
+      "agent-recipes",
+      "issue-execution"
     ]
   },
   {
@@ -26,7 +27,8 @@
       "to-issues",
       "to-prd",
       "execute-plan",
-      "agent-recipes"
+      "agent-recipes",
+      "issue-execution"
     ]
   },
   {
@@ -40,7 +42,8 @@
       "tdd",
       "to-prd",
       "execute-plan",
-      "agent-recipes"
+      "agent-recipes",
+      "issue-execution"
     ]
   },
   {
@@ -56,7 +59,8 @@
       "to-issues",
       "to-prd",
       "execute-plan",
-      "agent-recipes"
+      "agent-recipes",
+      "issue-execution"
     ]
   },
   {
@@ -72,7 +76,8 @@
       "to-issues",
       "to-prd",
       "execute-plan",
-      "agent-recipes"
+      "agent-recipes",
+      "issue-execution"
     ]
   },
   {
@@ -86,7 +91,8 @@
       "tdd",
       "to-issues",
       "execute-plan",
-      "agent-recipes"
+      "agent-recipes",
+      "issue-execution"
     ]
   },
   {
@@ -100,7 +106,8 @@
       "to-issues",
       "to-prd",
       "execute-plan",
-      "agent-recipes"
+      "agent-recipes",
+      "issue-execution"
     ]
   },
   {
@@ -114,7 +121,8 @@
       "tdd",
       "to-issues",
       "to-prd",
-      "execute-plan"
+      "execute-plan",
+      "issue-execution"
     ]
   },
   {
@@ -128,7 +136,8 @@
       "tdd",
       "to-issues",
       "to-prd",
-      "agent-recipes"
+      "agent-recipes",
+      "issue-execution"
     ]
   },
   {
@@ -137,6 +146,22 @@
       "to-issues"
     ],
     "forbiddenRoutes": [
+      "execute-plan",
+      "agent-recipes",
+      "issue-execution"
+    ]
+  },
+  {
+    "input": "start issue 42 and work it to PR",
+    "expectedRoutes": [
+      "issue-execution"
+    ],
+    "forbiddenRoutes": [
+      "handoff",
+      "diagnose",
+      "tdd",
+      "to-issues",
+      "to-prd",
       "execute-plan",
       "agent-recipes"
     ]

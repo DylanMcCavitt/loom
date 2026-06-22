@@ -46,6 +46,11 @@ const ROUTE_RULES = [
     any: ["go ahead", "execute the plan", "proceed", "stop discussing and implement", "ship the current plan"],
   },
   {
+    route: "issue-execution",
+    reason: "Issue-execution owns running one tracked issue end-to-end through PR-ready closeout.",
+    any: ["start issue", "continue issue", "ship issue", "ship one tracked issue", "work it to pr", "tracked issue end-to-end"],
+  },
+  {
     route: "agent-recipes",
     reason: "Agent-recipes owns turning short spawn intents into complete task assignments.",
     any: ["spawn review", "spawn agents", "/spawn", "subagent recipe", "agent recipe", "parallel implementation"],

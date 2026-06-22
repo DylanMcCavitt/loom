@@ -177,6 +177,7 @@ function validateSkills(options) {
   const entries = listEntries(skillsRoot);
   let checked = 0;
   for (const entry of entries) {
+    if (entry.name.startsWith(".")) continue;
     const skillDir = path.join(skillsRoot, entry.name);
     if (!entry.isDirectory()) {
       errors.push(`${path.relative(process.cwd(), skillDir)}: only skill directories are allowed directly under .agents/skills`);

@@ -30,4 +30,4 @@ Do not create default subagents for every phase. In particular, avoid separate "
 
 ## Boundaries
 
-Do not close issues, create PR closeout summaries, or claim issue acceptance criteria are complete unless the active tracked issue workflow separately requires that. If the user asks to ship one tracked issue end-to-end, route to `triage` instead.
+Do not close issues, create PR closeout summaries, or claim issue acceptance criteria are complete unless the active tracked issue workflow separately requires that. If the user asks to ship one tracked issue end-to-end, route to `issue-execution` instead.
