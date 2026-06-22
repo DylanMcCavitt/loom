@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 
@@ -113,11 +113,22 @@ function collectFiles(dir) {
   return files;
 }
 
-function collectGlobalSkillNames(globalSkillsDirs) {
+function safeRealpath(target) {
+  try {
+    return realpathSync(target);
+  } catch {
+    return null;
+  }
+}
+
+function collectGlobalSkillNames(globalSkillsDirs, skillsRoot) {
   const names = new Set();
+  const skillsReal = safeRealpath(skillsRoot);
   for (const dir of globalSkillsDirs) {
     const resolved = path.resolve(dir);
     if (!existsSync(resolved)) continue;
+    // Skip a global root that resolves to the skills dir itself (symlinked single source of truth).
+    if (skillsReal && safeRealpath(resolved) === skillsReal) continue;
     for (const entry of listEntries(resolved)) {
       if (!entry.isDirectory()) continue;
       const skillPath = path.join(resolved, entry.name, "SKILL.md");
@@ -136,7 +147,7 @@ function validateSkills(options) {
   const skillsRoot = path.resolve(options.skillsDir);
   const errors = [];
   const seenNames = new Map();
-  const globalNames = collectGlobalSkillNames(options.globalSkillsDirs);
+  const globalNames = collectGlobalSkillNames(options.globalSkillsDirs, skillsRoot);
   for (const reserved of options.reservedNames) globalNames.add(reserved);
 
   if (!existsSync(skillsRoot)) {
