@@ -6,18 +6,9 @@ import { recipeCount } from "../omp/.omp/agent/extensions/workflow-recipes.js";
 
 const ROOT = path.resolve(new URL("..", import.meta.url).pathname);
 const ROUTING_FIXTURES = JSON.parse(readFileSync(path.join(ROOT, "tests/fixtures/automation-routing.json"), "utf8"));
-const PROTECTED_EXISTING_SKILLS = new Set([
-  "handoff",
-  "diagnose",
-  "tdd",
-  "to-issues",
-  "to-prd",
-  "triage",
-  "workflow-kit",
-  "computer-use",
-  "chrome-devtools",
-  "openai-docs",
-]);
+// Single source of truth: the repo .agents/skills IS the canonical skill home for all
+// harnesses. The former "do not vendor these global skills into the repo" penalty is
+// obsolete under consolidation; duplicate overlap now means a name that appears twice.
 
 function parseSkillName(content) {
   const match = content.match(/^---\n([\s\S]*?)\n---/u);
@@ -48,7 +39,6 @@ function duplicateSkillOverlapCount() {
   for (const name of names) {
     if (seen.has(name)) overlaps += 1;
     seen.add(name);
-    if (PROTECTED_EXISTING_SKILLS.has(name)) overlaps += 1;
   }
   return overlaps;
 }

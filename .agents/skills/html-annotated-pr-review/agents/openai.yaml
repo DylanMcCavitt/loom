@@ -1,0 +1,4 @@
+interface:
+  display_name: "HTML Annotated PR Review"
+  short_description: "Visual PR reviews with diffs and comments"
+  default_prompt: "Use $html-annotated-pr-review to create an annotated HTML review for this pull request."

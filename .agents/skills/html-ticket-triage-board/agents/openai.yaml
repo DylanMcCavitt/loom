@@ -1,0 +1,4 @@
+interface:
+  display_name: "HTML Ticket Triage Board"
+  short_description: "Interactive issue triage board in HTML"
+  default_prompt: "Use $html-ticket-triage-board to build an HTML triage board for these issues."

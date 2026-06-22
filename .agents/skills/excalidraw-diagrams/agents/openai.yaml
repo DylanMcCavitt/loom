@@ -1,0 +1,4 @@
+interface:
+  display_name: "Excalidraw Diagrams"
+  short_description: "Create and edit Obsidian Excalidraw diagram files."
+  default_prompt: "Create or update a polished Excalidraw diagram file."

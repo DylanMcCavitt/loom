@@ -1,57 +1,144 @@
 [
   {
     "input": "tests are failing, debug it",
-    "expectedRoutes": ["diagnose"],
-    "forbiddenRoutes": ["thread-control", "handoff", "tdd", "to-issues", "to-prd", "execute-plan", "issue-autopilot", "agent-recipes"]
+    "expectedRoutes": [
+      "diagnose"
+    ],
+    "forbiddenRoutes": [
+      "thread-control",
+      "handoff",
+      "tdd",
+      "to-issues",
+      "to-prd",
+      "execute-plan",
+      "agent-recipes"
+    ]
   },
   {
     "input": "start a fresh chat with this context",
-    "expectedRoutes": ["thread-control", "handoff"],
-    "forbiddenRoutes": ["diagnose", "tdd", "to-issues", "to-prd", "execute-plan", "issue-autopilot", "agent-recipes"]
+    "expectedRoutes": [
+      "thread-control",
+      "handoff"
+    ],
+    "forbiddenRoutes": [
+      "diagnose",
+      "tdd",
+      "to-issues",
+      "to-prd",
+      "execute-plan",
+      "agent-recipes"
+    ]
   },
   {
     "input": "split this PRD into implementation tickets",
-    "expectedRoutes": ["to-issues"],
-    "forbiddenRoutes": ["handoff", "diagnose", "tdd", "to-prd", "execute-plan", "issue-autopilot", "agent-recipes"]
+    "expectedRoutes": [
+      "to-issues"
+    ],
+    "forbiddenRoutes": [
+      "handoff",
+      "diagnose",
+      "tdd",
+      "to-prd",
+      "execute-plan",
+      "agent-recipes"
+    ]
   },
   {
     "input": "inspect browser bug",
-    "expectedRoutes": ["chrome-devtools", "diagnose"],
-    "forbiddenRoutes": ["computer-use", "handoff", "tdd", "to-issues", "to-prd", "execute-plan", "issue-autopilot", "agent-recipes"]
+    "expectedRoutes": [
+      "chrome-devtools",
+      "diagnose"
+    ],
+    "forbiddenRoutes": [
+      "computer-use",
+      "handoff",
+      "tdd",
+      "to-issues",
+      "to-prd",
+      "execute-plan",
+      "agent-recipes"
+    ]
   },
   {
     "input": "inspect the desktop app window bug",
-    "expectedRoutes": ["computer-use", "diagnose"],
-    "forbiddenRoutes": ["chrome-devtools", "handoff", "tdd", "to-issues", "to-prd", "execute-plan", "issue-autopilot", "agent-recipes"]
+    "expectedRoutes": [
+      "computer-use",
+      "diagnose"
+    ],
+    "forbiddenRoutes": [
+      "chrome-devtools",
+      "handoff",
+      "tdd",
+      "to-issues",
+      "to-prd",
+      "execute-plan",
+      "agent-recipes"
+    ]
   },
   {
     "input": "write a PRD from this conversation",
-    "expectedRoutes": ["to-prd"],
-    "forbiddenRoutes": ["handoff", "diagnose", "tdd", "to-issues", "execute-plan", "issue-autopilot", "agent-recipes"]
+    "expectedRoutes": [
+      "to-prd"
+    ],
+    "forbiddenRoutes": [
+      "handoff",
+      "diagnose",
+      "tdd",
+      "to-issues",
+      "execute-plan",
+      "agent-recipes"
+    ]
   },
   {
     "input": "use TDD for this feature",
-    "expectedRoutes": ["tdd"],
-    "forbiddenRoutes": ["handoff", "diagnose", "to-issues", "to-prd", "execute-plan", "issue-autopilot", "agent-recipes"]
+    "expectedRoutes": [
+      "tdd"
+    ],
+    "forbiddenRoutes": [
+      "handoff",
+      "diagnose",
+      "to-issues",
+      "to-prd",
+      "execute-plan",
+      "agent-recipes"
+    ]
   },
   {
     "input": "/spawn review agents",
-    "expectedRoutes": ["agent-recipes"],
-    "forbiddenRoutes": ["handoff", "diagnose", "tdd", "to-issues", "to-prd", "execute-plan", "issue-autopilot"]
+    "expectedRoutes": [
+      "agent-recipes"
+    ],
+    "forbiddenRoutes": [
+      "handoff",
+      "diagnose",
+      "tdd",
+      "to-issues",
+      "to-prd",
+      "execute-plan"
+    ]
   },
   {
     "input": "go ahead and do the current plan",
-    "expectedRoutes": ["execute-plan"],
-    "forbiddenRoutes": ["handoff", "diagnose", "tdd", "to-issues", "to-prd", "issue-autopilot", "agent-recipes"]
+    "expectedRoutes": [
+      "execute-plan"
+    ],
+    "forbiddenRoutes": [
+      "handoff",
+      "diagnose",
+      "tdd",
+      "to-issues",
+      "to-prd",
+      "agent-recipes"
+    ]
   },
   {
     "input": "split the current plan into implementation tickets",
-    "expectedRoutes": ["to-issues"],
-    "forbiddenRoutes": ["execute-plan", "issue-autopilot", "agent-recipes"]
-  },
-  {
-    "input": "start issue 42 and work it to PR",
-    "expectedRoutes": ["issue-autopilot"],
-    "forbiddenRoutes": ["handoff", "diagnose", "tdd", "to-issues", "to-prd", "execute-plan", "agent-recipes"]
+    "expectedRoutes": [
+      "to-issues"
+    ],
+    "forbiddenRoutes": [
+      "execute-plan",
+      "agent-recipes"
+    ]
   }
 ]

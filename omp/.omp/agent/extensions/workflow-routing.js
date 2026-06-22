@@ -41,11 +41,6 @@ const ROUTE_RULES = [
     any: ["openai docs", "responses api", "agents sdk", "apps sdk", "realtime api"],
   },
   {
-    route: "issue-autopilot",
-    reason: "Issue-autopilot owns one tracked issue through PR-ready closeout.",
-    any: ["start issue", "continue issue", "ship issue", "ship one tracked issue", "active issue", "work it to pr", "tracked issue"],
-  },
-  {
     route: "execute-plan",
     reason: "Execute-plan owns explicit go-ahead requests for the current plan.",
     any: ["go ahead", "execute the plan", "proceed", "stop discussing and implement", "ship the current plan"],

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Deliverable Report"
+  short_description: "Create final issue-chain reports"
+  default_prompt: "Use $deliverable-report to create a final user-facing report for a completed issue chain."

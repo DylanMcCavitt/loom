@@ -1,0 +1,20 @@
+{
+  "skill_name": "terminal-steering",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "use this skill to speak with claude in omp and ask it what it thinks the next step is for this repo",
+      "expected_output": "The agent launches or reuses omp in the terminal, sends the prompt to omp, waits for the response, and relays the result. It does not merely explain how to open omp."
+    },
+    {
+      "id": 2,
+      "prompt": "ask Claude through Oh My Pi if I should run the test suite before opening a PR",
+      "expected_output": "The agent recognizes Oh My Pi as the target surface, starts `omp` in the current workspace terminal, submits the question, and reports Claude/omp's answer and session state."
+    },
+    {
+      "id": 3,
+      "prompt": "urse this skill to speak with claude in omp about the error in the terminal",
+      "expected_output": "The typo-filled trigger still activates the skill. The agent uses the omp terminal path and includes any observed terminal error context in the prompt to Claude."
+    }
+  ]
+}

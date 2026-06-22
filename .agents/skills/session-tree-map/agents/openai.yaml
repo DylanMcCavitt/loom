@@ -1,0 +1,4 @@
+interface:
+  display_name: "Session Tree Map"
+  short_description: "Trace or audit this agent run"
+  default_prompt: "Use $session-tree-map in quick mode to trace this run, or debug mode to audit tool calls and workflow issues."

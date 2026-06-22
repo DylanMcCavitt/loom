@@ -1,0 +1,4 @@
+interface:
+  display_name: "cmux project supervision"
+  short_description: "Recover context and prove live project work"
+  default_prompt: "Use $cmux-project-supervision to recover the active cmux project context and give me the smallest verified next step."

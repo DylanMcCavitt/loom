@@ -1,0 +1,23 @@
+{
+  "skill_name": "inbox-triage",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Clean up my Gmail and Outlook inboxes. Archive obvious ad clutter, unsubscribe from junk I do not open, mark recruiter and interview emails important, and check spam for job offers or declines.",
+      "expected_output": "A conservative inbox triage workflow that preserves job and human/actionable messages, checks spam/junk, labels job messages, avoids unsafe deletion, and reports actions taken.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Go through spam and junk for both Gmail and Outlook and recover anything about jobs, interviews, offers, declines, or scheduling. Put those in a Jobs group.",
+      "expected_output": "A spam/junk recovery workflow that searches for job-related terms, marks legitimate messages not spam/not junk, applies a Jobs label/category, and avoids interacting with suspicious spam unsubscribe links.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "My main inbox is full of promotions and automated junk. Filter it out without hiding job leads or important account/security messages.",
+      "expected_output": "A batch triage plan that archives or filters obvious clutter, keeps transactional/security messages safe, identifies ambiguous messages for review, and asks before creating broad rules.",
+      "files": []
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "HTML Code Approaches"
+  short_description: "Compare implementation approaches in HTML"
+  default_prompt: "Use $html-code-approaches to compare implementation approaches for this change."

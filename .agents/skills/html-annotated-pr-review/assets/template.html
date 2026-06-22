@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Annotated PR Review</title>
+<style>
+:root{--ivory:#FAF9F5;--slate:#141413;--clay:#D97757;--oat:#E3DACC;--olive:#788C5D;--rust:#B04A3F;--g150:#F0EEE6;--g300:#D1CFC5;--g500:#87867F;--g700:#3D3D3A;--white:#fff;--serif:ui-serif,Georgia,"Times New Roman",serif;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--mono:ui-monospace,"SF Mono",Menlo,Monaco,Consolas,monospace}
+*{box-sizing:border-box;margin:0;padding:0}body{background:var(--ivory);color:var(--g700);font-family:var(--sans);font-size:15px;line-height:1.6;padding:48px 24px 80px;overflow-x:hidden}.page{max-width:920px;margin:0 auto}.pr-head,.file-card,.command-card,footer{background:var(--white);border:1.5px solid var(--g300);border-radius:12px}.pr-head{padding:28px 32px;margin-bottom:36px}.repo-line,.branch,.stat,.file-path,.file-delta,.chip,.risk-tag,.diff,.anchor{font-family:var(--mono)}.repo-line{font-size:12px;color:var(--g500);margin-bottom:10px}h1,h2{font-family:var(--serif);font-weight:500;color:var(--slate)}h1{font-size:30px;line-height:1.25;margin-bottom:18px;overflow-wrap:anywhere}h2{font-size:21px;margin-bottom:14px}section{margin-bottom:40px}.meta-row,.risk-map{display:flex;gap:12px;flex-wrap:wrap;align-items:center}.branch,.chip{background:var(--g150);border:1.5px solid var(--g300);border-radius:8px;padding:6px 10px;max-width:100%;overflow-wrap:anywhere}.add{color:var(--olive)}.del{color:var(--rust)}.file-card{margin-bottom:24px;overflow:hidden}.file-head{padding:16px 20px;border-bottom:1.5px solid var(--g150);display:flex;justify-content:space-between;gap:12px}.risk-tag{font-size:11px;text-transform:uppercase;letter-spacing:.06em;background:rgba(217,119,87,.15);color:var(--clay);border-radius:6px;padding:3px 8px}.diff{background:var(--slate);font-size:12.5px;line-height:1.7;overflow-x:auto}.diff-row{display:grid;grid-template-columns:48px 18px 1fr;white-space:pre;padding-right:14px}.ln{text-align:right;padding-right:14px;color:var(--g500)}.mark{color:var(--g500);text-align:center}.code{color:#E8E6DC}.add-row{background:rgba(120,140,93,.15)}.del-row{background:rgba(176,74,63,.15)}.hunk{background:rgba(255,255,255,.04)}.hunk .code{color:var(--g500)}.comments{background:var(--g150);padding:18px 20px;display:grid;gap:14px}.bubble{background:var(--white);border:1.5px solid var(--g300);border-left:4px solid var(--clay);border-radius:8px;padding:12px 14px}.label{color:var(--clay);font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-right:8px}.copy{border:1.5px solid var(--slate);background:var(--slate);color:var(--ivory);border-radius:999px;font-family:var(--mono);font-size:12px;padding:8px 14px}
+section ul,section ol{padding-left:22px}
+.chip{color:var(--slate);text-decoration:none}
+@media(max-width:680px){body{padding:24px 14px}.page{width:min(330px,calc(100vw - 28px));margin:0}.file-head{flex-direction:column}h1{font-size:22px}}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="pr-head">
+    <div class="repo-line">repo &middot; Pull Request #000</div>
+    <h1>Pull request title</h1>
+    <div class="meta-row"><div class="branch">feature-branch -&gt; main</div><div class="stat"><span class="add">+0</span> / <span class="del">-0</span> files changed</div></div>
+  </header>
+  <section><h2>What this PR does</h2><ul><li>Replace with grounded bullets from the PR and diff.</li></ul></section>
+  <section><h2>Risk map</h2><div class="risk-map"><a class="chip" href="#file-main">file.swift</a></div></section>
+  <section><h2>Files</h2><article class="file-card" id="file-main"><div class="file-head"><div class="file-path">path/to/file</div><span class="risk-tag">needs attention</span></div><div class="diff"><div class="diff-row hunk"><span class="ln"></span><span class="mark"></span><span class="code">@@ selected hunk @@</span></div><div class="diff-row add-row"><span class="ln">1</span><span class="mark">+</span><span class="code">code</span></div></div><div class="comments"><div class="bubble"><div class="anchor">line 1</div><p><span class="label">P2</span>Review comment.</p></div></div></article></section>
+  <footer style="padding:24px 28px"><h2>Copyable review note</h2><button class="copy">Copy note</button></footer>
+</div>
+</body>
+</html>

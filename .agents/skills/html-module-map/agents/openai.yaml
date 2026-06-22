@@ -1,0 +1,4 @@
+interface:
+  display_name: "HTML Module Map"
+  short_description: "Map code modules as navigable HTML"
+  default_prompt: "Use $html-module-map to explain this module with an HTML map."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "HTML Implementation Plan"
+  short_description: "Visual implementation plans for issues"
+  default_prompt: "Use $html-implementation-plan to create an HTML implementation plan for this issue."
