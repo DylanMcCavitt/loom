@@ -86,6 +86,15 @@ node scripts/dry-run-harness-inventory.mjs --check-live
 node scripts/dry-run-harness-safety-gate.mjs --check-live
 ```
 
+The render-to-write executor renders the planned templates plus the decided OMP source into a temp directory, runs the dry-run safety gate over the rendered output, and prints a candidate manifest keyed by disposition:
+
+```sh
+node scripts/render-harness-nucleus.mjs            # dry-run render + gate (no writes)
+node scripts/render-harness-nucleus.mjs --write    # strict-manual apply (create-missing-only, gated)
+```
+
+The dry-run is AFK-safe and writes nothing; only `track`/`adapt` surfaces are appliable, while `reference-only` and `local-only` surfaces are reported and skipped. The `--write` path is HITL: it runs only after a clean dry-run + gate pass, never overwrites an existing non-marker live file, backs up kit-owned markers before updating, and applies idempotently against `~/.loom-harness/applied-manifest.json`.
+
 Full-flow traceability benchmark, distinct from the dry-run gate:
 
 ```sh

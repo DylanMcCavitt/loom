@@ -157,6 +157,19 @@ Before any live Codex modification is allowed:
 7. Print a dry-run manifest showing candidate destination paths, required human approvals, and skipped local-only surfaces.
 8. Require a future issue and PR before writing to live `~/.codex`, `.codex/agents`, or `.agents/skills`.
 
+### Render-to-write executor
+
+`scripts/render-harness-nucleus.mjs` implements this strategy end to end and is the keystone that turns the plan + checks into an instantiation:
+
+```sh
+node scripts/render-harness-nucleus.mjs            # dry-run: render to temp, gate, print manifest
+node scripts/render-harness-nucleus.mjs --write    # strict-manual apply (create-missing-only)
+```
+
+In dry-run (default, AFK-safe) it renders the Codex templates and the decided OMP source under `omp/.omp/agent/` into an ephemeral temp directory, runs the dry-run safety gate over the rendered output (secret-looking values, absolute private home paths, dangerous destinations, local-only write targets, forbidden provider/model/auth/telemetry/profile keys, and TOML parseability), and prints a deterministic candidate manifest — destination, disposition, applied/not-applied, overwrite risk, required approvals, and skipped local-only surfaces — with zero writes. Disposition is resolved from the resource manifest: only `track`/`adapt` surfaces become appliable candidates, while `reference-only` and `local-only` surfaces are reported and skipped.
+
+The gated `--write` path executes the strict-manual approval policy below; it never bypasses it. It refuses to run unless the dry-run render and the safety gate pass clean, is create-missing-only (skips any existing non-marker live file with `exists:` and leaves user edits intact), backs up any kit-owned marker before updating it, and applies idempotently against a marker manifest (`~/.loom-harness/applied-manifest.json`) so a second run is a clean no-op.
+
 Run the repo-wide offline checks:
 
 ```sh

@@ -3,6 +3,21 @@ import { existsSync, lstatSync, readFileSync, readlinkSync, readdirSync } from "
 import { homedir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
+import {
+  PRIVATE_HOME_PATH_PATTERN,
+  SECRET_PATTERNS,
+  DANGEROUS_PATH_RULES,
+  textOf,
+  asArray,
+  isNonEmptyString,
+  normalizePathText,
+  isPatternPath,
+  globPatternToRegex,
+  pathMatchesLocalOnly,
+  secretError,
+  dangerousPathReason,
+  containsPrivateHomePath,
+} from "./lib/harness-safety.mjs";
 
 const USAGE = [
   "Usage: node scripts/dry-run-harness-safety-gate.mjs",
@@ -50,47 +65,7 @@ const REQUIRED_GENERATED_FIELDS = [
   "approval",
 ];
 const REQUIRED_HARNESSES = ["omp", "codex", "claude"];
-const PRIVATE_HOME_PATH_PATTERN = /\/Users\/[^/\s"]+/u;
 
-const SECRET_PATTERNS = [
-  /\bgh[pousr]_[A-Za-z0-9_]{20,}\b/u,
-  /\bgithub_pat_[A-Za-z0-9_]{20,}\b/u,
-  /\bsk-[A-Za-z0-9_-]{20,}\b/u,
-  /\bAKIA[0-9A-Z]{16}\b/u,
-  /\b(?:api[_-]?key|token|secret|password)\b\s*[:=]\s*["']?[A-Za-z0-9_./+=-]{16,}["']?/iu,
-];
-
-const DANGEROUS_PATH_RULES = [
-  {
-    name: "database",
-    pattern: /(^|\/)[^/]*\.(?:db|sqlite|sqlite3)(?:$|[-.])/iu,
-  },
-  {
-    name: "database sidecar",
-    pattern: /(^|\/)[^/]*(?:-wal|-shm)$/iu,
-  },
-  {
-    name: "session/history state",
-    pattern: /(^|\/)(?:sessions?|archived_sessions|session_index\.jsonl|terminal-sessions|terminal_sessions|shell-snapshots|shell_snapshots|projects|todos|history(?:\.jsonl)?)(?:\/|$)/iu,
-  },
-  {
-    name: "blob or attachment state",
-    pattern: /(^|\/)(?:blobs?|attachments|generated_images)(?:\/|$)/iu,
-  },
-  {
-    name: "auth/cache state",
-    pattern: /(^|\/)(?:auth\.json|cache|plugins\/cache|statsig|\.tmp|browser|computer-use)(?:\/|$)/iu,
-  },
-  {
-    name: "logs or local settings",
-    pattern: /(^|\/)(?:logs?|log|settings\.local\.json)(?:\/|$)|\.log$/iu,
-  },
-  {
-    name: "secret or credential file",
-    pattern: /(^|\/)(?:\.env(?:\.[^/]*)?|[^/]*\.(?:pem|key)|[^/]*(?:secret|token)[^/]*\.(?:json|ya?ml|toml|env|txt))(?:$|\/)/iu,
-    allow: /\.example$/iu,
-  },
-];
 const SOURCE_SCAN_SCOPES = [
   /^autoresearch\.sh$/u,
   /^docs\//u,
@@ -152,31 +127,6 @@ function readJson(filePath) {
   return JSON.parse(readFileSync(path.resolve(filePath), "utf8"));
 }
 
-function textOf(value) {
-  return JSON.stringify(value, null, 2);
-}
-
-function asArray(value) {
-  if (Array.isArray(value)) return value;
-  if (typeof value === "string" && value.length > 0) return [value];
-  return [];
-}
-
-function isNonEmptyString(value) {
-  return typeof value === "string" && value.trim().length > 0;
-}
-
-function normalizePathText(value) {
-  return String(value ?? "")
-    .replace(/^repo:/u, "")
-    .replaceAll("\\", "/")
-    .replace(/\/+/gu, "/");
-}
-
-function isPatternPath(value) {
-  return /[*?[{]/u.test(String(value ?? ""));
-}
-
 function isMergeDestination(value) {
   return /\s+entries\b/iu.test(String(value ?? ""));
 }
@@ -233,60 +183,6 @@ function inspectOverwriteRisk(destination, checkLive) {
   if (inspection.status === "present") return `would overwrite existing ${inspection.type ?? "path"}`;
   if (inspection.status === "missing") return "no existing file";
   return inspection.status;
-}
-
-function secretError(label, value) {
-  const text = textOf(value);
-  for (const pattern of SECRET_PATTERNS) {
-    if (pattern.test(text)) return `${label}: contains API-key/token/secret-looking text`;
-  }
-  return null;
-}
-
-function dangerousPathReason(value) {
-  if (!isNonEmptyString(value)) return null;
-  const normalized = normalizePathText(value);
-  for (const rule of DANGEROUS_PATH_RULES) {
-    if (rule.allow?.test(normalized)) continue;
-    if (rule.pattern.test(normalized)) return rule.name;
-  }
-  return null;
-}
-
-function globPatternToRegex(pattern) {
-  let source = "^";
-  for (const char of pattern) {
-    if (char === "*") {
-      source += "[^/]*";
-      continue;
-    }
-    if (char === "?") {
-      source += "[^/]";
-      continue;
-    }
-    source += char.replace(/[\\^$.*+?()[\]{}|]/gu, "\\$&");
-  }
-  source += "$";
-  return new RegExp(source, "u");
-}
-
-function pathMatchesLocalOnly(value, localOnlyPatterns) {
-  if (!isNonEmptyString(value)) return false;
-  const normalized = normalizePathText(value);
-  return localOnlyPatterns.some((patternValue) => {
-    const pattern = normalizePathText(patternValue);
-    if (!pattern) return false;
-    if (isPatternPath(pattern)) return globPatternToRegex(pattern).test(normalized);
-    const withoutTrailingSlash = pattern.replace(/\/$/u, "");
-    return normalized === withoutTrailingSlash || normalized.startsWith(`${withoutTrailingSlash}/`);
-  });
-}
-
-function containsPrivateHomePath(label, value) {
-  if (PRIVATE_HOME_PATH_PATTERN.test(textOf(value))) {
-    return `${label}: must use home-relative or repo-relative paths instead of absolute private home paths`;
-  }
-  return null;
 }
 
 function validateManifest(manifest) {
