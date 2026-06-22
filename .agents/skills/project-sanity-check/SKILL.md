@@ -20,7 +20,7 @@ Use this skill before starting a new issue chain or when a repo repeatedly creat
    - `docs/architecture.md`
    - `docs/adr/`
    - `docs/plans/`
-   - `docs/handoffs/`
+   - handoff temp files (e.g. under `/tmp`); handoffs are never committed to the repo
 3. Inspect issue/PR state when GitHub is available:
    - ready labels
    - blocked issues

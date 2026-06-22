@@ -103,7 +103,7 @@ If one candidate clearly matches the live request, offer to create or update tha
 Use project-specific names, paths, and commands only in the answer for the current task. Keep reusable guidance generic:
 
 - Say "active project command" rather than baking in one repo's command.
-- Say "project handoff directory" rather than assuming `docs/handoffs`.
+- Say "project handoff location" rather than assuming a fixed path; handoffs are temporary files (e.g. under `/tmp`), never committed to the repo.
 - Say "live preview or app surface" rather than assuming a browser URL.
 - Say "session resume command" rather than assuming one agent CLI.
 
