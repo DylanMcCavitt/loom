@@ -289,7 +289,7 @@ gating.
    absolute destinations, destinations must be `~/...` or project-relative) then
    `gateRenderedOutput` over the rendered bytes:
    - `secretError` — reject token/key/secret-looking values.
-   - `containsPrivateHomePath` — reject `/Users/<name>/...` leakage.
+   - `containsPrivateHomePath` — reject absolute private home-path leakage (the gate's `PRIVATE_HOME_PATH_PATTERN`, i.e. an absolute path under the user home directory).
    - `dangerousPathReason` via `DANGEROUS_PATH_RULES` — already rejects
      `plugins/cache`, `auth.json`, sessions/history, blobs, `settings.local.json`,
      `*.db`/`*.sqlite`, logs. So any candidate aimed at `~/.codex/plugins/cache/`
