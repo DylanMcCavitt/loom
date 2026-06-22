@@ -48,8 +48,6 @@ symlinking all three roots back to it. One copy per skill, no harness prefixes, 
 | `html-ticket-triage-board` | .agents | copy | ~/.agents/skills/html-ticket-triage-board |
 | `improve-codebase-architecture` | .agents | copy | ~/.agents/skills/improve-codebase-architecture |
 | `inbox-triage` | .agents | copy | ~/.agents/skills/inbox-triage |
-| `issue-bootstrap` | .agents | copy | ~/.agents/skills/issue-bootstrap |
-| `issue-work` | .agents | copy | ~/.agents/skills/issue-work |
 | `jupyter-notebook` | .agents | copy | ~/.agents/skills/jupyter-notebook |
 | `openai-docs` | .agents | copy | ~/.agents/skills/openai-docs |
 | `orca-cli` | .agents | copy | ~/.agents/skills/orca-cli |
@@ -83,3 +81,7 @@ symlinking all three roots back to it. One copy per skill, no harness prefixes, 
 | `workflow-kit` | .agents | copy | ~/.agents/skills/workflow-kit |
 | `write-a-skill` | .agents | copy | ~/.agents/skills/write-a-skill |
 | `zoom-out` | .agents | copy | ~/.agents/skills/zoom-out |
+
+## Post-consolidation changes
+
+- **Issue-lane prune:** removed `issue-bootstrap` and `issue-work`. `issue-execution` is now the single issue-lifecycle skill (one thread per issue: create the worktree/branch, implement, test, open the PR). `triage` (intake/labels), `to-issues` (split a plan), and `to-prd` (synthesize a spec) remain distinct.

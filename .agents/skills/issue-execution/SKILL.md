@@ -7,7 +7,7 @@ description: Use when the user asks to start, continue, or ship one tracked issu
 
 Run one tracked issue from context gathering through PR-ready closeout. Preserve the convention: one issue/task to one branch/worktree to one PR unless repo docs explicitly say otherwise.
 
-This skill does not create branches, worktrees, issues, or PRs while being validated. During real issue work, follow the repository's issue workflow and use the existing worktree or an explicitly requested bootstrap flow.
+This skill does not create branches, worktrees, issues, or PRs while being validated. During real issue work it owns the full lifecycle for one issue end to end: create the branch and worktree (one issue → one branch/worktree → one PR), implement, test, and open the PR — unless the user points it at an existing worktree or repo docs say otherwise.
 
 The main agent owns issue intake, implementation, integration, fixing review findings, final verification, commit, push, and PR. Subagents may support bounded scouting, isolated implementation slices, targeted tests, or independent review, but they do not own issue closeout.
 
@@ -25,8 +25,6 @@ Before editing, read:
 Do not duplicate specialized workflows:
 
 - Use `triage` when the issue needs classification, labels, state, or intake decisions before implementation.
-- Use `issue-bootstrap` when the worktree/branch for the issue does not exist yet.
-- Use `issue-work` when implementing from an already-prepared issue worktree.
 - Use `diagnose` when the issue is a bug, failing check, exception, or performance regression.
 - Use `tdd` when the user asks for test-first or red-green-refactor implementation.
 - Use `handoff` when stopping, blocking, or preparing a next-thread transfer.
@@ -58,7 +56,7 @@ Review packet contents:
 
 For actionable implementation issues:
 
-1. Confirm issue scope, blockers, owned behavior, and validation plan.
+1. Confirm issue scope, blockers, owned behavior, and validation plan; create the one branch/worktree for the issue if it does not already exist.
 2. Implement only the acceptance criteria.
 3. Run targeted checks that prove the changed behavior.
 4. Run scoped reviewer subagents when warranted, fix real findings, and rerun relevant checks.
