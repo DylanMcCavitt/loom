@@ -14,7 +14,7 @@ Use this skill before doing any edits in a resumed repo task.
    - `git worktree list` when multiple worktrees may exist
    - current branch, dirty files, detached HEAD state, and untracked files
 2. Read durable context in repo order:
-   - relevant `docs/handoffs/`
+   - relevant handoff temp files (e.g. under `/tmp`); handoffs are never committed to the repo
    - active `docs/plans/`
    - GitHub issue
    - the agent context file (`AGENTS.md` or `CLAUDE.md`)
