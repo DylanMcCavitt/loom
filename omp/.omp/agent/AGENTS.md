@@ -12,7 +12,7 @@ Use `~/.omp/agent/workflow-kit/` as the reusable workflow kit for global and per
 4. Use a matching project skill from `.agents/skills/` when the task matches its description.
 5. Keep one issue/task to one branch/worktree to one PR unless the repo explicitly says otherwise.
 6. Verify behavior with the project’s documented commands before calling work complete.
-7. Leave a handoff in `docs/handoffs/` when work stops or blocks.
+7. Write any handoff as a temporary file (e.g. under `/tmp`), never committed to the repo — keep repos lean.
 
 ## Skill authoring
 
