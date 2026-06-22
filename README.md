@@ -27,7 +27,29 @@ Every harness change is planned and validated as a dry run before any future liv
 
 The gate reports planned OMP, Codex, and Claude candidate paths, generated config destinations, local-only skips, duplicate paths, overwrite risk, and tracked-source hygiene. It rejects dangerous destinations, local-only write targets, secret-looking values, private home paths in plan data or tracked source, auth/cache files, runtime databases, sessions, logs, histories, and whole-root Claude skill symlinks.
 
-The apply/render executor is intentionally not implemented yet. This README documents the model and the current dry-run safety boundary; it does not claim a working installer for `~/.omp`, `~/.codex`, `~/.claude`, or repo config.
+The apply/render executor is [`scripts/render-harness-nucleus.mjs`](scripts/render-harness-nucleus.mjs). It is dry-run by default and only writes under an explicit, strict-manual `--write` approval. See [Installing the harness nucleus](#installing-the-harness-nucleus) for the gated flow.
+
+## Installing the harness nucleus
+
+The harness nucleus is installed with a single gated flow built around [`scripts/render-harness-nucleus.mjs`](scripts/render-harness-nucleus.mjs). The dry run is the default; the apply step is opt-in.
+
+1. **Dry-run (default).** Render every candidate into an ephemeral temp dir, run the read-only safety gate over the rendered output, and print the candidate manifest. Nothing is written to live `~/.omp`, `~/.codex`, `~/.claude`, or repo config.
+
+   ```sh
+   npm run render-nucleus
+   ```
+
+2. **Review.** Read the printed candidate manifest. The `[appliable candidates]` block lists the create-missing-only files `--write` would add; `[reported candidates]` and `[skipped local-only surfaces]` are rendered and validated but never written. Confirm the destinations, dispositions, and that `Result: passed`.
+
+3. **Approve and apply.** Only after reviewing the dry-run output, run the gated apply:
+
+   ```sh
+   npm run install-nucleus
+   ```
+
+   `install-nucleus` is `render-harness-nucleus.mjs --write`: a strict-manual apply that refuses unless the dry-run render and safety gate pass clean. It is **create-missing-only** (never overwrites an existing non-marker live file), **backed-up** (any kit-owned marker is backed up before it is updated), and **idempotent** (a second run against the applied marker manifest is a clean no-op).
+
+Scope a different live HOME with `--home <dir>` (default `$HOME`); see `node scripts/render-harness-nucleus.mjs --help` for the full option list.
 
 ## Target Directory Layout
 
