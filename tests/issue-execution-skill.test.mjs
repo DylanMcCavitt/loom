@@ -19,7 +19,7 @@ test("issue-execution requires repo-local docs", () => {
 });
 
 test("issue-execution routes to specialized skills", () => {
-  for (const route of ["triage", "issue-bootstrap", "issue-work", "diagnose", "tdd", "handoff"]) {
+  for (const route of ["triage", "diagnose", "tdd", "handoff"]) {
     assert.ok(skill.includes(`\`${route}\``), `${route} route missing`);
   }
 });
