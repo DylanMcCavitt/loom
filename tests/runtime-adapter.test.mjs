@@ -30,7 +30,9 @@ function mkdtemp_() {
   return mkdtempSync(path.join(tmpdir(), "loo7-sessions-"));
 }
 
-// In-process fake omp RPC host (mirrors the mock fixture) for fast adapter tests.
+// In-process double of the RpcHost.request(command, params) API (resolves the response `data`
+// payload). Independent of the wire frame shape — it exercises adapter gating/projection/redaction
+// with deliberately hostile fields (a `messages` array, a secret-looking `note`, a /Users/ path).
 function fakeHostFactory() {
   return async () => ({
     async request(command, params = {}) {
@@ -40,9 +42,11 @@ function fakeHostFactory() {
         case "get_session_stats":
           return { messages: 12, tokens: 3456 };
         case "set_session_name":
-          return { ok: true, name: params.name };
+          // Verified: success carries no data payload.
+          return undefined;
         case "set_model":
-          return { ok: true, model: params.model };
+          // Verified params: provider + modelId; data is the resolved Model { provider, id }.
+          return { provider: params.provider, id: params.modelId };
         default:
           throw new Error("unknown_command");
       }
@@ -130,7 +134,7 @@ test("adapter: Tier M requires a selector-bound token", async () => {
 
   const ok = await adapter.handle({ op: "session.rename", selector: { session_id: "01900000" }, params: { name: "X" }, confirmationToken: first.confirmationToken });
   assert.equal(ok.status, "ok");
-  assert.equal(ok.result.name, "X");
+  assert.equal(ok.session.sessionId, ID_A, "rename reaches dispatch for the resolved session (no data payload)");
 
   // Token is bound to the session — A's token must not authorize B.
   const wrong = await adapter.handle({ op: "session.rename", selector: { session_id: ID_B1 }, params: { name: "X" }, confirmationToken: first.confirmationToken });
@@ -141,15 +145,16 @@ test("adapter: Tier M requires a selector-bound token", async () => {
 test("adapter: Tier D requires token then explicit approval", async () => {
   const root = makeSessionsDir();
   const adapter = new RuntimeAdapter({ sessionsDir: root, makeRpcHost: fakeHostFactory() });
-  const need = await adapter.handle({ op: "model.set", selector: { session_id: "01900000" }, params: { model: "pi/slow" } });
+  const need = await adapter.handle({ op: "model.set", selector: { session_id: "01900000" }, params: { provider: "pi", modelId: "slow" } });
   assert.equal(need.status, "confirmation_required");
 
-  const unapproved = await adapter.handle({ op: "model.set", selector: { session_id: "01900000" }, params: { model: "pi/slow" }, confirmationToken: need.confirmationToken });
+  const unapproved = await adapter.handle({ op: "model.set", selector: { session_id: "01900000" }, params: { provider: "pi", modelId: "slow" }, confirmationToken: need.confirmationToken });
   assert.equal(unapproved.status, "approval_required");
 
-  const done = await adapter.handle({ op: "model.set", selector: { session_id: "01900000" }, params: { model: "pi/slow" }, confirmationToken: need.confirmationToken, approved: true });
+  const done = await adapter.handle({ op: "model.set", selector: { session_id: "01900000" }, params: { provider: "pi", modelId: "slow" }, confirmationToken: need.confirmationToken, approved: true });
   assert.equal(done.status, "ok");
-  assert.equal(done.result.model, "pi/slow");
+  assert.equal(done.result.id, "slow");
+  assert.equal(done.result.provider, "pi");
   rmSync(root, { recursive: true, force: true });
 });
 
@@ -178,7 +183,8 @@ test("rpc host: spawns the mock, awaits ready, correlates a response", async () 
   await host.start();
   assert.equal(host.ready, true);
   const stats = await host.request("get_session_stats");
-  assert.equal(stats.messages, 12);
+  assert.equal(stats.totalMessages, 12);
+  assert.equal(stats.tokens.total, 3456);
   await host.close();
 });
 
@@ -194,7 +200,7 @@ test("end-to-end: adapter drives a spawned mock omp over RPC", async () => {
   });
   const res = await adapter.handle({ op: "session.stats", selector: { session_id: "01900000" } });
   assert.equal(res.status, "ok");
-  assert.equal(res.result.messages, 12);
+  assert.equal(res.result.totalMessages, 12);
   rmSync(root, { recursive: true, force: true });
 });
 
@@ -232,3 +238,52 @@ test("selectors: a symlinked session file is rejected (local-only containment)",
     rmSync(outside, { recursive: true, force: true });
   }
 });
+
+test("rpc host: get_state over the wire is projected to metadata and redacted", async () => {
+  // Exercises the VERIFIED response envelope end-to-end: a spawned mock emits
+  // {type:"response",command:"get_state",success:true,data:{...}}; the host unwraps `data`,
+  // the adapter projects Tier R to metadata and scrubs the synthetic secret + /Users/ path.
+  const root = makeSessionsDir();
+  const adapter = new RuntimeAdapter({
+    sessionsDir: root,
+    makeRpcHost: async () => {
+      const host = new RpcHost({ command: process.execPath, args: [mockOmp] });
+      await host.start();
+      return host;
+    },
+  });
+  const res = await adapter.handle({ op: "session.get", selector: { session_id: "01900000" } });
+  assert.equal(res.status, "ok");
+  assert.equal(res.result.sessionId, "mock");
+  assert.equal(res.result.model.id, "default");
+  assert.equal(typeof res.result.sessionFile_chars, "number", "session file path reduced to a length");
+  assert.equal(res.result.sessionFile, undefined, "raw session file path not forwarded");
+  const serialized = JSON.stringify(res.result);
+  assert.ok(!serialized.includes("/Users/"), "private home path redacted");
+  assert.ok(!serialized.includes("ABCDEFGHIJKLMNOP"), "secret-looking value redacted");
+  rmSync(root, { recursive: true, force: true });
+});
+
+// Opt-in live probe of the REAL `omp --mode rpc`. Skipped unless LOO_OMP_LIVE=1, so CI and
+// hermetic runs never spawn the real agent or require auth. Sends ONLY non-model commands
+// (get_state / get_session_stats) under a hard per-request timeout, then tears the child down.
+// It NEVER sends a prompt or any model-invoking command.
+test(
+  "live omp --mode rpc: ready + non-model commands match the verified envelope",
+  { skip: process.env.LOO_OMP_LIVE === "1" ? false : "set LOO_OMP_LIVE=1 to run the live probe" },
+  async () => {
+    const host = new RpcHost({ command: "omp", args: ["--mode", "rpc"], readyTimeoutMs: 15000, requestTimeoutMs: 15000 });
+    try {
+      await host.start();
+      assert.equal(host.ready, true);
+      const state = await host.request("get_state", {}, { timeoutMs: 10000 });
+      assert.equal(typeof state.sessionId, "string");
+      assert.ok(state.model && typeof state.model.provider === "string", "get_state.data.model is a Model");
+      const stats = await host.request("get_session_stats", {}, { timeoutMs: 10000 });
+      assert.equal(typeof stats.totalMessages, "number");
+      assert.ok(stats.tokens && typeof stats.tokens.total === "number", "SessionStats carries a token breakdown");
+    } finally {
+      await host.close();
+    }
+  },
+);

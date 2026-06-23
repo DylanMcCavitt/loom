@@ -3,12 +3,17 @@
 // Spawns and OWNS an `omp --mode rpc` child process and speaks newline-delimited JSON over
 // stdio. There is no attach-to-running-TUI and no control port (LOO-7 spike, omp://rpc.md).
 //
-// Wire shape used here: requests are `{id, command, params}`; the child emits a `{type:"ready"}`
-// frame once, then responses `{id, result}` / `{id, error}`, plus unsolicited event frames.
-// NOTE: the exact omp RPC field names (command vs type, response envelope, id correlation) must
-// be reconciled against the real protocol in the live-omp integration sub-issue; the mock used
-// by the tests conforms to this shape, so this module's machinery (ready-wait, correlation,
-// timeouts, exit handling) is what gets exercised.
+// Wire shape (VERIFIED against omp/16.0.5 — see docs/harness/omp-runtime-adapter-contract.md §5):
+//   request : `{ id?: string, type: <command>, ...inline params }` — the command name is `type`,
+//             params are inlined at the top level (NOT a nested `params` object), `id` is an
+//             optional string the response echoes back.
+//   ready   : `{ type: "ready" }`, emitted once at startup.
+//   response: success `{ id?, type: "response", command, success: true, data? }`;
+//             failure `{ id?, type: "response", command, success: false, error: string }`.
+//   Any other frame (session/agent events, available_commands_update, extension_ui_request,
+//   host_tool_call, …) is unsolicited and is recorded on `this.events`, never correlated.
+// Source: dist/types/modes/rpc/rpc-types.d.ts (RpcCommand/RpcResponse) + a live `omp --mode rpc`
+// probe (get_state/get_session_stats) + omp://rpc.md.
 
 import { spawn as nodeSpawn } from "node:child_process";
 import { createInterface } from "node:readline";
@@ -88,26 +93,34 @@ export class RpcHost {
           }
           return;
         }
-        if (frame.id !== undefined && this.pending.has(frame.id)) {
-          const { resolve: resolveReq, reject: rejectReq, timer } = this.pending.get(frame.id);
-          this.pending.delete(frame.id);
-          clearTimeout(timer);
-          if (frame.error !== undefined && frame.error !== null) {
-            rejectReq(new Error(typeof frame.error === "string" ? frame.error : JSON.stringify(frame.error)));
-          } else {
-            resolveReq(frame.result ?? frame);
+        if (frame.type === "response") {
+          const rid = frame.id;
+          if (rid !== undefined && this.pending.has(rid)) {
+            const { resolve: resolveReq, reject: rejectReq, timer } = this.pending.get(rid);
+            this.pending.delete(rid);
+            clearTimeout(timer);
+            if (frame.success === false) {
+              rejectReq(new Error(typeof frame.error === "string" ? frame.error : JSON.stringify(frame.error ?? "rpc error")));
+            } else {
+              resolveReq(frame.data);
+            }
+            return;
           }
-          return;
+          // Uncorrelated response (e.g. an unknown command echoes id:undefined, or a late
+          // prompt-scheduling error after stdin close) — record it, never silently drop.
         }
         this.events.push(frame);
       });
     });
   }
 
+  // `command` is the RPC command name written on the wire as the frame `type`; `params` fields are
+  // inlined alongside `id`/`type`. Resolves with the response `data` payload (undefined for
+  // commands that carry no data), rejects with an Error built from `error` on `success:false`.
   request(command, params = {}, options = {}) {
     if (this.closed) return Promise.reject(new Error("rpc host is closed"));
     if (!this.ready) return Promise.reject(new Error("rpc host is not ready"));
-    const id = this.nextId;
+    const id = `req_${this.nextId}`;
     this.nextId += 1;
     const timeoutMs = options.timeoutMs ?? this.requestTimeoutMs;
     return new Promise((resolve, reject) => {
@@ -116,7 +129,7 @@ export class RpcHost {
         reject(new Error(`rpc request "${command}" timed out after ${timeoutMs}ms`));
       }, timeoutMs);
       this.pending.set(id, { resolve, reject, timer });
-      this.child.stdin.write(`${JSON.stringify({ id, command, params })}\n`);
+      this.child.stdin.write(`${JSON.stringify({ ...params, id, type: command })}\n`);
     });
   }
 

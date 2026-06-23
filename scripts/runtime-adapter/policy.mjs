@@ -15,6 +15,26 @@
 //   fs:true        → resolved locally from the sessions directory (filenames/metadata only).
 //   cli:<verb>     → the `omp` CLI for saved-file ops (supplementary).
 //   unsupported    → no verified backend in omp/16.0.5; the adapter returns not_implemented.
+//
+// RPC command names + inline params VERIFIED against omp/16.0.5 (dist/types/modes/rpc/rpc-types.d.ts
+// `RpcCommand`/`RpcResponse`; a live `omp --mode rpc` probe; omp://rpc.md). The wire frame `type`
+// IS the command name in each `rpc:` mapping below; request params are inlined on the frame (not
+// nested under `params`), and the response `data` is unwrapped by rpc-host. Per op — type / params
+// → success data:
+//   get_state         {}                      → RpcSessionState
+//   get_session_stats {}                      → SessionStats { totalMessages, tokens{ total, … }, … }
+//   set_session_name  { name }                → (no data; empty name rejected)
+//   set_model         { provider, modelId }   → Model { provider, id, … }
+//   compact           { customInstructions? } → CompactionResult
+//   branch            { entryId }             → { text, cancelled }
+//   new_session       { parentSession? }      → { cancelled }
+//   switch_session    { sessionPath }         → { cancelled }
+//   get_messages      {}                      → { messages: AgentMessage[] }
+//   login             { providerId }          → { providerId }
+// All ten `rpc:` names below match the verified `type` values (no corrections needed). The adapter
+// forwards the caller's `params` verbatim as the inlined fields, so callers must use the param
+// names above — notably set_model takes provider+modelId (not `model`), switch_session takes
+// sessionPath, branch takes entryId, and login takes providerId.
 
 export const TIERS = Object.freeze({ R: "R", M: "M", D: "D" });
 

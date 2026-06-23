@@ -141,6 +141,29 @@ The adapter is an **MCP server** whose single command envelope is served by laye
 
 Rationale: one typed MCP schema is the cross-harness contract (selector, tiers, confirmation, redaction in one place); RPC mode is the only surface with genuine live-session access and needs no new port or daemon beyond the spawned child; the extension is reserved for the few needs RPC doesn't cover, keeping the omp-version coupling minimal.
 
+### 5.1 Verified RPC wire schema (omp/16.0.5)
+
+> Reconciled in LOO-10. The PR #71 foundation *assumed* the frame shape (`{id, command, params}` requests and `{id, result}` / `{id, error}` responses) and conformed a mock to it. The real schema below is **verified** against three sources: the bundled implementation `dist/cli.js` (the `{type:"ready"}` writer and the `{type:"response",command,success,…}` builder), the canonical declarations `dist/types/modes/rpc/rpc-types.d.ts` (`RpcCommand` lines 17–167, `RpcResponse` lines 243–519, `RpcSessionState` lines 168–193), and a guarded live `omp --mode rpc` probe (sent `get_state` + `get_session_stats`, captured the frames, killed the child — no model call). `omp://rpc.md` documents the same protocol. `scripts/runtime-adapter/rpc-host.mjs` and `tests/fixtures/mock-omp-rpc.mjs` now match this exactly.
+
+- **Request** (stdin, one JSON object per line): `{ id?: string, type: <command>, ...inline params }`. The command name is the **`type`** field (not `command`); params are **inlined at the top level** (not nested under a `params` object); **`id` is an optional string** the response echoes back (not a required number). Example: `{ "id": "req_1", "type": "set_session_name", "name": "demo" }`.
+- **Ready** (stdout, once at startup): `{ "type": "ready" }` — this was the one assumed detail that was already correct.
+- **Response** (stdout): success `{ id?, type: "response", command, success: true, data? }`; failure `{ id?, type: "response", command, success: false, error: string }`. The payload key is **`data`** (not `result`); failures carry a string **`error`** and `success: false`. Commands with no payload (e.g. `set_session_name`) omit `data` entirely. Example success: `{ "id": "req_1", "type": "response", "command": "set_model", "success": true, "data": { "provider": "pi", "id": "default" } }`.
+- **Correlation**: by the echoed string `id`. Edge cases (from the runtime): an *unknown* command response is emitted with `id: undefined`, and parse/handler exceptions emit `command: "parse"` with `id: undefined` — neither correlates, so the host records them as events rather than resolving a request.
+- **Unsolicited frames**: between `ready` and a response the child also emits non-`response` frames — `available_commands_update`, `extension_ui_request`, session/agent events (`agent_start`, `message_update`, …), `host_tool_call`, etc. (observed live). The host records every non-`ready`/non-`response` frame on its event list and never treats it as a command result.
+- **Verified op → request type / inline params → success `data`** (the adapter ops in `policy.mjs`):
+  - `get_state` — `{}` → `RpcSessionState` (`{ model: { provider, id, … }, sessionId, sessionFile, messageCount, contextUsage: { tokens, contextWindow, percent }, … }`).
+  - `get_session_stats` — `{}` → `SessionStats` (`{ sessionId, userMessages, assistantMessages, toolCalls, toolResults, totalMessages, tokens: { input, output, cacheRead, cacheWrite, total }, premiumRequests, cost }`; **no `messages` field** — the assumed mock's `{ messages, tokens }` was fabricated).
+  - `set_session_name` — `{ name }` → no `data` (empty name rejected: `Session name cannot be empty`).
+  - `set_model` — `{ provider, modelId }` → `Model` (`{ provider, id, … }`). Takes provider+modelId, **not** `model`.
+  - `compact` — `{ customInstructions? }` → `CompactionResult` (`{ summary, firstKeptEntryId, tokensBefore, … }`).
+  - `branch` — `{ entryId }` → `{ text, cancelled }`.
+  - `new_session` — `{ parentSession? }` → `{ cancelled }`.
+  - `switch_session` — `{ sessionPath }` → `{ cancelled }`.
+  - `get_messages` — `{}` → `{ messages: AgentMessage[] }` (deny-by-default content egress).
+  - `login` — `{ providerId }` → `{ providerId }` (deny-by-default).
+
+All ten adapter command names matched the verified `type` values, so no name corrections were needed; the reconciliation corrected the request/response **envelope** (`type`/inline-params/string-`id`; `data`/`success`/`error`) and the documented per-op params. A guarded live probe is preserved as an opt-in test (`LOO_OMP_LIVE=1`, skipped in CI) plus a synthetic mock fixture matching this schema; neither commits captured session content.
+
 ## Open questions — resolved (LOO-7 spike)
 
 Verified against omp/16.0.5 (`omp://rpc.md`, `omp://hooks.md`, `omp://extensions.md`, `omp --help`, `~/.omp/agent/sessions/`):

@@ -1,8 +1,14 @@
 #!/usr/bin/env node
-// Mock `omp --mode rpc` for hermetic LOO-7 tests. Conforms to scripts/runtime-adapter/rpc-host.mjs:
-// emits one {type:"ready"} frame, then answers {id,command,params} with {id,result} or {id,error}.
-// Intentionally returns a secret-looking string and a /Users/ path so the adapter's redaction is
-// exercised. (tests/ is outside the safety-gate source-scan scope.)
+// Mock `omp --mode rpc` for hermetic LOO-7/LOO-10 tests. Conforms to the VERIFIED omp/16.0.5 RPC
+// wire shape (docs/harness/omp-runtime-adapter-contract.md §5; dist/types/modes/rpc/rpc-types.d.ts):
+//   - emits one `{ type: "ready" }` frame at startup;
+//   - reads requests `{ id?, type, ...inline params }` (command name is `type`, params inlined);
+//   - answers with `{ id?, type: "response", command, success: true, data? }` on success and
+//     `{ id?, type: "response", command, success: false, error }` on failure, echoing the `id`.
+// Data payloads mirror the real result types (RpcSessionState, SessionStats, Model, …) but are
+// SYNTHETIC. get_state intentionally carries a secret-looking string and a /Users/ path so the
+// adapter's redaction/projection is exercised; both are fabricated (tests/ is outside the
+// safety-gate source-scan scope) — no real session content, path, or secret is present here.
 
 import { createInterface } from "node:readline";
 
@@ -18,37 +24,75 @@ rl.on("line", (line) => {
   } catch {
     return;
   }
-  const { id, command, params = {} } = message;
-  const reply = (result) => process.stdout.write(`${JSON.stringify({ id, result })}\n`);
-  const fail = (error) => process.stdout.write(`${JSON.stringify({ id, error })}\n`);
+  const { id, type } = message;
+  // Params are inlined on the frame, not nested under `params`.
+  const reply = (data) =>
+    process.stdout.write(
+      `${JSON.stringify(
+        data === undefined
+          ? { id, type: "response", command: type, success: true }
+          : { id, type: "response", command: type, success: true, data },
+      )}\n`,
+    );
+  const fail = (error) =>
+    process.stdout.write(`${JSON.stringify({ id, type: "response", command: type, success: false, error })}\n`);
 
-  switch (command) {
+  switch (type) {
     case "get_state":
+      // RpcSessionState (subset). `sessionFile`/`note` are synthetic redaction bait.
       return reply({
-        sessionId: params.sessionId ?? "mock",
-        name: "Mock Session",
-        model: "pi/default",
-        cwd: "/Users/dev/project",
+        model: { provider: "pi", id: "default" },
+        thinkingLevel: "medium",
+        isStreaming: false,
+        isCompacting: false,
+        steeringMode: "one-at-a-time",
+        followUpMode: "one-at-a-time",
+        interruptMode: "immediate",
+        sessionFile: "/Users/dev/project/.omp/agent/sessions/mock.jsonl",
+        sessionId: "mock",
+        sessionName: "Mock Session",
+        autoCompactionEnabled: true,
+        messageCount: 2,
+        queuedMessageCount: 0,
+        todoPhases: [],
+        contextUsage: { tokens: 1100, contextWindow: 200000, percent: 0.55 },
         note: "token = ABCDEFGHIJKLMNOP1234567890",
-        messages: [{ role: "user" }, { role: "assistant" }],
       });
     case "get_session_stats":
-      return reply({ messages: 12, tokens: 3456, contextUsedPct: 42 });
+      // SessionStats (verified shape: counts + a nested token breakdown, no raw content).
+      return reply({
+        sessionFile: "/Users/dev/project/.omp/agent/sessions/mock.jsonl",
+        sessionId: "mock",
+        userMessages: 5,
+        assistantMessages: 7,
+        toolCalls: 9,
+        toolResults: 9,
+        totalMessages: 12,
+        tokens: { input: 2000, output: 1456, cacheRead: 0, cacheWrite: 0, total: 3456 },
+        premiumRequests: 3,
+        cost: 0.12,
+      });
     case "set_session_name":
-      return reply({ ok: true, name: params.name });
+      // Real `set_session_name` success carries NO data; empty name is rejected.
+      if (typeof message.name !== "string" || message.name.length === 0) return fail("Session name cannot be empty");
+      return reply();
     case "set_model":
-      return reply({ ok: true, model: params.model });
+      // Params are `provider` + `modelId`; data is the resolved Model.
+      return reply({ provider: message.provider ?? "pi", id: message.modelId ?? "default" });
     case "compact":
-      return reply({ ok: true });
+      // CompactionResult (subset).
+      return reply({ summary: "compacted", firstKeptEntryId: "entry-1", tokensBefore: 1000 });
     case "branch":
-      return reply({ ok: true, branchedFrom: params.entryId ?? null });
+      return reply({ text: "branched", cancelled: false });
     case "new_session":
-      return reply({ ok: true, sessionId: "new-session" });
+      return reply({ cancelled: false });
     case "switch_session":
-      return reply({ ok: true });
+      return reply({ cancelled: false });
     case "get_messages":
       return reply({ messages: [{ role: "user", content: "raw transcript" }] });
+    case "login":
+      return reply({ providerId: message.providerId ?? "anthropic" });
     default:
-      return fail("unknown_command");
+      return fail(`Unknown command: ${type}`);
   }
 });
