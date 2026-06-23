@@ -39,6 +39,7 @@ const cases = [
     project: "PRJ-FN",
     roles: { foundation: "LOO-1", ready: "LOO-2", inReview: "LOO-3", backlog: "LOO-4", canceled: "LOO-5", triage: "LOO-6" },
     labels: ["Feature", "AFK"],
+    branch: "dylanmccavitt2015/loo-2-tracker-bind",
   },
   {
     name: "github",
@@ -46,12 +47,13 @@ const cases = [
     project: "acme/widgets",
     roles: { foundation: "#1", ready: "#2", inReview: "#3", backlog: "#4", canceled: "#5", triage: "#6" },
     labels: ["ready-for-agent", "feature"],
+    branch: "dylanmccavitt2015/2-tracker-bind",
   },
 ];
 
 // === Common contract assertions, run against every adapter ===
 
-for (const { name, tracker, project, roles, labels } of cases) {
+for (const { name, tracker, project, roles, labels, branch } of cases) {
   test(`${name} adapter satisfies the shared tracker contract`, () => {
     assert.deepEqual(validateTrackerAdapter(tracker), { ok: true, errors: [] });
   });
@@ -88,6 +90,9 @@ for (const { name, tracker, project, roles, labels } of cases) {
     const inReview = tracker.assessReadiness(roles.inReview);
     assert.equal(inReview.ready, false);
     assert.ok(inReview.reasons.includes("state is in-review, not ready"), inReview.reasons.join("\n"));
+    // The dependency (the still-ready ghost) is not done, so the dependency
+    // gate also fires -> dependency completion is actually load-bearing here.
+    assert.ok(inReview.reasons.includes(`blocked by ${roles.ready} (ready)`), inReview.reasons.join("\n"));
   });
 
   test(`${name} plans an id-carrying branch/PR bridge`, () => {
@@ -95,6 +100,8 @@ for (const { name, tracker, project, roles, labels } of cases) {
     assert.equal(bridge.kind, "bridge-plan");
     assert.equal(bridge.ghostId, roles.ready);
     assert.ok(branchCarriesGhostId(bridge.branch, roles.ready), bridge.branch);
+    // Pin the literal branch shape, not just self-consistency with the checker.
+    assert.equal(bridge.branch, branch);
     assert.equal(bridge.closingKeyword, `Closes ${roles.ready}`);
   });
 
