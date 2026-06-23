@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 
 import { resolveFactoryStatePaths, validateEnvelopeYaml, withArtifactMetadata } from "./schema.mjs";
+import { computeScienceLevel } from "./science.mjs";
 
 const USAGE = "Usage: node scripts/factory-nucleus/scan.mjs [--root <path>] [--save] [--content-scan] [--integrated-envelope]";
 const COMMAND_KINDS = Object.freeze(["build", "test", "lint"]);
@@ -376,30 +377,17 @@ function directoryHasFiles(root, relativePath) {
   return readdirSync(fullPath).length > 0;
 }
 
-function computeScience({ stack, commands, dirty, protectedSurfaces, root, pointer }) {
-  const missingUnlocks = [];
+function computeScience({ stack, commands, dirty, root, pointer }) {
   const hasEnvelope = directoryHasFiles(root, ".agents/envelope");
-  if (stack.every((entry) => entry.name === "unknown")) missingUnlocks.push("stack detection");
-  for (const kind of COMMAND_KINDS) {
-    if (commands[kind].status === "absent") missingUnlocks.push(`${kind} command`);
-  }
-  if (!directoryHasFiles(root, ".github/workflows")) missingUnlocks.push("ci workflow");
-  if (!hasEnvelope && pointer?.status !== "valid") missingUnlocks.push("factory envelope");
-  if (!hasEnvelope) missingUnlocks.push("tracker bind");
-  if (dirty.isDirty) missingUnlocks.push("clean worktree");
-
-  let level = "pre-automation";
-  if (stack.some((entry) => entry.name !== "unknown")) level = "automation";
-  if (
-    COMMAND_KINDS.every((kind) => commands[kind].status === "found")
-    && protectedSurfaces.some((surface) => surface.path === ".github/workflows")
-    && !dirty.isDirty
-  ) {
-    level = "logistic";
-  }
-  if (level === "logistic" && hasEnvelope) level = "chemical";
-
-  return { level, missingUnlocks };
+  return computeScienceLevel({
+    stackDetected: stack.some((entry) => entry.name !== "unknown"),
+    buildCommand: commands.build.status === "found",
+    testCommand: commands.test.status === "found",
+    lintCommand: commands.lint.status === "found",
+    ciWorkflow: directoryHasFiles(root, ".github/workflows"),
+    cleanWorktree: !dirty.isDirty,
+    envelope: hasEnvelope || pointer?.status === "valid",
+  });
 }
 
 function isContentScanFile(filePath) {
@@ -489,7 +477,7 @@ export function scanFactory({ root = process.cwd(), generatedAt, content = false
   const dirty = dirtyState(repoRoot);
   const protectedSurfaces = detectProtectedSurfaces(repoRoot);
   const pointer = discoverPointer(repoRoot);
-  const science = computeScience({ stack, commands, dirty, protectedSurfaces, root: repoRoot, pointer });
+  const science = computeScience({ stack, commands, dirty, root: repoRoot, pointer });
 
   return withArtifactMetadata("factory-scan", {
     mode: "zero-footprint",
