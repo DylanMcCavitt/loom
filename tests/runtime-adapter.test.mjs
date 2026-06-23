@@ -55,6 +55,38 @@ function fakeHostFactory() {
   });
 }
 
+// Recording double of RpcHost.request that captures every dispatched (command, params) and answers
+// the mutating commands with their VERIFIED success shapes (mirrors tests/fixtures/mock-omp-rpc.mjs).
+// Lets a test prove an approved op reaches dispatch with the correct command name + verbatim params
+// and returns the mapped result.
+function recordingHostFactory() {
+  const calls = [];
+  const factory = async () => ({
+    async request(command, params = {}) {
+      calls.push({ command, params });
+      switch (command) {
+        case "set_session_name":
+          if (typeof params.name !== "string" || params.name.length === 0) throw new Error("Session name cannot be empty");
+          return undefined; // verified: success carries no data
+        case "set_model":
+          return { provider: params.provider, id: params.modelId };
+        case "compact":
+          return { summary: "compacted", firstKeptEntryId: "entry-1", tokensBefore: 1000 };
+        case "branch":
+          return { text: "branched", cancelled: false };
+        case "new_session":
+          return { cancelled: false };
+        case "switch_session":
+          return { cancelled: false };
+        default:
+          throw new Error(`unexpected command: ${command}`);
+      }
+    },
+    async close() {},
+  });
+  return { factory, calls };
+}
+
 test("policy registry: tiers, deny flags, and discovery shape", () => {
   assert.equal(getOp("session.get").tier, "R");
   assert.equal(getOp("session.rename").tier, "M");
@@ -176,6 +208,86 @@ test("adapter: unsupported op reports not_implemented (after gating)", async () 
   const res = await adapter.handle({ op: "session.move", selector: { session_id: "01900000" }, confirmationToken: need.confirmationToken, approved: true });
   assert.equal(res.status, "not_implemented");
   rmSync(root, { recursive: true, force: true });
+});
+
+test("policy: verified params are documented per mutating op and surfaced for discovery", () => {
+  // Param-handling decision (a): the verified RPC param names are documented machine-readably on
+  // each op (no normalization layer), so MCP callers know exactly what to pass.
+  assert.deepEqual(getOp("session.rename").params, { name: "string" });
+  assert.deepEqual(getOp("model.set").params, { provider: "string", modelId: "string" });
+  assert.deepEqual(getOp("session.compact").params, { customInstructions: "string?" });
+  assert.deepEqual(getOp("session.branch").params, { entryId: "string" });
+  assert.deepEqual(getOp("session.new").params, { parentSession: "string?" });
+  assert.deepEqual(getOp("session.switch").params, { sessionPath: "string" });
+
+  const ops = describeOps();
+  const setModel = ops.find((o) => o.op === "model.set");
+  assert.equal(setModel.backend, "rpc:set_model");
+  assert.deepEqual(setModel.params, { provider: "string", modelId: "string" });
+  // No-param ops still expose an (empty) params shape for discovery.
+  assert.deepEqual(ops.find((o) => o.op === "session.list").params, {});
+
+  // session.move has NO verified RPC command (RpcCommand union, omp/16.0.5) — it stays unsupported
+  // and is deferred to LOO-12; never fabricate a command for it.
+  const move = ops.find((o) => o.op === "session.move");
+  assert.equal(move.backend, "unsupported");
+  assert.equal(getOp("session.move").unsupported, true);
+  assert.equal(getOp("session.move").rpc, undefined);
+});
+
+test("adapter: each mutating op gates by tier then dispatches the verified command + params", async () => {
+  // For every mutating op: walk the tier gate (M = token; D = token + approval), then assert that
+  // on approval the adapter dispatches the verified RPC command with the params forwarded verbatim
+  // and returns the mapped result. Earlier (un-gated) calls must NOT reach dispatch.
+  const cases = [
+    { op: "session.rename", tier: "M", rpc: "set_session_name", params: { name: "Renamed" }, check: (res) => assert.equal(res.result, undefined, "set_session_name success carries no data") },
+    { op: "model.set", tier: "D", rpc: "set_model", params: { provider: "anthropic", modelId: "opus" }, check: (res) => { assert.equal(res.result.provider, "anthropic"); assert.equal(res.result.id, "opus"); } },
+    { op: "session.compact", tier: "D", rpc: "compact", params: { customInstructions: "keep decisions" }, check: (res) => assert.equal(res.result.summary, "compacted") },
+    { op: "session.compact", tier: "D", rpc: "compact", params: {}, check: (res) => assert.equal(res.result.summary, "compacted") },
+    { op: "session.branch", tier: "D", rpc: "branch", params: { entryId: "entry-1" }, check: (res) => { assert.equal(res.result.text, "branched"); assert.equal(res.result.cancelled, false); } },
+    { op: "session.new", tier: "D", rpc: "new_session", params: { parentSession: "parent.jsonl" }, check: (res) => assert.equal(res.result.cancelled, false) },
+    { op: "session.new", tier: "D", rpc: "new_session", params: {}, check: (res) => assert.equal(res.result.cancelled, false) },
+    { op: "session.switch", tier: "D", rpc: "switch_session", params: { sessionPath: "/tmp/x.jsonl" }, check: (res) => assert.equal(res.result.cancelled, false) },
+  ];
+  const root = makeSessionsDir();
+  const { factory, calls } = recordingHostFactory();
+  const adapter = new RuntimeAdapter({ sessionsDir: root, makeRpcHost: factory });
+  const selector = { session_id: "01900000" };
+  try {
+    for (const tc of cases) {
+      const label = `${tc.op}(${JSON.stringify(tc.params)})`;
+      // 1. No token → tier-appropriate confirmation is demanded; dispatch is NOT reached.
+      const first = await adapter.handle({ op: tc.op, selector, params: tc.params });
+      assert.equal(first.status, "confirmation_required", `${label}: token gate`);
+      assert.equal(first.needs, tc.tier === "M" ? "token" : "token+approval", `${label}: needs`);
+      const token = first.confirmationToken;
+      assert.ok(token, `${label}: token issued`);
+
+      // 2. Tier D: token alone is still insufficient — explicit human approval is required.
+      if (tc.tier === "D") {
+        const staged = await adapter.handle({ op: tc.op, selector, params: tc.params, confirmationToken: token });
+        assert.equal(staged.status, "approval_required", `${label}: approval gate`);
+      }
+
+      // 3. Fully gated → exactly one dispatch with the verified command name + verbatim params.
+      const before = calls.length;
+      const done = await adapter.handle({
+        op: tc.op,
+        selector,
+        params: tc.params,
+        confirmationToken: token,
+        ...(tc.tier === "D" ? { approved: true } : {}),
+      });
+      assert.equal(done.status, "ok", `${label}: dispatched`);
+      assert.equal(done.session.sessionId, ID_A, `${label}: resolved session`);
+      assert.equal(calls.length, before + 1, `${label}: single dispatch`);
+      assert.equal(calls[before].command, tc.rpc, `${label}: command name`);
+      assert.deepEqual(calls[before].params, tc.params, `${label}: params forwarded verbatim`);
+      tc.check(done);
+    }
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test("rpc host: spawns the mock, awaits ready, correlates a response", async () => {
