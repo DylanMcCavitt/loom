@@ -141,3 +141,106 @@ test("factory init-envelope does not persist current branch as default branch", 
     }
   });
 });
+
+test("factory bind-tracker --provider linear records adapter and project identity", () => {
+  withTempRepo({
+    "package.json": `${JSON.stringify({ scripts: { test: "node --test" } }, null, 2)}\n`,
+  }, (root) => {
+    const home = mkdtempSync(path.join(tmpdir(), "factory-bind-linear-home-"));
+    try {
+      initEnvelope({ root, homeDir: home, generatedAt });
+      const beforeRepo = walkFiles(root);
+      const result = spawnSync(
+        process.execPath,
+        [factoryCli, "bind-tracker", "--root", root, "--provider", "linear", "--team", "Loom", "--project", "Factory Nucleus"],
+        { encoding: "utf8", env: { ...process.env, HOME: home } },
+      );
+      assert.equal(result.status, 0, result.stderr || result.stdout);
+      assert.match(result.stdout, /Mode: bind-tracker \(writes local envelope state only; no target-repo writes\)/u);
+      assert.match(result.stdout, /Tracker: linear \(project Factory Nucleus\)/u);
+
+      const state = resolveFactoryStatePaths({ homeDir: home, targetRepoPath: root, factoryId: path.basename(root) });
+      const envelopeYaml = readFileSync(state.envelope, "utf8");
+      assert.equal(validateEnvelopeYaml(envelopeYaml).ok, true, validateEnvelopeYaml(envelopeYaml).errors.join("\n"));
+      assert.match(envelopeYaml, /provider: linear/u);
+      assert.match(envelopeYaml, /team: "Loom"/u);
+      assert.match(envelopeYaml, /project: "Factory Nucleus"/u);
+      assert.deepEqual(walkFiles(root), beforeRepo);
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+});
+
+test("factory bind-tracker --provider github records the detected source repo bridge", () => {
+  withTempRepo({
+    "package.json": `${JSON.stringify({ scripts: { test: "node --test" } }, null, 2)}\n`,
+  }, (root) => {
+    run("git", ["remote", "add", "origin", "git@github.com:acme/widgets.git"], { cwd: root });
+    const home = mkdtempSync(path.join(tmpdir(), "factory-bind-github-home-"));
+    try {
+      initEnvelope({ root, homeDir: home, generatedAt });
+      const result = spawnSync(
+        process.execPath,
+        [factoryCli, "bind-tracker", "--root", root, "--provider", "github"],
+        { encoding: "utf8", env: { ...process.env, HOME: home } },
+      );
+      assert.equal(result.status, 0, result.stderr || result.stdout);
+      assert.match(result.stdout, /Tracker: github \(repo acme\/widgets\)/u);
+
+      const state = resolveFactoryStatePaths({ homeDir: home, targetRepoPath: root, factoryId: path.basename(root) });
+      const envelopeYaml = readFileSync(state.envelope, "utf8");
+      assert.equal(validateEnvelopeYaml(envelopeYaml).ok, true, validateEnvelopeYaml(envelopeYaml).errors.join("\n"));
+      assert.match(envelopeYaml, /provider: github/u);
+      assert.match(envelopeYaml, /repo: "acme\/widgets"/u);
+      assert.doesNotMatch(envelopeYaml, /team:/u);
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+});
+
+test("factory bind-tracker without an explicit provider leaves the tracker inactive", () => {
+  withTempRepo({
+    "package.json": `${JSON.stringify({ scripts: { test: "node --test" } }, null, 2)}\n`,
+  }, (root) => {
+    const home = mkdtempSync(path.join(tmpdir(), "factory-bind-inactive-home-"));
+    try {
+      initEnvelope({ root, homeDir: home, generatedAt });
+      const state = resolveFactoryStatePaths({ homeDir: home, targetRepoPath: root, factoryId: path.basename(root) });
+      const before = readFileSync(state.envelope, "utf8");
+      const result = spawnSync(
+        process.execPath,
+        [factoryCli, "bind-tracker", "--root", root],
+        { encoding: "utf8", env: { ...process.env, HOME: home } },
+      );
+      assert.equal(result.status, 1);
+      assert.match(result.stderr, /explicit --provider <linear\|github> is required; tracker left inactive/u);
+      assert.equal(readFileSync(state.envelope, "utf8"), before);
+      assert.match(before, /provider: none/u);
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+});
+
+test("factory bind-tracker before init-envelope reports a missing envelope", () => {
+  withTempRepo({
+    "package.json": `${JSON.stringify({ scripts: { test: "node --test" } }, null, 2)}\n`,
+  }, (root) => {
+    const home = mkdtempSync(path.join(tmpdir(), "factory-bind-missing-home-"));
+    try {
+      const result = spawnSync(
+        process.execPath,
+        [factoryCli, "bind-tracker", "--root", root, "--provider", "linear", "--team", "Loom", "--project", "Factory Nucleus"],
+        { encoding: "utf8", env: { ...process.env, HOME: home } },
+      );
+      assert.equal(result.status, 1);
+      assert.match(result.stderr, /factory envelope not found; run init-envelope first/u);
+      const state = resolveFactoryStatePaths({ homeDir: home, targetRepoPath: root, factoryId: path.basename(root) });
+      assert.equal(existsSync(state.envelope), false);
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+});

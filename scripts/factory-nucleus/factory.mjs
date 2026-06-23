@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-import { main as envelopeMain } from "./envelope.mjs";
+import { bindMain, main as envelopeMain } from "./envelope.mjs";
 import { main as scanMain } from "./scan.mjs";
 
-const USAGE = "Usage: node scripts/factory-nucleus/factory.mjs <scan|init-envelope> [options]";
+const USAGE = "Usage: node scripts/factory-nucleus/factory.mjs <scan|init-envelope|bind-tracker> [options]";
 
 export function main(argv = process.argv.slice(2)) {
   const [command, ...rest] = argv;
@@ -12,6 +12,7 @@ export function main(argv = process.argv.slice(2)) {
   }
   if (command === "scan") return scanMain(rest);
   if (command === "init-envelope") return envelopeMain(rest);
+  if (command === "bind-tracker") return bindMain(rest);
   throw new Error(`Unknown factory command: ${command}`);
 }
 
