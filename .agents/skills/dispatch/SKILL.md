@@ -14,6 +14,10 @@ build it.
 Dispatch **never implements.** Code, branches, and PRs belong to `robots`.
 Splitting a fat plan into tracked slices belongs to `ghosts`.
 
+This skill does not change Linear issue state or labels, post comments, or close
+issues while being validated; during real triage it moves one issue through the
+contract's state machine and routes it onward.
+
 ## Read first: the repo contract
 
 Read the repo contract that `assembler` generated before touching any issue: the

@@ -1,10 +1,18 @@
 // In-memory model of the Factorio-kit contract: Linear as the planning system of
-// record, GitHub as code delivery, joined by the bridge (branch name carries the
-// Linear issue id; merging a PR whose branch carries an id closes that issue).
+// record, GitHub as code delivery, joined by the bridge: the branch name carries
+// the Linear issue id AND the PR body carries a closing keyword (e.g. "Closes
+// ABC-1"); merging a PR that satisfies BOTH closes the linked issue.
 //
 // This is a fixture for golden-path/behavioral evals, NOT the skills themselves.
 // It encodes the cross-skill contract so a test (or an on-demand agent eval with
 // mocked MCP) can assert the pipeline wiring is coherent.
+
+// The bridge's second requirement: a GitHub/Linear closing keyword naming the
+// issue id in the PR body (branch-id alone is not enough to auto-close).
+function closesIssue(body, id) {
+  const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`\\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\\s+#?${escaped}\\b`, "iu").test(body);
+}
 
 export function createWorld() {
   const linear = {
@@ -58,15 +66,22 @@ export function createWorld() {
       api.issue(key).state = state;
     },
 
-    // robots: one issue -> one branch (carries the id) -> one PR.
-    openPr(issueKey, branch) {
+    // robots: one issue -> one branch (carries the id) -> one PR. The PR body
+    // carries the closing keyword the bridge needs to auto-close on merge.
+    openPr(issueKey, branch, body = "") {
       api.issue(issueKey); // must exist
       if (!branch.includes(issueKey)) {
         throw new Error(`branch '${branch}' must carry issue id '${issueKey}'`);
       }
       github.branches.set(branch, issueKey);
       const number = (github.seq += 1);
-      github.prs.set(number, { number, branch, issueId: issueKey, merged: false });
+      github.prs.set(number, {
+        number,
+        branch,
+        issueId: issueKey,
+        merged: false,
+        closes: closesIssue(body, issueKey),
+      });
       api.setState(issueKey, "in_review");
       return number;
     },
@@ -90,8 +105,9 @@ export function createWorld() {
         throw new Error(`refused: open blockers ${openBlockers.join(",")}`);
       }
       pr.merged = true;
-      // The bridge: merge closes the linked issue.
-      api.setState(pr.issueId, "done");
+      // The bridge closes the issue only when the PR also carries the closing
+      // keyword; a merge without it lands the code but leaves the issue open.
+      if (pr.closes) api.setState(pr.issueId, "done");
       return pr;
     },
   };

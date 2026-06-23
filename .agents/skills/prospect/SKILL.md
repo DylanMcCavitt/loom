@@ -11,6 +11,9 @@ initiative or project with an idea/brief document attached — the planning syst
 of record for everything that follows. It does **not** spec, decompose, or build;
 it opens the patch so the rest of the kit can mine it.
 
+This skill does not create Linear initiatives, projects, or documents while being
+validated; during real intake it opens one home for the idea and attaches a brief.
+
 ## Read the contract first
 
 This skill drives Linear through its MCP tools and never hardcodes a tracker.

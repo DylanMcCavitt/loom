@@ -109,11 +109,11 @@ bus-first   the minimal-diff doctrine every code-writing skill cites.
 
 ### `blueprint`
 
-- **Trigger:** `Use when` the user wants a PRD/spec from current context, wants to
-  prototype a design before committing, or wants/needs a reusable PR/doc/issue/
-  project template.
-- **Does:** synthesize a PRD/spec (no interview — use known context), optionally
-  prototype, and publish it as a Linear document on the prospect's project. Owns
+- **Trigger:** `Use when` the user wants a PRD/spec from current context, or
+  wants/needs a reusable PR/doc/issue/project template.
+- **Does:** synthesize a PRD/spec (no interview — use known context) and publish
+  it as a Linear document on the prospect's project; route prototyping to
+  `map-seed` when a design must be felt first, then fold its findings back. Owns
   the canonical templates under `blueprint/templates/`.
 - **Linear/GitHub:** `save_document` for the spec; templates materialized by
   `assembler`.

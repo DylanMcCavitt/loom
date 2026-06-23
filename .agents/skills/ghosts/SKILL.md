@@ -9,6 +9,9 @@ In Factorio a ghost is a planned-but-unbuilt entity — a stamped outline waitin
 
 Linear is the planning system of record. This skill **never implements** and **never changes the parent idea's scope** — it only stamps the work that already got decided.
 
+This skill does not create Linear issues or sub-issues while being validated;
+during real planning it stamps the decided work as dependency-ordered issues.
+
 ## Read first: the repo contract
 
 Read the repo contract that `assembler` generated before stamping anything: the Linear team/project/label map, domain glossary, milestone list, estimate scale, and the HITL/AFK state map. Read the source spec too — usually the `blueprint` PRD document on the project (or the plan in context). Do not hardcode a tracker, team, label set, or states; read them from the contract.

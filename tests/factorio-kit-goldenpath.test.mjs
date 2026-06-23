@@ -19,7 +19,7 @@ test("golden path: dependency-ordered ghosts, branch carries id, merge closes vi
   api.createIssue({ key: "ABC-2", project, blockedBy: ["ABC-1"], labels: ["afk"] });
 
   // robots: implement ABC-1 on a branch that carries the id.
-  const pr1 = api.openPr("ABC-1", "feat/ABC-1-local-cache");
+  const pr1 = api.openPr("ABC-1", "feat/ABC-1-local-cache", "Closes ABC-1");
   assert.equal(api.issue("ABC-1").state, "in_review");
 
   // rocket-launch: a red gate refuses the merge; the issue stays open.
@@ -52,6 +52,17 @@ test("bridge invariant: a branch that omits the issue id is rejected", () => {
   const project = api.createProject("p");
   api.createIssue({ key: "ABC-9", project });
   assert.throws(() => api.openPr("ABC-9", "feat/random-branch"), /must carry issue id/u);
+});
+
+test("bridge invariant: a merge without the PR closing keyword does not close the issue", () => {
+  const { api } = createWorld();
+  const project = api.createProject("p");
+  api.createIssue({ key: "ABC-7", project });
+  // Branch carries the id, but the PR body has NO closing keyword.
+  const pr = api.openPr("ABC-7", "feat/ABC-7-cache", "wip: cache layer");
+  const merged = api.merge(pr, { tests: true, review: true, acceptance: true, ci: true, busFirst: true });
+  assert.equal(merged.merged, true); // the merge still lands the code
+  assert.notEqual(api.issue("ABC-7").state, "done"); // but the bridge does not auto-close
 });
 
 // ---- Eval coverage gate: every kit skill ships runnable trigger evals ----
@@ -92,10 +103,10 @@ test("kit handoff targets all exist as skills", () => {
   for (const [from, targets] of Object.entries(edges)) {
     const skill = readFileSync(new URL(`${from}/SKILL.md`, skillsRoot), "utf8");
     for (const to of targets) {
-      // enrichment targets (research/dispatch/map-seed) may not be built yet;
-      // only assert existence for targets that are referenced AND present.
-      const present = existsSync(new URL(`${to}/SKILL.md`, skillsRoot));
-      if (skill.includes(`\`${to}\``) && present) {
+      // A routed-to target backticked in a SKILL.md MUST exist as a skill;
+      // a dangling route fails here instead of being silently skipped.
+      if (skill.includes(`\`${to}\``)) {
+        const present = existsSync(new URL(`${to}/SKILL.md`, skillsRoot));
         assert.ok(present, `${from} routes to ${to} which must exist`);
       }
     }
