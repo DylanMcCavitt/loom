@@ -1,14 +1,16 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
+import { EventEmitter } from "node:events";
 
 import { describeOps, getOp } from "../scripts/runtime-adapter/policy.mjs";
 import { listSessions, resolveSelector } from "../scripts/runtime-adapter/selectors.mjs";
 import { RuntimeAdapter } from "../scripts/runtime-adapter/adapter.mjs";
 import { RpcHost } from "../scripts/runtime-adapter/rpc-host.mjs";
 import { createServer } from "../scripts/runtime-adapter/server.mjs";
+import { makeCliRunner } from "../scripts/runtime-adapter/cli-runner.mjs";
 
 const mockOmp = new URL("./fixtures/mock-omp-rpc.mjs", import.meta.url).pathname;
 
@@ -399,3 +401,143 @@ test(
     }
   },
 );
+
+test("adapter: transcript.export dispatches via the injected CLI runner on the full explicit path and redacts the export", async () => {
+  const root = makeSessionsDir();
+  const calls = [];
+  // Hermetic CLI runner double (no spawn). Returns deliberately hostile export output: a
+  // secret-looking value (collapses the whole string under scrubString) and a /Users/ path.
+  const fakeRunCli = async ({ op, verb, sessionId, sessionFile }) => {
+    calls.push({ op, verb, sessionId, sessionFile });
+    return {
+      op,
+      sessionId,
+      format: "html",
+      content: "<html><body>note token = ABCDEFGHIJKLMNOP1234567890</body></html>",
+      exportPath: "/Users/dev/.omp/agent/sessions/work/transcript-export.html",
+    };
+  };
+  const adapter = new RuntimeAdapter({ sessionsDir: root, makeRpcHost: fakeHostFactory(), runCli: fakeRunCli });
+  const selector = { session_id: "01900000" };
+
+  // Deny-by-default first; the refusal still mints the selector-bound token to walk the gate.
+  const refused = await adapter.handle({ op: "transcript.export", selector });
+  assert.equal(refused.status, "refused");
+  assert.equal(refused.error, "denied_by_default");
+  assert.equal(calls.length, 0, "no CLI dispatch on refusal");
+  const token = refused.confirmationToken;
+  assert.ok(token);
+
+  const ok = await adapter.handle({ op: "transcript.export", selector, explicitApproval: true, approved: true, confirmationToken: token });
+  assert.equal(ok.status, "ok");
+  assert.equal(ok.session.sessionId, ID_A);
+  assert.equal(calls.length, 1, "exactly one CLI dispatch on the full explicit path");
+  assert.equal(calls[0].verb, "export", "dispatched the cli verb declared in the registry");
+  assert.ok(calls[0].sessionFile.endsWith(".jsonl"), "runner receives the resolved session file path");
+
+  // Redaction: nothing the CLI produced leaves unscrubbed.
+  assert.equal(ok.result.content, "[redacted:secret]", "secret-bearing export collapses to a redaction marker");
+  const serialized = JSON.stringify(ok.result);
+  assert.ok(!serialized.includes("ABCDEFGHIJKLMNOP"), "no secret leaks");
+  assert.ok(!serialized.includes("/Users/"), "no private home path leaks");
+  assert.ok(ok.result.exportPath.includes("[redacted:home-path]"), "private home path redacted inline");
+  rmSync(root, { recursive: true, force: true });
+});
+
+test("adapter: transcript egress is refused unless explicitApproval + approved + a valid token are ALL present", async () => {
+  const root = makeSessionsDir();
+  const cliCalls = [];
+  const rpcCalls = [];
+  const fakeRunCli = async (args) => {
+    cliCalls.push(args);
+    return { content: "must-never-egress" };
+  };
+  const countingHost = async () => ({
+    async request(command, params) {
+      rpcCalls.push({ command, params });
+      return { messages: [{ role: "user", content: "raw transcript" }] };
+    },
+    async close() {},
+  });
+  const adapter = new RuntimeAdapter({ sessionsDir: root, makeRpcHost: countingHost, runCli: fakeRunCli });
+  const selector = { session_id: "01900000" };
+
+  // Covers a cli-backed egress (export), an rpc-backed egress (get → get_messages), and a
+  // backend-less egress (share). Each must be denied unless the full explicit path is supplied.
+  for (const op of ["transcript.export", "transcript.get", "transcript.share"]) {
+    const seed = await adapter.handle({ op, selector });
+    assert.equal(seed.status, "refused", `${op}: denied by default`);
+    assert.equal(seed.error, "denied_by_default", `${op}: deny reason`);
+    const token = seed.confirmationToken;
+    assert.ok(token, `${op}: selector-bound token minted on refusal`);
+
+    const variants = [
+      { label: "missing explicitApproval", env: { approved: true, confirmationToken: token } },
+      { label: "missing approved", env: { explicitApproval: true, confirmationToken: token } },
+      { label: "missing token", env: { explicitApproval: true, approved: true } },
+      { label: "wrong token", env: { explicitApproval: true, approved: true, confirmationToken: "deadbeefdeadbeefdeadbeefdeadbeef" } },
+      { label: "approved not boolean-true", env: { explicitApproval: true, approved: "yes", confirmationToken: token } },
+      { label: "explicitApproval not boolean-true", env: { explicitApproval: "yes", approved: true, confirmationToken: token } },
+    ];
+    for (const v of variants) {
+      const res = await adapter.handle({ op, selector, ...v.env });
+      assert.equal(res.status, "refused", `${op} (${v.label}): still refused`);
+      assert.equal(res.error, "denied_by_default", `${op} (${v.label}): deny reason`);
+    }
+  }
+  assert.equal(cliCalls.length, 0, "no cli backend reached without the full explicit path");
+  assert.equal(rpcCalls.length, 0, "no rpc backend reached without the full explicit path");
+  rmSync(root, { recursive: true, force: true });
+});
+
+test("adapter: transcript.share clears the explicit gate but honestly reports not_implemented (no verified backend)", async () => {
+  // Proves the deny-by-default gate is the ONLY thing blocking egress (not a fake stub): once the
+  // full explicit path is supplied, share reaches dispatch and reports it has no rpc/cli/fs backend.
+  const root = makeSessionsDir();
+  const adapter = new RuntimeAdapter({ sessionsDir: root, makeRpcHost: fakeHostFactory() });
+  const selector = { session_id: "01900000" };
+  const seed = await adapter.handle({ op: "transcript.share", selector });
+  assert.equal(seed.status, "refused");
+  const done = await adapter.handle({ op: "transcript.share", selector, explicitApproval: true, approved: true, confirmationToken: seed.confirmationToken });
+  assert.equal(done.status, "not_implemented");
+  rmSync(root, { recursive: true, force: true });
+});
+
+test("cli runner: makeCliRunner('export') runs `omp --export <file> <out>`, returns the produced HTML, and cleans up", async () => {
+  const workRoot = mkdtempSync(path.join(tmpdir(), "loo12-cli-"));
+  const spawned = [];
+  const workDirs = [];
+  // Fake child process: write the requested HTML, print `Exported to:`, exit 0.
+  const fakeSpawn = (command, args, opts) => {
+    spawned.push({ command, args, opts });
+    const child = new EventEmitter();
+    child.stdout = new EventEmitter();
+    child.stderr = new EventEmitter();
+    child.kill = () => {};
+    queueMicrotask(() => {
+      const outPath = args[2];
+      writeFileSync(outPath, "<html>exported transcript</html>");
+      child.stdout.emit("data", Buffer.from(`Exported to: ${outPath}\n`));
+      child.emit("close", 0);
+    });
+    return child;
+  };
+  const makeWorkDir = () => {
+    const d = mkdtempSync(path.join(workRoot, "exp-"));
+    workDirs.push(d);
+    return d;
+  };
+  const runCli = makeCliRunner({ command: "omp", spawnFn: fakeSpawn, makeWorkDir });
+  const res = await runCli({ verb: "export", sessionId: "abc", sessionFile: "/tmp/sessions/2026_x.jsonl" });
+
+  assert.equal(spawned[0].command, "omp");
+  assert.deepEqual(spawned[0].args.slice(0, 2), ["--export", "/tmp/sessions/2026_x.jsonl"], "passes --export + the session file");
+  assert.equal(res.format, "html");
+  assert.equal(res.content, "<html>exported transcript</html>");
+  assert.equal(res.sessionId, "abc");
+  assert.ok(res.bytes > 0);
+  assert.ok(!existsSync(workDirs[0]), "throwaway export dir is removed after the run");
+
+  await assert.rejects(runCli({ verb: "totally-unknown" }), /unsupported CLI verb/);
+  rmSync(workRoot, { recursive: true, force: true });
+});

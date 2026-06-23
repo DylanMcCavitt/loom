@@ -164,6 +164,14 @@ Rationale: one typed MCP schema is the cross-harness contract (selector, tiers, 
 
 All ten adapter command names matched the verified `type` values, so no name corrections were needed; the reconciliation corrected the request/response **envelope** (`type`/inline-params/string-`id`; `data`/`success`/`error`) and the documented per-op params. A guarded live probe is preserved as an opt-in test (`LOO_OMP_LIVE=1`, skipped in CI) plus a synthetic mock fixture matching this schema; neither commits captured session content.
 
+### 5.2 CLI saved-file fallback + gated transcript egress (LOO-12)
+
+Some ops have no verified RPC command but reach omp through the **CLI** operating on a saved session file. These dispatch through an **injectable CLI runner** (`scripts/runtime-adapter/cli-runner.mjs`, `makeCliRunner({ command, spawnFn, timeoutMs, makeWorkDir })`), mirroring how `makeRpcHost` is injected into `RuntimeAdapter` — the real runner spawns `omp` and a hermetic fake is substituted in tests (the MCP server does not inject one, so the adapter defaults to the real runner and `server.mjs` is unchanged).
+
+- **`transcript.export`** (`cli: "export"`) → `omp --export <sessionFile> <outPath>` (the first positional after `--export` is the output path; verified in `dist/cli.js`). The runner writes the HTML into a throwaway dir, reads it back deterministically, and removes the dir. There is **no `--session-file` flag** — saved-file selection uses the resolved `.jsonl` path (and `--resume <id|path>` for opening, which is interactive/TUI and therefore intentionally **not** wired as a one-shot adapter op).
+- **Egress stays deny-by-default.** `transcript.export` / `transcript.share` / `transcript.get` remain in the denied set and are reachable **only** through the full explicit path — `explicitApproval: true` **and** `approved: true` **and** a valid selector-bound `confirmationToken`. Any missing or non-`true` piece (or a wrong token) is refused with `denied_by_default`; the backend is never reached.
+- **Everything that leaves is redacted.** The adapter scrubs the CLI runner's entire return value through the same `scrubSecrets`/`scrubString` (secret patterns + private home paths) used for RPC results, so exported HTML, paths, or stdout can never egress unredacted.
+
 ## Open questions — resolved (LOO-7 spike)
 
 Verified against omp/16.0.5 (`omp://rpc.md`, `omp://hooks.md`, `omp://extensions.md`, `omp --help`, `~/.omp/agent/sessions/`):

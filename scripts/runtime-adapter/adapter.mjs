@@ -5,7 +5,8 @@
 //   2. mandatory session selector (no implicit "current" session); refuse zero/ambiguous.
 //   3. tier → confirmation mapping: R none; M selector-bound token; D token + approval; denied
 //      needs an explicit approved override.
-//   4. dispatch: fs (list) / rpc (live, via a spawned `omp --mode rpc` host) / unsupported.
+//   4. dispatch: fs (list) / cli (saved-file ops via the injected `omp` runner, e.g. --export) /
+//      rpc (live, via a spawned `omp --mode rpc` host) / unsupported.
 //   5. egress safety: Tier R returns derived metadata only; all returned strings are scrubbed
 //      of secret-looking values and absolute private home paths.
 //
@@ -18,6 +19,7 @@ import {
 } from "../lib/harness-safety.mjs";
 import { CONFIRMATION, confirmationFor, getOp } from "./policy.mjs";
 import { defaultSessionsDir, listSessions, resolveSelector } from "./selectors.mjs";
+import { makeCliRunner } from "./cli-runner.mjs";
 
 const CONTENT_KEYS = new Set(["messages", "transcript", "content", "text", "entries", "history", "body", "prompt"]);
 // Tier R: only these string fields are forwarded verbatim (after scrubbing); every other string
@@ -78,6 +80,9 @@ export class RuntimeAdapter {
     this.sessionsDir = options.sessionsDir ?? defaultSessionsDir();
     // Factory returning a started RPC host bound to a resolved session. Injected in tests.
     this.makeRpcHost = options.makeRpcHost ?? null;
+    // Function dispatching saved-file ops through the `omp` CLI. Defaults to the real runner so the
+    // MCP server (which does not inject it) works unchanged; overridden with a fake in tests.
+    this.runCli = options.runCli ?? makeCliRunner();
     // Per-instance nonce makes confirmation tokens unguessable and non-replayable across runs.
     this.nonce = options.nonce ?? randomBytes(16).toString("hex");
   }
@@ -143,6 +148,21 @@ export class RuntimeAdapter {
     }
 
     // 4. dispatch
+    // 4a. CLI backend (LOO-12): saved-file ops reach omp through the injected CLI runner, not the
+    // RPC host. transcript.export drives `omp --export <sessionFile>`. Anything the CLI produces
+    // (exported HTML, paths, stdout) is content egress and is scrubbed before it can leave — these
+    // ops only reach here after the full explicit-approval gate above.
+    if (def.cli) {
+      if (!this.runCli) {
+        return { status: "unavailable", op, tier: def.tier, message: "No CLI runner configured (set runCli)." };
+      }
+      try {
+        const raw = await this.runCli({ op, verb: def.cli, sessionId, sessionFile: resolved.sessionFile });
+        return { status: "ok", op, tier: def.tier, session: { sessionId }, result: scrubSecrets(raw) };
+      } catch (error) {
+        return { status: "error", op, tier: def.tier, session: { sessionId }, error: scrubString(String(error?.message ?? error)) };
+      }
+    }
     if (def.unsupported || (!def.rpc && !def.fs)) {
       return { status: "not_implemented", op, tier: def.tier, message: def.summary ?? "No verified backend in omp/16.0.5." };
     }
