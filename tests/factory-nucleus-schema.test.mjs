@@ -6,8 +6,10 @@ import {
   ARTIFACT_KINDS,
   CIRCUIT_GATES,
   CIRCUIT_OUTCOMES,
+  GHOST_STATES,
   artifactMetadata,
   resolveFactoryStatePaths,
+  validateAdapterGhost,
   validateArtifactMetadata,
   validateCircuit,
   validateEnvelopeYaml,
@@ -243,4 +245,43 @@ test("structured artifact metadata is required and generated consistently", () =
   const missing = validateArtifactMetadata({ schemaVersion: 1, kind: "factory-scan" }, "factory-scan");
   assert.equal(missing.ok, false);
   assert.ok(missing.errors.some((error) => error.includes("$.generatedAt: required")), missing.errors.join("\n"));
+});
+
+test("adapter-ghost schema validates neutral ghost shape and rejects unsafe or unknown fields", () => {
+  assert.deepEqual(GHOST_STATES, ["triage", "backlog", "ready", "in-progress", "in-review", "done", "canceled"]);
+
+  const validGhost = withArtifactMetadata("adapter-ghost", {
+    id: "G-1",
+    title: "Add tracker bind",
+    state: "ready",
+    projectId: "PRJ-1",
+    labels: ["feature"],
+    dependsOn: [],
+    blocks: ["G-2"],
+  }, generatedAt);
+  assert.equal(validateAdapterGhost(validGhost).ok, true, validateAdapterGhost(validGhost).errors.join("\n"));
+
+  const missingProject = withArtifactMetadata("adapter-ghost", {
+    id: "G-1",
+    title: "No project",
+    state: "ready",
+    labels: [],
+    dependsOn: [],
+    blocks: [],
+  }, generatedAt);
+  const missing = validateAdapterGhost(missingProject);
+  assert.equal(missing.ok, false);
+  assert.ok(missing.errors.some((error) => error.includes("$.projectId: required")), missing.errors.join("\n"));
+
+  const unknownState = validateAdapterGhost({ ...validGhost, state: "shipped" });
+  assert.equal(unknownState.ok, false);
+  assert.ok(unknownState.errors.some((error) => error.includes("$.state")), unknownState.errors.join("\n"));
+
+  const unknownProperty = validateAdapterGhost({ ...validGhost, tracker: "linear" });
+  assert.equal(unknownProperty.ok, false);
+  assert.ok(unknownProperty.errors.some((error) => error.includes("$.tracker: unknown property")), unknownProperty.errors.join("\n"));
+
+  const secretLabel = validateAdapterGhost({ ...validGhost, labels: ["ghp_0123456789abcdef0123"] });
+  assert.equal(secretLabel.ok, false);
+  assert.ok(secretLabel.errors.some((error) => error.includes("secret-looking")), secretLabel.errors.join("\n"));
 });

@@ -28,6 +28,16 @@ export const CIRCUIT_GATES = Object.freeze([
 
 export const CIRCUIT_OUTCOMES = Object.freeze(["allow", "block", "escalate"]);
 
+export const GHOST_STATES = Object.freeze([
+  "triage",
+  "backlog",
+  "ready",
+  "in-progress",
+  "in-review",
+  "done",
+  "canceled",
+]);
+
 const metadataProperties = {
   schemaVersion: { type: "integer", const: SCHEMA_VERSION },
   kind: { type: "string", enum: ARTIFACT_KINDS },
@@ -42,6 +52,7 @@ export const ARTIFACT_METADATA_SCHEMA = Object.freeze({
 });
 
 const stringArray = Object.freeze({ type: "array", items: { type: "string", minLength: 1 }, minItems: 1 });
+const optionalStringArray = Object.freeze({ type: "array", items: { type: "string", minLength: 1 } });
 
 export const CIRCUIT_SCHEMA = Object.freeze({
   type: "object",
@@ -242,6 +253,24 @@ export const LOCAL_STATE_SCHEMA = Object.freeze({
       },
       additionalProperties: false,
     },
+  },
+  additionalProperties: false,
+});
+
+export const ADAPTER_GHOST_SCHEMA = Object.freeze({
+  type: "object",
+  required: ["schemaVersion", "kind", "generatedAt", "id", "title", "state", "projectId", "labels", "dependsOn", "blocks"],
+  properties: {
+    ...metadataProperties,
+    kind: { type: "string", const: "adapter-ghost" },
+    id: { type: "string", minLength: 1 },
+    title: { type: "string", minLength: 1 },
+    state: { type: "string", enum: GHOST_STATES },
+    projectId: { type: "string", minLength: 1 },
+    parentId: { type: "string", minLength: 1 },
+    labels: optionalStringArray,
+    dependsOn: optionalStringArray,
+    blocks: optionalStringArray,
   },
   additionalProperties: false,
 });
@@ -505,6 +534,10 @@ export function validateRecipePlan(value) {
 
 export function validateCircuit(value) {
   return validateArtifact(value, CIRCUIT_SCHEMA);
+}
+
+export function validateAdapterGhost(value) {
+  return validateArtifact(value, ADAPTER_GHOST_SCHEMA);
 }
 
 export function validateArtifactMetadata(value, expectedKind) {
