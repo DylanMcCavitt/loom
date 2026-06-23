@@ -141,7 +141,7 @@ function pointerBlockIdentityKeys(lines) {
     const line = lines[index];
     if (!line.trim() || line.trim().startsWith("#") || line !== line.trimStart()) continue;
     const match = line.trim().match(/^["']?([A-Za-z][A-Za-z0-9_-]*)["']?:(?:\s*(.*))?$/u);
-    if (!match || !POINTER_IDENTITY_KEYS.has(match[1]) || match[2]?.trim()) continue;
+    if (!match || !POINTER_IDENTITY_KEYS.has(match[1])) continue;
     if (hasIndentedContent(lines, index)) keys.push(match[1]);
   }
   return keys;
