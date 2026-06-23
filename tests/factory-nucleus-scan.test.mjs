@@ -258,6 +258,7 @@ test("factory scan --save writes only scan state outside the target repo", () =>
       assert.equal(savedScan.localState.writes, true);
       assert.equal(savedScan.localState.scan, state.scan);
       assert.equal(savedScan.remoteApis.called, false);
+      assert.deepEqual(savedScan.pointer, { present: true, status: "valid", identity: "test" });
     });
     assertNoUserFileWrites(root, beforeRepo);
   });
@@ -283,6 +284,51 @@ test("factory scan --save redacts secret-looking branch names in saved scan stat
       assert.equal(savedScan.git.currentBranch, "feature/key_[REDACTED]");
       assert.equal(savedScan.git.defaultBranch, "feature/key_[REDACTED]");
     });
+  });
+});
+
+test("factory scan reads .loom.yml pointer identity only", () => {
+  withTempRepo({
+    "package.json": `${JSON.stringify({ scripts: { test: "node --test" } }, null, 2)}\n`,
+    ".loom.yml": "factory: test-factory\n",
+  }, (root) => {
+    const before = walkFiles(root);
+    const result = runScan(root);
+    const scan = scanFactory({ root, generatedAt });
+
+    assert.match(result.stdout, /Pointer: test-factory/u);
+    assert.deepEqual(scan.pointer, { present: true, status: "valid", identity: "test-factory" });
+    assertNoUserFileWrites(root, before);
+  });
+});
+
+test("factory scan ignores policy-bearing .loom.yml values", () => {
+  const fakeToken = `ghp_${"12345678901234567890"}`;
+  withTempRepo({
+    "package.json": `${JSON.stringify({ scripts: { test: "node --test" } }, null, 2)}\n`,
+    ".loom.yml": `factory: test-factory\ntracker:\n  token: ${fakeToken}\ncommands:\n  test: npm test\n`,
+  }, (root) => {
+    const before = walkFiles(root);
+    withScanSave(root, ({ home, result }) => {
+      const state = resolveFactoryStatePaths({
+        homeDir: home,
+        targetRepoPath: root,
+        factoryId: path.basename(root),
+        generatedAt,
+      });
+      const savedText = readFileSync(state.scan, "utf8");
+      const savedScan = JSON.parse(savedText);
+
+      assert.match(result.stdout, /Pointer: ignored policy-bearing \.loom\.yml \(tracker, commands\)/u);
+      assert.doesNotMatch(result.stdout, new RegExp(fakeToken, "u"));
+      assert.doesNotMatch(savedText, new RegExp(fakeToken, "u"));
+      assert.deepEqual(savedScan.pointer, {
+        present: true,
+        status: "ignored-policy",
+        ignoredKeys: ["tracker", "commands"],
+      });
+    });
+    assertNoUserFileWrites(root, before);
   });
 });
 

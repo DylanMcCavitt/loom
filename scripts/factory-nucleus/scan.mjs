@@ -30,6 +30,8 @@ const SECRET_VALUE_PATTERNS = Object.freeze([
   /(^|[^A-Za-z0-9])(sk-[A-Za-z0-9_-]{12,})/gu,
   /(^|[^A-Za-z0-9])(AKIA[0-9A-Z]{8,})/gu,
 ]);
+const POINTER_IDENTITY_KEYS = new Set(["factory", "factoryId", "id"]);
+
 
 const PROTECTED_SURFACES = Object.freeze([
   {
@@ -114,6 +116,41 @@ function safeJsonFile(filePath) {
     return null;
   }
 }
+
+function discoverPointer(root) {
+  const pointerPath = path.join(root, ".loom.yml");
+  if (!existsSync(pointerPath)) return { present: false };
+  let text;
+  try {
+    text = readFileSync(pointerPath, "utf8");
+  } catch {
+    return { present: true, status: "unreadable" };
+  }
+  const entries = text
+    .split(/\r?\n/u)
+    .filter((line) => line.trim() && !line.trim().startsWith("#") && line === line.trimStart())
+    .map((line) => line.trim().match(/^([A-Za-z][A-Za-z0-9_-]*):(?:\s*(.*))?$/u))
+    .filter(Boolean)
+    .map((match) => ({ key: match[1], value: match[2]?.replace(/^["']|["']$/gu, "") ?? "" }));
+  const policyKeys = entries
+    .map((entry) => entry.key)
+    .filter((key) => !POINTER_IDENTITY_KEYS.has(key));
+  if (policyKeys.length > 0) {
+    return {
+      present: true,
+      status: "ignored-policy",
+      ignoredKeys: [...new Set(policyKeys)].map(redactSecrets),
+    };
+  }
+  const identity = entries.find((entry) => POINTER_IDENTITY_KEYS.has(entry.key) && entry.value.trim())?.value.trim();
+  if (!identity) return { present: true, status: "missing-identity" };
+  return {
+    present: true,
+    status: "valid",
+    identity: redactSecrets(identity),
+  };
+}
+
 
 function hasPath(root, relativePath) {
   return existsSync(path.join(root, relativePath));
@@ -333,6 +370,7 @@ export function scanFactory({ root = process.cwd(), generatedAt, content = false
   const dirty = dirtyState(repoRoot);
   const protectedSurfaces = detectProtectedSurfaces(repoRoot);
   const science = computeScience({ stack, commands, dirty, protectedSurfaces, root: repoRoot });
+  const pointer = discoverPointer(repoRoot);
 
   return withArtifactMetadata("factory-scan", {
     mode: "zero-footprint",
@@ -346,6 +384,7 @@ export function scanFactory({ root = process.cwd(), generatedAt, content = false
     },
     stack,
     commands,
+    pointer,
     protectedSurfaces,
     science,
     localState: {
@@ -385,6 +424,14 @@ function formatCommand(command) {
   return `${command.command} (${command.source})`;
 }
 
+function formatPointer(pointer) {
+  if (!pointer?.present) return "Pointer: absent";
+  if (pointer.status === "valid") return `Pointer: ${pointer.identity}`;
+  if (pointer.status === "ignored-policy") return `Pointer: ignored policy-bearing .loom.yml (${pointer.ignoredKeys.join(", ")})`;
+  if (pointer.status === "missing-identity") return "Pointer: missing identity";
+  return "Pointer: unreadable";
+}
+
 export function formatScanSummary(scan) {
   const stack = scan.stack
     .map((entry) => (entry.packageManager ? `${entry.name}/${entry.packageManager}` : entry.name))
@@ -413,6 +460,7 @@ export function formatScanSummary(scan) {
     "Remote APIs: none",
     `Repo: ${scan.target.name}`,
     `Branch: ${scan.git.currentBranch} (default: ${scan.git.defaultBranch})`,
+    formatPointer(scan.pointer),
     `Dirty state: ${scan.git.dirty.isDirty ? `dirty (${scan.git.dirty.count} paths)` : "clean"}`,
     `Stack: ${stack}`,
     "Commands:",
