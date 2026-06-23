@@ -9,6 +9,12 @@ import { test } from "node:test";
 const renderer = new URL("../scripts/render-harness-nucleus.mjs", import.meta.url).pathname;
 const templatesDir = new URL("../docs/harness/codex-adapter-plan/templates", import.meta.url).pathname;
 const planPath = new URL("../docs/harness/codex-adapter-plan/adapter-plan.json", import.meta.url).pathname;
+import {
+  applyCandidates,
+  configKeys,
+  configKindFor,
+  renderAndGate,
+} from "../scripts/render-harness-nucleus.mjs";
 
 function withTempPlan(addBoundary) {
   const plan = JSON.parse(readFileSync(planPath, "utf8"));
@@ -287,4 +293,159 @@ test("gate fails a candidate that targets a local-only destination", () => {
 
   rmSync(home, { recursive: true, force: true });
   rmSync(path.dirname(evilPlan), { recursive: true, force: true });
+});
+
+// --- JSON manifest gating (LOO-8 slice 1) -----------------------------------------------------
+
+function jsonCandidate(content, overrides = {}) {
+  const destination = overrides.destination ?? "~/.omp/agent/test-manifest.json";
+  return {
+    id: `omp:${destination}`,
+    harness: "omp",
+    boundaryId: null,
+    forbiddenKeys: overrides.forbiddenKeys ?? [],
+    source: "test/manifest.json",
+    content,
+    renderedRelPath: overrides.rel ?? "omp/agent/test-manifest.json",
+    destination,
+    disposition: "track",
+    operation: "create-file",
+    appliable: true,
+  };
+}
+
+test("config kind detection recognises .json alongside .toml and .yaml", () => {
+  assert.equal(configKindFor("agent/manifest.json"), "json");
+  assert.equal(configKindFor("config.toml"), "toml");
+  assert.equal(configKindFor("config.yaml"), "yaml");
+  assert.equal(configKindFor("config.yml"), "yaml");
+  assert.equal(configKindFor("notes.txt"), null);
+  const keys = configKeys(JSON.stringify({ outer: { inner: 1 }, list: [{ deep: 2 }] }), "json");
+  assert.ok(
+    keys.has("outer") && keys.has("inner") && keys.has("list") && keys.has("deep"),
+    `expected recursive JSON keys, got ${[...keys].join(",")}`,
+  );
+});
+
+test("gate flags a top-level forbidden key in a rendered JSON manifest", () => {
+  const findings = renderAndGate([jsonCandidate(JSON.stringify({ model_provider: "openai" }))], []);
+  assert.ok(
+    findings.some((finding) => finding.includes("forbidden key model_provider")),
+    findings.join("\n"),
+  );
+});
+
+test("gate flags a nested forbidden key in a rendered JSON manifest", () => {
+  const findings = renderAndGate(
+    [jsonCandidate(JSON.stringify({ settings: { profiles: { default: {} } } }))],
+    [],
+  );
+  assert.ok(
+    findings.some((finding) => finding.includes("forbidden key profiles")),
+    findings.join("\n"),
+  );
+});
+
+test("gate honours per-candidate forbiddenKeys for JSON manifests", () => {
+  const findings = renderAndGate(
+    [jsonCandidate(JSON.stringify({ plugin_id: "x" }), { forbiddenKeys: ["plugin_id"] })],
+    [],
+  );
+  assert.ok(
+    findings.some((finding) => finding.includes("forbidden key plugin_id")),
+    findings.join("\n"),
+  );
+});
+
+test("gate reports malformed rendered JSON as a finding instead of throwing", () => {
+  let findings;
+  assert.doesNotThrow(() => {
+    findings = renderAndGate([jsonCandidate("{ not valid json ")], []);
+  });
+  assert.ok(
+    findings.some((finding) => finding.includes("invalid JSON")),
+    findings.join("\n"),
+  );
+});
+
+test("gate passes a clean rendered JSON manifest with no forbidden keys", () => {
+  const content = JSON.stringify(
+    { name: "loom-plugin", version: "1.0.0", entries: [{ id: "a" }] },
+    null,
+    2,
+  );
+  const findings = renderAndGate([jsonCandidate(content)], []);
+  assert.deepEqual(findings, []);
+});
+
+// --- applyCandidates apply engine (LOO-8 slice 1) ---------------------------------------------
+
+function applyCandidate(destination, content) {
+  return {
+    id: destination,
+    harness: "omp",
+    boundaryId: null,
+    forbiddenKeys: [],
+    source: "test",
+    content,
+    renderedRelPath: "omp/agent/x",
+    destination,
+    disposition: "track",
+    operation: "create-file",
+    appliable: true,
+  };
+}
+
+function emptyMarker() {
+  return { schemaVersion: 1, generatedBy: "test", entries: {} };
+}
+
+test("applyCandidates creates missing files, records markers, and is idempotent", () => {
+  const home = tempDir("apply-home-");
+  const marker = emptyMarker();
+  const dest = "~/.loom-apply/manifest.json";
+  const content = '{"name":"ok"}\n';
+  const live = path.join(home, ".loom-apply/manifest.json");
+
+  const first = applyCandidates([applyCandidate(dest, content)], home, marker);
+  assert.equal(first.actions.length, 1);
+  assert.equal(first.actions[0].action, "created");
+  assert.equal(first.backups.length, 0);
+  assert.equal(readFileSync(live, "utf8"), content);
+  assert.ok(marker.entries[dest], "expected a recorded marker entry");
+
+  // Second run against the same marker is a clean no-op (no rewrite, no backup).
+  const second = applyCandidates([applyCandidate(dest, content)], home, marker);
+  assert.equal(second.actions[0].action, "already-applied");
+  assert.equal(second.backups.length, 0);
+
+  rmSync(home, { recursive: true, force: true });
+});
+
+test("applyCandidates skips a pre-existing non-marker user file (create-missing-only)", () => {
+  const home = tempDir("apply-home-");
+  const dest = "~/.loom-apply/user.json";
+  const live = path.join(home, ".loom-apply/user.json");
+  mkdirSync(path.dirname(live), { recursive: true });
+  writeFileSync(live, "USER OWNED\n");
+
+  const result = applyCandidates([applyCandidate(dest, '{"name":"kit"}\n')], home, emptyMarker());
+  assert.equal(result.actions[0].action, "skipped");
+  assert.equal(result.actions[0].reason, "exists");
+  assert.equal(readFileSync(live, "utf8"), "USER OWNED\n", "user file must be byte-for-byte intact");
+
+  rmSync(home, { recursive: true, force: true });
+});
+
+test("applyCandidates skips non-appliable and non-home-scoped candidates", () => {
+  const home = tempDir("apply-home-");
+  const nonAppliable = { ...applyCandidate("~/.loom-apply/skip.json", "{}\n"), appliable: false };
+  const projectScoped = applyCandidate("./project/local.json", "{}\n");
+
+  const result = applyCandidates([nonAppliable, projectScoped], home, emptyMarker());
+  assert.equal(result.actions.length, 1, "non-appliable candidate must produce no action");
+  assert.equal(result.actions[0].action, "skipped");
+  assert.equal(result.actions[0].reason, "not home-scoped");
+
+  rmSync(home, { recursive: true, force: true });
 });
