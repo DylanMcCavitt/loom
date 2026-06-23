@@ -1,0 +1,35 @@
+{
+  "skill_name": "rocket-launch",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Ship the offline-mode PR.",
+      "expected_output": "Activates rocket-launch: runs every launch gate (targeted tests pass via proof-pass, a pr-review lens clean or findings fixed, all Linear acceptance criteria checked, GitHub CI green, a bus-first minimal-diff pass) and only then merges the PR, lets the branch/PR bridge auto-close the Linear issue, and posts a Linear status update with a human-reviewable record.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "This is ready, launch it.",
+      "expected_output": "Activates rocket-launch: treats the change as a ship request, enforces the full gate list before merging, merges the PR so the bridge closes the Linear issue, and records the outcome — refusing to merge if any gate is red.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "CI is failing on this PR but I want it merged now to close the ticket.",
+      "expected_output": "Activates rocket-launch but refuses to merge with a red gate: CI is not green so it blocks the launch, never silently closes the Linear issue by hand, and routes the fix back to robots.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Open a draft PR, this isn't ready yet.",
+      "expected_output": "Does NOT activate rocket-launch — the work is not ready to ship and there is nothing to gate or merge. Routes to robots to continue implementation and open/update the PR.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Mark the Linear issue done, I'll deal with the PR later.",
+      "expected_output": "Refuses to silently close the issue: closeout must go through the bridge (merge the PR with the issue id in the branch) and the acceptance check, not a manual close ahead of the merge.",
+      "files": []
+    }
+  ]
+}

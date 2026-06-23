@@ -1,0 +1,35 @@
+{
+  "skill_name": "blueprint",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Write the PRD for offline mode.",
+      "expected_output": "Synthesizes a PRD/spec from existing context without interviewing the user, written in the repo domain glossary's vocabulary, with explicit acceptance criteria, non-goals, and a proof plan, and no file paths or code snippets except a decision-encoding snippet. Publishes it as a Linear document on the prospect's project via save_document and returns the document id/link.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Give me a PR template for this repo.",
+      "expected_output": "Provides the canonical pull-request template from blueprint/templates/pull-request.md: generic, placeholder-driven, no repo-specific facts or secrets, and encoding the Linear/GitHub bridge (branch carries the Linear issue id, the merge auto-closes the issue). Notes that assembler stamps the repo-local copy.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "draft teh spec for offline mode and dont ask me questions",
+      "expected_output": "Still activates despite the typo; synthesizes the spec from existing context without interviewing, includes acceptance criteria, non-goals, and a proof plan, and publishes it as a Linear document via save_document.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Create the Linear issues now.",
+      "expected_output": "Does NOT create issues. Recognizes this as decomposition work and routes to the ghosts skill, which splits the spec into tracer-bullet issues in dependency order.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Let me play with the sync state machine before we lock the spec.",
+      "expected_output": "Does not build a prototype itself or own any iterate/restart loop. Routes prototyping to the map-seed skill to de-risk the decision, then plans to fold its findings (and any decision-encoding snippet) back into the blueprint spec.",
+      "files": []
+    }
+  ]
+}

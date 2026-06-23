@@ -1,0 +1,35 @@
+{
+  "skill_name": "ghosts",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Turn the offline-mode PRD into issues.",
+      "expected_output": "Activates ghosts: reads the repo contract and the blueprint PRD, splits the plan into tracer-bullet vertical slices (each cutting through every layer end-to-end and demoable on its own, preferring many thin slices), marks each HITL or AFK, sets dependencies, and publishes Linear issues/sub-issues with save_issue in dependency order (blockers first) with blocked-by relations, labels, project, milestone, and estimate from the contract. Does not implement and does not rescope the PRD.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Make tickets for this.",
+      "expected_output": "Activates ghosts from the casual request: works from the plan/spec in context, breaks it into thin tracer-bullet vertical slices with HITL/AFK marks and dependencies, and stamps them as dependency-ordered Linear issues via save_issue. Does not start writing code.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "brek this down into tickts",
+      "expected_output": "Despite the typos, activates ghosts: splits the work into dependency-ordered tracer-bullet vertical slices and publishes them as Linear issues/sub-issues with blocked-by relations, without implementing or changing the parent scope.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Implement issue ABC-12.",
+      "expected_output": "Does NOT activate ghosts. Recognizes this as executing a single existing issue end-to-end and routes to the robots skill; ghosts stamps planned work but never implements.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Sort and prioritize the open issues, mark what's ready to pick up.",
+      "expected_output": "Does NOT activate ghosts. This is prioritizing/state-triage of issues that already exist, which routes to the dispatch skill rather than stamping new ghosts.",
+      "files": []
+    }
+  ]
+}

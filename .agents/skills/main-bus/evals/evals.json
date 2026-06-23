@@ -1,0 +1,35 @@
+{
+  "skill_name": "main-bus",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "We're about to add three more features on top of this module. How should we structure it so it scales instead of walling us in?",
+      "expected_output": "Activates main-bus: maps the shared materials many features tap, identifies which belong on a clean lane, proposes the minimal restructure (cites bus-first — no more than the scaling need requires) at the highest seam, and records the decision as an ADR/doc after reading the repo contract and domain glossary. Plans and advises; does not mass-refactor in place.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "This part of the codebase is turning into spaghetti — every feature reimplements the same pricing logic and wires straight to each other. Plan the bus.",
+      "expected_output": "Activates main-bus: charts the tangle, applies the deletion test, proposes pulling the shared material onto a clean lane with consumers routed off it instead of parallel spaghetti, presents candidates as a before/after bus map, grills the chosen restructure, cites bus-first for the minimal seam, and records it as an ADR/doc. Hands implementation to robots; does not refactor in place itself.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "this codebse is becoming spagetti as it grows, can u plan the buss so it dont wall us in when we scale",
+      "expected_output": "Despite the typos, still activates main-bus: identifies the shared lanes, where the layout blocks future scale, and the minimal restructure to keep new work routing off the bus, recorded as an ADR/doc.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Rename this variable everywhere and tidy up the formatting in this file.",
+      "expected_output": "Does NOT activate main-bus; routes to quality, since this is an in-place behavior-preserving refactor, not architecture/scale planning. main-bus plans and advises, it does not mass-refactor in place.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Implement the cache for the session store now.",
+      "expected_output": "Does NOT activate main-bus; routes to robots, since this is implementing a feature on a tracked issue rather than planning structure or seams. main-bus plans the bus, it does not build it.",
+      "files": []
+    }
+  ]
+}
