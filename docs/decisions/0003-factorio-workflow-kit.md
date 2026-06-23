@@ -43,19 +43,22 @@ A Factorio-themed kit becomes loom's single planning/issue/execution lane.
    `rocket-launch`, and `quality` cite it. It is a skill, not a loom-wide rule,
    so it stays curatable per flow.
 5. **Adaptation model.** `assembler` reads a repo once and generates a repo-local
-   envelope (Linear team/project/label map, domain glossary, commands,
-   PR/issue/doc templates) plus optional repo-specific skills/agents, reusing the
-   retired bootstrap trio's machinery. `roboports` execute issues end-to-end against
-   that envelope. Every kit skill reads the envelope, so behavior is dynamic per
-   repo.
+   Markdown envelope under `.agents/envelope/` (Linear team/project/label map,
+   domain glossary, commands, PR/issue/doc templates) plus optional repo-specific
+   skills/agents, reusing the retired bootstrap trio's machinery. Local Factory
+   Nucleus state may carry a generated/validated YAML mirror at
+   `~/.loom/factory-nucleus/<id>/envelope/envelope.yaml`; that mirror is not a
+   second binding point. `roboports` execute issues end-to-end against that
+   envelope. Every kit skill reads the envelope, so behavior is dynamic per repo.
 6. **Blueprints.** Canonical templates live in `blueprint/templates/` (versioned
    and eval-able in loom). `assembler` stamps repo-local copies; Linear-side
    templates are applied via `save_document` / issue-description scaffolds.
 7. **Build order.** A tracer-bullet MVP ships first
-   (`prospect -> blueprint -> ghosts -> roboports -> rocket-launch`, plus
-   `bus-first` and a minimal `assembler` substrate), then the rest is enrichment.
+   (`prospect -> blueprint -> ghosts -> roboports -> radar/proof-pass ->
+   rocket-launch`, plus `bus-first` and a minimal `assembler` substrate), then
+   the rest is enrichment.
 8. **Eval.** Each skill is authored eval-first and gated by layers: structural
-   lint (`validate-skills.mjs`), content-contract `node:test`, trigger
+   lint (`validate-skills.mjs`), content-envelope `node:test`, trigger
    `evals.json` (positive + adversarial/typo + negative/near-miss), a golden-path
    behavioral eval against mock Linear/GitHub fixtures in offline CI, an opt-in
    live sandbox smoke before release, and a minimal-diff benchmark for
@@ -78,7 +81,7 @@ A Factorio-themed kit becomes loom's single planning/issue/execution lane.
 - New skill names must clear `validate-skills.mjs` collision checks against
   existing loom and global skills before release.
 - The kit depends on the Linear MCP for planning side effects and on Linear's
-  GitHub integration for the bridge; the envelope `assembler` generates is the
-  per-repo binding point.
+  GitHub integration for the bridge; `.agents/envelope/` is the per-repo binding
+  point, with local-state YAML only mirroring it for validation/runtime checks.
 - If loom ever needs a tracker-agnostic planning lane again, this ADR must be
   superseded.

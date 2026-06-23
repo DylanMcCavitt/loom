@@ -265,6 +265,10 @@ function splitKeyValue(text, line) {
   if (!key) throw new Error(`YAML parse error on line ${line}: empty key`);
   return [key, text.slice(separator + 1).trim()];
 }
+function isArrayMappingItem(text) {
+  return /^[A-Za-z_][A-Za-z0-9_-]*\s*:(?:\s|$)/u.test(text);
+}
+
 
 function parseScalar(raw) {
   if (raw === "") return undefined;
@@ -333,10 +337,21 @@ function parseArray(lines, start, indent) {
       i = next;
       continue;
     }
-    if (itemText.includes(":")) {
+    if (isArrayMappingItem(itemText)) {
       const [key, rawValue] = splitKeyValue(itemText, line.index);
-      const item = { [key]: rawValue === "" ? {} : parseScalar(rawValue) };
+      const item = {};
       i += 1;
+      if (rawValue === "") {
+        if (i < lines.length && lines[i].indent > indent) {
+          const [child, next] = parseBlock(lines, i, lines[i].indent);
+          item[key] = child;
+          i = next;
+        } else {
+          item[key] = {};
+        }
+      } else {
+        item[key] = parseScalar(rawValue);
+      }
       if (i < lines.length && lines[i].indent > indent) {
         const [child, next] = parseObject(lines, i, lines[i].indent);
         Object.assign(item, child);
@@ -422,23 +437,67 @@ export function validateArtifact(value, schema) {
   const errors = [];
   checkSecretMaterial(value, errors);
   validateWithSchema(value, schema, "$", errors);
+  if (schema === ENVELOPE_SCHEMA) addLinearTrackerErrors(value, errors);
   return { ok: errors.length === 0, errors };
 }
+function addLinearTrackerErrors(value, errors) {
+  if (value?.tracker?.provider !== "linear") return;
+  if (typeof value.tracker.team !== "string" || value.tracker.team.length === 0) {
+    errors.push("$.tracker.team: required for linear tracker");
+  }
+  if (typeof value.tracker.project !== "string" || value.tracker.project.length === 0) {
+    errors.push("$.tracker.project: required for linear tracker");
+  }
+}
+
+function addRecipeCircuitReferenceErrors(value, errors) {
+  if (!Array.isArray(value?.circuits) || !Array.isArray(value?.stages)) return;
+  const circuitNames = new Set(value.circuits.map((circuit) => circuit?.name).filter((name) => typeof name === "string"));
+  value.stages.forEach((stage, stageIndex) => {
+    if (!Array.isArray(stage?.circuits)) return;
+    stage.circuits.forEach((circuit, circuitIndex) => {
+      if (typeof circuit === "string" && !circuitNames.has(circuit)) {
+        errors.push(`$.stages[${stageIndex}].circuits[${circuitIndex}]: unknown circuit ${circuit}`);
+      }
+    });
+  });
+}
+
+function addRecipePlanActionReferenceErrors(value, errors) {
+  if (!Array.isArray(value?.plannedActions) || !Array.isArray(value?.stages)) return;
+  const actionIds = new Set(value.plannedActions.map((action) => action?.id).filter((id) => typeof id === "string"));
+  value.stages.forEach((stage, stageIndex) => {
+    if (!Array.isArray(stage?.plannedActions)) return;
+    stage.plannedActions.forEach((action, actionIndex) => {
+      if (typeof action === "string" && !actionIds.has(action)) {
+        errors.push(`$.stages[${stageIndex}].plannedActions[${actionIndex}]: unknown planned action ${action}`);
+      }
+    });
+  });
+}
+
 
 export function validateEnvelopeYaml(input) {
   try {
-    return validateArtifact(parseYaml(input), ENVELOPE_SCHEMA);
+    const value = parseYaml(input);
+    return validateArtifact(value, ENVELOPE_SCHEMA);
   } catch (error) {
     return { ok: false, errors: [String(error.message ?? error)] };
   }
 }
 
 export function validateRecipe(value) {
-  return validateArtifact(value, RECIPE_SCHEMA);
+  const result = validateArtifact(value, RECIPE_SCHEMA);
+  addRecipeCircuitReferenceErrors(value, result.errors);
+  result.ok = result.errors.length === 0;
+  return result;
 }
 
 export function validateRecipePlan(value) {
-  return validateArtifact(value, RECIPE_PLAN_SCHEMA);
+  const result = validateArtifact(value, RECIPE_PLAN_SCHEMA);
+  addRecipePlanActionReferenceErrors(value, result.errors);
+  result.ok = result.errors.length === 0;
+  return result;
 }
 
 export function validateCircuit(value) {

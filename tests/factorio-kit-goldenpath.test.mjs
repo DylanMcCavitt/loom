@@ -6,6 +6,9 @@ import { createWorld } from "./fixtures/mock-linear-github.mjs";
 const skillsRoot = new URL("../.agents/skills/", import.meta.url);
 const MVP = ["prospect", "blueprint", "ghosts", "roboports", "radar", "proof-pass", "rocket-launch", "assembler", "bus-first"];
 const KIT = [...MVP, "map-seed", "biters", "research", "main-bus", "inserter", "modules", "quality", "space-age"];
+const manifest = readFileSync(new URL("../docs/skills/factorio-kit.md", import.meta.url), "utf8");
+const assemblerSkill = readFileSync(new URL("../.agents/skills/assembler/SKILL.md", import.meta.url), "utf8");
+const adr0003 = readFileSync(new URL("../docs/decisions/0003-factorio-workflow-kit.md", import.meta.url), "utf8");
 
 // ---- Golden path: idea -> spec -> ghosts -> roboports -> rocket-launch ----
 
@@ -87,6 +90,32 @@ test("every kit skill ships evals with positive + negative coverage", () => {
     );
     assert.ok(hasNegative, `${name}: no negative/routing eval case`);
   }
+});
+
+test("manifest gives canonical contracts for kept pipeline proof skills", () => {
+  for (const name of ["radar", "proof-pass"]) {
+    const section = manifest.match(new RegExp(`### \`${name}\`[\\s\\S]*?(?=\\n### \`|\\n## )`, "u"))?.[0] ?? "";
+    assert.ok(section, `${name}: missing manifest contract section`);
+    for (const label of ["**Trigger:**", "**Does", "**Invariants:**", "**Eval cases:**"]) {
+      assert.ok(section.includes(label), `${name}: missing ${label}`);
+    }
+  }
+});
+
+test("envelope docs keep Markdown source and YAML mirror in one binding model", () => {
+  assert.match(assemblerSkill, /\.agents\/envelope\/` in the target repo/u);
+  assert.match(assemblerSkill, /generated\/validated mirror/u);
+  assert.match(assemblerSkill, /not a second source to edit/u);
+  assert.match(manifest, /\.agents\/envelope\/` Markdown/u);
+  assert.match(manifest, /~\/\.loom\/factory-nucleus\/<id>\/envelope\/envelope\.yaml/u);
+  assert.match(adr0003, /\.agents\/envelope\/`/u);
+  assert.match(adr0003, /not a\s+second binding point/u);
+});
+
+test("workflow docs use post-cutover content-envelope terminology", () => {
+  const targetDocs = `${manifest}\n${assemblerSkill}\n${adr0003}`;
+  assert.doesNotMatch(targetDocs, /content-contract/u);
+  assert.match(targetDocs, /content-envelope/u);
 });
 
 test("renamed skills have no duplicate canonical old paths", () => {

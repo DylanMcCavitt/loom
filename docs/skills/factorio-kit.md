@@ -7,7 +7,7 @@ PR auto-links and auto-closes the issue on merge). Decisions are recorded in
 [ADR 0003](../decisions/0003-factorio-workflow-kit.md).
 
 This manifest is the build envelope. Each skill is authored eval-first: write its
-`evals.json` and content-contract test, then iterate `SKILL.md` until both pass.
+`evals.json` and content-envelope test, then iterate `SKILL.md` until both pass.
 
 ## Pipeline
 
@@ -38,7 +38,9 @@ bus-first   the minimal-diff doctrine every code-writing skill cites.
   skills. Reuse before write; minimum that works; never cut
   validation/security/error-handling/accessibility.
 - **Dynamic per repo.** `assembler` generates a repo envelope; skills read it.
-  Skills do not hardcode trackers, teams, labels, or commands.
+  The canonical binding is the repo's `.agents/envelope/` Markdown, with
+  `~/.loom/factory-nucleus/<id>/envelope/envelope.yaml` only a generated/validated
+  runtime mirror. Skills do not hardcode trackers, teams, labels, or commands.
 - **Eval-first.** No skill is "released" until its eval layers are green.
 
 ## Core vocabulary and rename plan
@@ -76,7 +78,7 @@ migration notes explaining the cutover.
 | `blueprint` | saved layout you stamp | PRD/spec + reusable templates | document; template scaffolds | PR/issue templates | MVP | replaces `to-prd` |
 | `ghosts` | ghost = planned-unbuilt entity | split plan into tracer-bullet issues, dep-ordered | issues/sub-issues, blocked-by | — | MVP | replaces `to-issues` |
 | `roboports` | construction/logistic bots | execute one issue end-to-end + fanout discipline | reads issue/acceptance | branch/worktree -> PR | MVP | replaces `issue-execution`, `agent-recipes`; reuses `tdd`, `diagnose` |
-| `radar` | radar scan | check-only drift model + next-route suggestion | reads state/labels/dependencies | reads branch/PR/proof evidence | enrich | new |
+| `radar` | radar scan | check-only drift model + next-route suggestion | reads state/labels/dependencies | reads branch/PR/proof evidence | MVP | new |
 | `proof-pass` | proof circuit | proof-only validation and evidence capture | optional read-only checks | local/browser/test artifacts | MVP | kept engine; used by `rocket-launch` |
 | `rocket-launch` | launch | ship: review gate, merge, close issue | close issue, status update | PR review/merge/CI | MVP | replaces `thread-closeout`, `gh-issue-thread-chain` closeout; reuses `pr-review`, `proof-pass` |
 | `assembler` | machine that builds machines | per-repo envelope + tooling generation | team/project/label map | template files | MVP (minimal) | replaces `repo-workflow-bootstrap`, `workflow-kit`, `setup-matt-pocock-skills` |
@@ -186,6 +188,46 @@ migration notes explaining the cutover.
   offline-mode sync issue"; adversarial "strat building ABC-12"; negative
   "triage the new bugs" (-> `inserter`).
 
+### `radar`
+
+- **Trigger:** `Use when` the user asks to check drift, compare planned ghosts
+  against repo/tracker state, run radar, detect stale plans, or decide whether
+  work needs `inserter`, `roboports`, `proof-pass`, or `rocket-launch` next.
+- **Does:** reads the repo envelope, relevant ghosts, recent PR/proof evidence,
+  and local factory state, then compares tracker/repo/proof evidence against the
+  planned factory state. Returns a check-only drift artifact with `driftClass`,
+  `affectedGhosts`, `suggestedSyncActions`, `suggestedRoute`, and `evidence`.
+- **GitHub/Linear:** read-only issue/PR/state inspection; no tracker writes,
+  blueprint rewrites, repo edits, or PR changes.
+- **Invariants:** check-only; evidence-grounded; reports exactly one drift class
+  (`clean`, `tracker-drift`, `repo-drift`, `proof-drift`, or `blocked`);
+  conflicting or missing evidence is `blocked`, not `clean`.
+- **Eval cases:** positive "run radar on this plan"; positive "compare the Linear
+  ghosts to repo state before launch"; adversarial "radra chk stale ghosts pls";
+  negative "move these issues to Todo" (-> `inserter`); negative "implement this
+  stale ghost" (-> `roboports`).
+
+### `proof-pass`
+
+- **Trigger:** `Use when` the user asks to prove, verify, smoke test, browser
+  test, run live/local evidence, produce artifacts, check whether something
+  works, or separate code correctness from operational/platform/data readiness.
+- **Does:** identifies the claim and proof standard, runs only the validation
+  needed for that claim (targeted tests/checks, local app smoke, browser
+  verification, explicitly allowed read-only platform checks, or artifact
+  generation), captures exact evidence, and states the proof class: proven,
+  partially proven, plumbing evidence only, blocked, or unproven.
+- **Proof sources:** commands/results, artifact paths, screenshots or local URLs
+  when relevant, logs/errors, and exact blockers.
+- **Invariants:** does not add features or expand scope; no live side effects
+  unless explicitly approved; separates "code/checks pass" from "operational
+  proof passed"; incomplete data/API access/permissions/acceptance criteria make
+  the proof blocked or plumbing-only, not countable.
+- **Eval cases:** positive "prove this change works and capture evidence";
+  positive "smoke test the local app"; adversarial "verfy the fix with proof
+  pls"; negative "add retry logic while testing" (-> `roboports`); negative
+  "merge the PR now" (-> `rocket-launch`).
+
 ### `rocket-launch`
 
 - **Trigger:** `Use when` a change is ready to ship: open/merge the PR, run the
@@ -207,11 +249,13 @@ migration notes explaining the cutover.
   envelope: which Linear team/project/labels map to this repo, its domain
   glossary, its commands, and its PR/issue/doc templates.
 - **Does (MVP):** read the repo + ask only for facts tools can't supply, then
-  generate the repo-local envelope (`.agents/envelope/` or repo docs) and stamp
-  templates from `blueprint/templates/`. Reuses the retired bootstrap trio's
-  machinery, re-themed. Full per-repo skill/agent generation is enrichment.
-- **Invariants:** never writes secrets; create-missing-only; the envelope is the
-  single binding point every kit skill reads.
+  generate the repo-local Markdown envelope (`.agents/envelope/`) and, when local
+  Factory Nucleus state is needed, its generated/validated YAML mirror at
+  `~/.loom/factory-nucleus/<id>/envelope/envelope.yaml`; stamp templates from
+  `blueprint/templates/`. Reuses the retired bootstrap trio's machinery,
+  re-themed. Full per-repo skill/agent generation is enrichment.
+- **Invariants:** never writes secrets; create-missing-only; `.agents/envelope/`
+  is the single author-owned binding point every kit skill reads.
 - **Eval cases:** positive "set up this repo for the kit"; positive "refresh the
   Linear mapping for this repo"; negative "create an issue" (-> `ghosts`).
 

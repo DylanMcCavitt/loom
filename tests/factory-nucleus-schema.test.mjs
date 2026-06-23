@@ -37,7 +37,7 @@ delivery:
   autoMerge: false
 proof:
   commands:
-    - npm test
+    - npm run test:unit
 agents:
   maxSubagents: 4
   allowFullTranscriptCapture: false
@@ -53,6 +53,21 @@ test("valid minimal envelope YAML validates through the schema", () => {
   assert.equal(result.ok, true, result.errors.join("\n"));
 });
 
+test("envelope YAML keeps colon-bearing list scalars and nested array item mappings intact", () => {
+  const hooksFirstCircuitYaml = validEnvelopeYaml.replace(`  - name: proof-required
+    gate: proof
+    outcome: block
+    enforcement: validate`, `  - hooks:
+      - name: proof-pass
+        surface: proof
+    name: proof-required
+    gate: proof
+    outcome: block
+    enforcement: validate`);
+  const result = validateEnvelopeYaml(hooksFirstCircuitYaml);
+  assert.equal(result.ok, true, result.errors.join("\n"));
+});
+
 test("malformed, unknown, and unsafe envelope config fails clearly", () => {
   assert.deepEqual(validateEnvelopeYaml("schemaVersion 1").ok, false);
 
@@ -63,6 +78,13 @@ test("malformed, unknown, and unsafe envelope config fails clearly", () => {
   const unsafe = validateEnvelopeYaml(`${validEnvelopeYaml}\napiToken: nope\n`);
   assert.equal(unsafe.ok, false);
   assert.ok(unsafe.errors.some((error) => error.includes("secret-bearing keys")), unsafe.errors.join("\n"));
+
+  const missingLinearContext = validateEnvelopeYaml(
+    validEnvelopeYaml.replace("  team: Loom\n  project: Factory Nucleus\n", ""),
+  );
+  assert.equal(missingLinearContext.ok, false);
+  assert.ok(missingLinearContext.errors.some((error) => error.includes("$.tracker.team")), missingLinearContext.errors.join("\n"));
+  assert.ok(missingLinearContext.errors.some((error) => error.includes("$.tracker.project")), missingLinearContext.errors.join("\n"));
 });
 
 const proofCircuit = withArtifactMetadata("circuit", {
@@ -116,7 +138,7 @@ const recipePlan = withArtifactMetadata("recipe-plan", {
       status: "planned",
       circuits: ["proof-required"],
       proof: ["node --test tests/factory-nucleus-schema.test.mjs"],
-      plannedActions: ["create branch", "run targeted checks"],
+      plannedActions: ["branch", "pr"],
     },
   ],
   plannedActions: [
@@ -128,6 +150,24 @@ const recipePlan = withArtifactMetadata("recipe-plan", {
 test("recipe and generated recipe-plan schemas validate ghost-to-launch fixtures", () => {
   assert.equal(validateRecipe(recipe).ok, true, validateRecipe(recipe).errors.join("\n"));
   assert.equal(validateRecipePlan(recipePlan).ok, true, validateRecipePlan(recipePlan).errors.join("\n"));
+});
+
+test("recipe stages and recipe-plan stages reject dangling references", () => {
+  const danglingCircuitRecipe = {
+    ...recipe,
+    stages: [{ ...recipe.stages[0], circuits: ["missing-circuit"] }, recipe.stages[1]],
+  };
+  const recipeResult = validateRecipe(danglingCircuitRecipe);
+  assert.equal(recipeResult.ok, false);
+  assert.ok(recipeResult.errors.some((error) => error.includes("unknown circuit missing-circuit")), recipeResult.errors.join("\n"));
+
+  const danglingActionPlan = {
+    ...recipePlan,
+    stages: [{ ...recipePlan.stages[0], plannedActions: ["missing-action"] }],
+  };
+  const planResult = validateRecipePlan(danglingActionPlan);
+  assert.equal(planResult.ok, false);
+  assert.ok(planResult.errors.some((error) => error.includes("unknown planned action missing-action")), planResult.errors.join("\n"));
 });
 
 test("recipes missing stages or circuits fail validation", () => {
