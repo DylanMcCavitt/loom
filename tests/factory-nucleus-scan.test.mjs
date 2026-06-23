@@ -6,6 +6,7 @@ import path from "node:path";
 import { test } from "node:test";
 
 import { scanFactory } from "../scripts/factory-nucleus/scan.mjs";
+import { resolveFactoryStatePaths } from "../scripts/factory-nucleus/schema.mjs";
 
 const factoryCli = new URL("../scripts/factory-nucleus/factory.mjs", import.meta.url).pathname;
 const generatedAt = "2026-06-23T00:00:00.000Z";
@@ -69,6 +70,20 @@ function runScan(root) {
     assert.equal(result.status, 0, result.stderr || result.stdout);
     assert.deepEqual(readdirSync(home), [], "default scan must not create local state files");
     return result;
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+}
+
+function withScanSave(root, callback) {
+  const home = mkdtempSync(path.join(tmpdir(), "factory-scan-save-home-"));
+  try {
+    const result = spawnSync(process.execPath, [factoryCli, "scan", "--root", root, "--save"], {
+      encoding: "utf8",
+      env: { ...process.env, HOME: home },
+    });
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    callback({ home, result });
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
@@ -185,5 +200,74 @@ test("factory scan distinguishes sk tokens from ordinary task branch names", () 
 
     assert.match(result.stdout, /Branch: feature\/key_\[REDACTED\] \(default: feature\/key_\[REDACTED\]\)/u);
     assert.doesNotMatch(result.stdout, new RegExp(fakeSkToken, "u"));
+  });
+});
+
+test("factory scan --save writes only scan state outside the target repo", () => {
+  withTempRepo({
+    "package.json": `${JSON.stringify({ scripts: { test: "node --test" } }, null, 2)}\n`,
+    ".agents/envelope/linear-map.md": "team: Loom\n",
+    ".loom.yml": "factory: test\n",
+  }, (root) => {
+    const beforeRepo = walkFiles(root);
+    withScanSave(root, ({ home, result }) => {
+      const state = resolveFactoryStatePaths({
+        homeDir: home,
+        targetRepoPath: root,
+        factoryId: path.basename(root),
+        generatedAt,
+      });
+      assert.equal(existsSync(state.envelope), false, "scan save must not create an envelope");
+      const envelopeDir = path.dirname(state.envelope);
+      mkdirSync(envelopeDir, { recursive: true });
+      writeFileSync(state.envelope, "original envelope\n");
+
+      const secondResult = spawnSync(process.execPath, [factoryCli, "scan", "--root", root, "--save"], {
+        encoding: "utf8",
+        env: { ...process.env, HOME: home },
+      });
+      assert.equal(secondResult.status, 0, secondResult.stderr || secondResult.stdout);
+
+      assert.match(result.stdout, /Factory scan/u);
+      assert.match(result.stdout, /Mode: scan-save \(writes local scan state only; no target-repo writes\)/u);
+      assert.ok(existsSync(state.scan), "scan save should write scan/latest.json");
+      assert.equal(readFileSync(state.envelope, "utf8"), "original envelope\n");
+      assert.deepEqual(
+        [...walkFiles(home).keys()].sort(),
+        [path.relative(home, state.envelope), path.relative(home, state.scan)].sort(),
+      );
+
+      const savedScan = JSON.parse(readFileSync(state.scan, "utf8"));
+      assert.equal(savedScan.schemaVersion, 1);
+      assert.equal(savedScan.kind, "factory-scan");
+      assert.equal(savedScan.mode, "scan-save");
+      assert.equal(savedScan.localState.writes, true);
+      assert.equal(savedScan.localState.scan, state.scan);
+      assert.equal(savedScan.remoteApis.called, false);
+    });
+    assertNoUserFileWrites(root, beforeRepo);
+  });
+});
+
+test("factory scan --save redacts secret-looking branch names in saved scan state", () => {
+  const fakeToken = `ghp_${"12345678901234567890"}`;
+  withTempRepo({
+    "package.json": `${JSON.stringify({ scripts: { test: "node --test" } }, null, 2)}\n`,
+  }, (root) => {
+    run("git", ["branch", "-m", `feature/key_${fakeToken}`], { cwd: root });
+    withScanSave(root, ({ home }) => {
+      const state = resolveFactoryStatePaths({
+        homeDir: home,
+        targetRepoPath: root,
+        factoryId: path.basename(root),
+        generatedAt,
+      });
+      const savedText = readFileSync(state.scan, "utf8");
+      const savedScan = JSON.parse(savedText);
+
+      assert.doesNotMatch(savedText, new RegExp(fakeToken, "u"));
+      assert.equal(savedScan.git.currentBranch, "feature/key_[REDACTED]");
+      assert.equal(savedScan.git.defaultBranch, "feature/key_[REDACTED]");
+    });
   });
 });

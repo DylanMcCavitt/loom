@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
-import { withArtifactMetadata } from "./schema.mjs";
+import { resolveFactoryStatePaths, withArtifactMetadata } from "./schema.mjs";
 
-const USAGE = "Usage: node scripts/factory-nucleus/scan.mjs [--root <path>]";
+const USAGE = "Usage: node scripts/factory-nucleus/scan.mjs [--root <path>] [--save]";
 const COMMAND_KINDS = Object.freeze(["build", "test", "lint"]);
 const SECRET_ASSIGNMENT_PATTERN = /\b(api[_-]?key|token|secret|password|credential|private[_-]?key)\b\s*[:=]\s*["']?[A-Za-z0-9_./+=-]{12,}["']?/giu;
 const SECRET_VALUE_PATTERNS = Object.freeze([
@@ -63,11 +64,15 @@ function gitOutput(root, args) {
 }
 
 function readArgs(argv) {
-  const options = { root: process.cwd() };
+  const options = { root: process.cwd(), save: false };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === "--help" || arg === "-h") {
       options.help = true;
+      continue;
+    }
+    if (arg === "--save") {
+      options.save = true;
       continue;
     }
     if (arg !== "--root") {
@@ -227,6 +232,16 @@ export function redactSecrets(value) {
   return text;
 }
 
+function redactScanArtifact(value) {
+  if (typeof value === "string") return redactSecrets(value);
+  if (Array.isArray(value)) return value.map((item) => redactScanArtifact(item));
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, nested]) => [key, redactScanArtifact(nested)]));
+  }
+  return value;
+}
+
+
 export function scanFactory({ root = process.cwd(), generatedAt } = {}) {
   const requestedRoot = path.resolve(root);
   const repoRoot = path.resolve(gitOutput(requestedRoot, ["rev-parse", "--show-toplevel"]) || requestedRoot);
@@ -261,6 +276,28 @@ export function scanFactory({ root = process.cwd(), generatedAt } = {}) {
   }, generatedAt);
 }
 
+export function saveScanState(scan, { homeDir = process.env.HOME || os.homedir(), root = process.cwd(), generatedAt } = {}) {
+  const requestedRoot = path.resolve(root);
+  const repoRoot = path.resolve(gitOutput(requestedRoot, ["rev-parse", "--show-toplevel"]) || requestedRoot);
+  const state = resolveFactoryStatePaths({
+    homeDir,
+    targetRepoPath: repoRoot,
+    factoryId: redactSecrets(scan.target.name),
+    generatedAt,
+  });
+  const savedScan = redactScanArtifact({
+    ...scan,
+    mode: "scan-save",
+    localState: {
+      writes: true,
+      scan: state.scan,
+    },
+  });
+  mkdirSync(path.dirname(state.scan), { recursive: true });
+  writeFileSync(state.scan, `${JSON.stringify(savedScan, null, 2)}\n`);
+  return savedScan;
+}
+
 function formatCommand(command) {
   if (command.status === "absent") return "absent";
   return `${command.command} (${command.source})`;
@@ -276,10 +313,13 @@ export function formatScanSummary(scan) {
   const missingUnlockLines = scan.science.missingUnlocks.length > 0
     ? scan.science.missingUnlocks.map((unlock) => `  - ${unlock}`)
     : ["  - none"];
+  const modeLine = scan.localState.writes
+    ? "Mode: scan-save (writes local scan state only; no target-repo writes)"
+    : "Mode: zero-footprint (no target-repo or local-state writes)";
 
   return redactSecrets([
     "Factory scan",
-    "Mode: zero-footprint (no target-repo or local-state writes)",
+    modeLine,
     "Remote APIs: none",
     `Repo: ${scan.target.name}`,
     `Branch: ${scan.git.currentBranch} (default: ${scan.git.defaultBranch})`,
@@ -304,7 +344,8 @@ export function main(argv = process.argv.slice(2)) {
     process.stdout.write(`${USAGE}\n`);
     return 0;
   }
-  const scan = scanFactory({ root: options.root });
+  let scan = scanFactory({ root: options.root });
+  if (options.save) scan = saveScanState(scan, { root: options.root });
   process.stdout.write(formatScanSummary(scan));
   return 0;
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { main as scanMain } from "./scan.mjs";
 
-const USAGE = "Usage: node scripts/factory-nucleus/factory.mjs scan [--root <path>]";
+const USAGE = "Usage: node scripts/factory-nucleus/factory.mjs scan [--root <path>] [--save]";
 
 export function main(argv = process.argv.slice(2)) {
   const [command, ...rest] = argv;
