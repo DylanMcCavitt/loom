@@ -1,4 +1,0 @@
-interface:
-  display_name: "Repo Workflow Bootstrap"
-  short_description: "Scaffold repo-local workflow docs and issue architecture."
-  default_prompt: "Use $repo-workflow-bootstrap to bootstrap a repo-local workflow architecture with handoff docs, issue packets, and PR conventions."

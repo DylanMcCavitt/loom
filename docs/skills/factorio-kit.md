@@ -319,12 +319,11 @@ bus-first   the minimal-diff doctrine every code-writing skill cites.
 
 ## Cutover retire/keep map
 
-Deferred (decision, 2026-06-23): the cutover is NOT run until each retired skill's
-replacement exists at parity — specifically `dispatch` and `main-bus` are built and
-`assembler` is fleshed beyond the MVP to absorb the bootstrap trio. Until then the
-kit co-exists with the skills it will replace (accepted transient routing overlap).
-Each retirement is gated on its own replacement reaching parity, not done as one
-blanket delete.
+Cutover completed (2026-06-23): replacement skills reached parity and the
+GitHub-default planning lane was retired in favor of the Linear-first Factorio
+kit. Retirements were gated on each replacement reaching parity: `dispatch`,
+`main-bus`, `robots`, `rocket-launch`, and `assembler` now own the old lane's
+active responsibilities.
 
 - **Retire (replaced):** `to-prd`, `to-issues`, `triage`,
   `issue-execution`, `gh-issue-thread-chain`, `thread-closeout`,

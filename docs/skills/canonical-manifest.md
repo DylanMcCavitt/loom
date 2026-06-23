@@ -19,7 +19,6 @@ symlinking all three roots back to it. One copy per skill, no harness prefixes, 
 ## Conflict resolutions
 - `chronicle` -> `.codex` (escalated host process check).
 - `fleet-status` -> `.codex`/`.claude` majority (rewrite hardcoded path).
-- `repo-workflow-bootstrap` -> `.codex` (self-contained; bundles scripts/templates/agents; rewrite paths).
 
 ## Canonical skills
 
@@ -41,22 +40,19 @@ symlinking all three roots back to it. One copy per skill, no harness prefixes, 
 | `project-sanity-check` | .agents | copy | ~/.agents/skills/project-sanity-check |
 | `proof-pass` | REPO | keep | (already in repo) |
 | `repo-triage` | .agents | copy | ~/.agents/skills/repo-triage |
-| `repo-workflow-bootstrap` | .codex | copy+deharness | ~/.codex/skills/repo-workflow-bootstrap |
 | `resume-thread` | REPO | keep | (already in repo) |
 | `security-best-practices` | .agents | copy | ~/.agents/skills/security-best-practices |
 | `security-ownership-map` | .agents | copy | ~/.agents/skills/security-ownership-map |
 | `security-threat-model` | .agents | copy | ~/.agents/skills/security-threat-model |
-| `setup-matt-pocock-skills` | .agents | copy | ~/.agents/skills/setup-matt-pocock-skills |
 | `skill-maintenance` | .agents | copy | ~/.agents/skills/skill-maintenance |
 | `swiftui-pro` | .agents | copy | ~/.agents/skills/swiftui-pro |
 | `tdd` | .agents | copy | ~/.agents/skills/tdd |
 | `thread-organizer` | .codex | copy+deharness | ~/.codex/skills/thread-organizer |
 | `tradingview-breakout-dashboard` | .agents | copy | ~/.agents/skills/tradingview-breakout-dashboard |
-| `workflow-kit` | .agents | copy | ~/.agents/skills/workflow-kit |
 | `write-a-skill` | .agents | copy | ~/.agents/skills/write-a-skill |
 | `zoom-out` | .agents | copy | ~/.agents/skills/zoom-out |
 
 ## Post-consolidation changes
 
 - **Issue-lane prune (historical):** earlier consolidation removed `issue-bootstrap`/`issue-work`, leaving `issue-execution` as the single issue-lifecycle skill alongside `triage`/`to-issues`/`to-prd`.
-- **ADR 0003 Factorio-kit cutover:** that GitHub-default planning lane is now retired in favor of the Linear-first Factorio kit (see `factorio-kit.md`, the kit's manifest). Replaced: `to-prd`->`blueprint`, `to-issues`->`ghosts`, `triage`->`dispatch`, `improve-codebase-architecture`->`main-bus`, `thread-closeout`+`gh-issue-thread-chain`->`rocket-launch`, `agent-recipes`+`issue-execution`->`robots`. Dropped (curation): `caveman`, `doc`, `pdf`, `jupyter-notebook`, `excalidraw-diagrams`, `theme-factory`, `inbox-triage`, `summarize-youtube-videos`, `teach`, `orca-cli`, `orchestration`, `cmux-project-supervision`, `terminal-steering`, `session-tree-map`, `prototype` (re-themed as `map-seed`), and the five `html-*` skills. Kept as cited engines: `tdd`, `zoom-out`, `security-threat-model`/`-best-practices`/`-ownership-map`. The bootstrap trio (`workflow-kit`, `repo-workflow-bootstrap`, `setup-matt-pocock-skills`) is deferred until `assembler` reaches parity.
+- **ADR 0003 Factorio-kit cutover:** that GitHub-default planning lane is now retired in favor of the Linear-first Factorio kit (see `factorio-kit.md`, the kit's manifest). Replaced: `to-prd`->`blueprint`, `to-issues`->`ghosts`, `triage`->`dispatch`, `improve-codebase-architecture`->`main-bus`, `thread-closeout`+`gh-issue-thread-chain`->`rocket-launch`, `agent-recipes`+`issue-execution`->`robots`. Dropped (curation): `caveman`, `doc`, `pdf`, `jupyter-notebook`, `excalidraw-diagrams`, `theme-factory`, `inbox-triage`, `summarize-youtube-videos`, `teach`, `orca-cli`, `orchestration`, `cmux-project-supervision`, `terminal-steering`, `session-tree-map`, `prototype` (re-themed as `map-seed`), and the five `html-*` skills. Kept as cited engines: `tdd`, `zoom-out`, `security-threat-model`/`-best-practices`/`-ownership-map`. The bootstrap trio (`repo-workflow-bootstrap`, `workflow-kit`, `setup-matt-pocock-skills`) -> `assembler`, now that `assembler` reached parity (LOO-19): their skill dirs, table rows, and the `repo-workflow-bootstrap` routing note are removed from this manifest.

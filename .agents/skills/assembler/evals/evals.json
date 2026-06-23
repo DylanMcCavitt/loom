@@ -30,6 +30,16 @@
       "prompt": "Write the PRD for offline mode and give me a PR template.",
       "expected_output": "Does NOT own spec or template content; routes to blueprint, which owns the canonical templates assembler later stamps into the repo contract.",
       "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "While setting up this repo for the kit, also scaffold a repo-specific skill for our recurring nightly data-import workflow.",
+      "expected_output": "As part of repo setup, scaffolds a repo-specific skill under the repo's own .agents/skills/<repo>-<capability>/ (one level deep, concrete Use-when trigger, reads the contract, cites the generic kit skill it specializes), only because a real recurring workflow justifies it; passes validate-skills. Generic standalone skill authoring is write-a-skill's job; assembler owns repo-specific scaffolding from the contract during setup/refresh."
+    },
+    {
+      "id": 7,
+      "prompt": "Is this repo kit-ready? Check the contract.",
+      "expected_output": "Runs the verify checklist: confirms all four bindings exist and agree, every dispatch role maps to a real state/label, commands are real, the AGENTS.md/CLAUDE.md agent-skills block points at .agents/contract/, and reports kit-ready or the exact gaps. Does not overwrite anything."
     }
   ]
 }

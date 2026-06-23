@@ -17,6 +17,24 @@ const commands = JSON.parse(readFileSync(commandsPath, "utf8"));
 const portabilityMatrix = JSON.parse(readFileSync(portabilityMatrixPath, "utf8"));
 const resourceIndex = JSON.parse(readFileSync(resourceIndexPath, "utf8"));
 const hasOmp = spawnSync("which", ["omp"]).status === 0;
+const hasRefreshableOmpPackage = Boolean(findRefreshableOmpPackageRoot());
+
+function findRefreshableOmpPackageRoot() {
+  const which = spawnSync("which", ["omp"], { encoding: "utf8" });
+  if (which.status !== 0) return null;
+  const realpath = spawnSync("realpath", [which.stdout.trim()], { encoding: "utf8" });
+  const ompPath = (realpath.status === 0 ? realpath.stdout : which.stdout).trim();
+  let current = path.dirname(ompPath);
+  while (current !== path.dirname(current)) {
+    const packageJson = path.join(current, "package.json");
+    if (existsSync(packageJson)) {
+      const pkg = JSON.parse(readFileSync(packageJson, "utf8"));
+      if (pkg.name === "@oh-my-pi/pi-coding-agent") return current;
+    }
+    current = path.dirname(current);
+  }
+
+}
 
 function runNode(script, args = []) {
   return spawnSync(process.execPath, [script, ...args], { encoding: "utf8" });
@@ -132,7 +150,7 @@ test("built-in prompt and rule indexes contain path-level drift metadata only", 
   assert.ok(resourceIndex.excludedRuntimeState.some(item => item.includes("terminal-sessions")));
 });
 
-test("snapshot refresh dry run reports no drift when OMP is installed", { skip: !hasOmp }, () => {
+test("snapshot refresh dry run reports no drift when refreshable OMP package source is available", { skip: !hasRefreshableOmpPackage }, () => {
   const result = runNode(refresh);
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
   assert.match(result.stdout, /Mutation: disabled/u);
