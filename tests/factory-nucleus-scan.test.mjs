@@ -10,6 +10,33 @@ import { resolveFactoryStatePaths } from "../scripts/factory-nucleus/schema.mjs"
 
 const factoryCli = new URL("../scripts/factory-nucleus/factory.mjs", import.meta.url).pathname;
 const generatedAt = "2026-06-23T00:00:00.000Z";
+const offlineEnvelopeYaml = `
+schemaVersion: 1
+kind: envelope
+generatedAt: "${generatedAt}"
+factory:
+  id: offline-factory
+  repo:
+    name: fixture
+    root: .
+tracker:
+  provider: none
+delivery:
+  defaultBranch: main
+  branchPrefix: offline
+  autoMerge: false
+proof:
+  commands:
+    - npm test
+agents:
+  maxSubagents: 1
+  allowFullTranscriptCapture: false
+circuits:
+  - name: proof-required
+    gate: proof
+    outcome: block
+    enforcement: validate
+`;
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, { encoding: "utf8", ...options });
@@ -487,6 +514,94 @@ test("factory scan reports dangling .loom.yml symlinks as unreadable", () => {
 
     assert.match(result.stdout, /Pointer: unreadable/u);
     assert.deepEqual(scan.pointer, { present: true, status: "unreadable" });
+  });
+});
+
+test("factory scan ignores integrated envelopes unless explicitly requested", () => {
+  withTempRepo({
+    "package.json": `${JSON.stringify({ scripts: { test: "node --test" } }, null, 2)}\n`,
+    ".agents/envelope/envelope.yaml": "schemaVersion 1\nUNREQUESTED_INTEGRATED_ENVELOPE\n",
+  }, (root) => {
+    const before = walkFiles(root);
+    const result = runScan(root);
+    const scan = scanFactory({ root, generatedAt });
+
+    assert.deepEqual(scan.integratedEnvelope, { enabled: false });
+    assert.doesNotMatch(result.stdout, /Integrated envelope/u);
+    assert.doesNotMatch(result.stdout, /UNREQUESTED_INTEGRATED_ENVELOPE/u);
+    assertNoUserFileWrites(root, before);
+  });
+});
+
+test("factory scan --integrated-envelope discovers and validates offline envelope content", () => {
+  withTempRepo({
+    "package.json": `${JSON.stringify({ scripts: { test: "node --test" } }, null, 2)}\n`,
+    ".agents/envelope/envelope.yaml": offlineEnvelopeYaml,
+  }, (root) => {
+    withFactoryScan(root, ["--integrated-envelope"], ({ home, result }) => {
+      assert.deepEqual(readdirSync(home), [], "integrated envelope scan without --save must not create local state files");
+      assert.match(result.stdout, /Integrated envelope: valid \(\.agents\/envelope\/envelope\.yaml\)/u);
+    });
+
+    const scan = scanFactory({ root, generatedAt, integratedEnvelope: true });
+    assert.deepEqual(scan.integratedEnvelope, {
+      enabled: true,
+      present: true,
+      path: ".agents/envelope/envelope.yaml",
+      status: "valid",
+      validation: { ok: true, errors: [] },
+    });
+    assert.equal(scan.localState.writes, false);
+  });
+});
+
+test("factory scan --integrated-envelope reports invalid offline envelope content", () => {
+  withTempRepo({
+    "package.json": `${JSON.stringify({ scripts: { test: "node --test" } }, null, 2)}\n`,
+    ".agents/envelope/envelope.yaml": "schemaVersion 1\n",
+  }, (root) => {
+    const before = walkFiles(root);
+    withFactoryScan(root, ["--integrated-envelope"], ({ result }) => {
+      assert.match(result.stdout, /Integrated envelope: invalid \(\.agents\/envelope\/envelope\.yaml\)/u);
+    });
+
+    const scan = scanFactory({ root, generatedAt, integratedEnvelope: true });
+    assert.equal(scan.integratedEnvelope.enabled, true);
+    assert.equal(scan.integratedEnvelope.present, true);
+    assert.equal(scan.integratedEnvelope.path, ".agents/envelope/envelope.yaml");
+    assert.equal(scan.integratedEnvelope.status, "invalid");
+    assert.equal(scan.integratedEnvelope.validation.ok, false);
+    assert.ok(scan.integratedEnvelope.validation.errors.length > 0);
+    assertNoUserFileWrites(root, before);
+  });
+});
+
+test("factory scan --integrated-envelope --save writes only scan state outside the target repo", () => {
+  withTempRepo({
+    "package.json": `${JSON.stringify({ scripts: { test: "node --test" } }, null, 2)}\n`,
+    ".agents/envelope/envelope.yaml": offlineEnvelopeYaml,
+  }, (root) => {
+    const before = walkFiles(root);
+    withFactoryScan(root, ["--integrated-envelope", "--save"], ({ home, result }) => {
+      const state = resolveFactoryStatePaths({
+        homeDir: home,
+        targetRepoPath: root,
+        factoryId: path.basename(root),
+        generatedAt,
+      });
+      const savedScan = JSON.parse(readFileSync(state.scan, "utf8"));
+
+      assert.match(result.stdout, /Mode: scan-save \(writes local scan state only; no target-repo writes\)/u);
+      assert.equal(existsSync(state.scan), true);
+      assert.equal(existsSync(state.envelope), false, "integrated envelope scan save must not create a local envelope");
+      assert.deepEqual([...walkFiles(home).keys()], [path.relative(home, state.scan)]);
+      assert.equal(savedScan.mode, "scan-save");
+      assert.equal(savedScan.localState.writes, true);
+      assert.equal(savedScan.remoteApis.called, false);
+      assert.equal(savedScan.integratedEnvelope.status, "valid");
+      assert.equal(savedScan.integratedEnvelope.validation.ok, true);
+    });
+    assertNoUserFileWrites(root, before);
   });
 });
 

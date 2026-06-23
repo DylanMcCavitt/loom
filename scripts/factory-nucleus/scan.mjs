@@ -4,11 +4,12 @@ import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, realpathSy
 import os from "node:os";
 import path from "node:path";
 
-import { resolveFactoryStatePaths, withArtifactMetadata } from "./schema.mjs";
+import { resolveFactoryStatePaths, validateEnvelopeYaml, withArtifactMetadata } from "./schema.mjs";
 
-const USAGE = "Usage: node scripts/factory-nucleus/scan.mjs [--root <path>] [--save] [--content-scan]";
+const USAGE = "Usage: node scripts/factory-nucleus/scan.mjs [--root <path>] [--save] [--content-scan] [--integrated-envelope]";
 const COMMAND_KINDS = Object.freeze(["build", "test", "lint"]);
 const CONTENT_SCAN_IGNORES = new Set([".git", ".github", ".agents", "node_modules", "dist", "build", "coverage", ".loom"]);
+const INTEGRATED_ENVELOPE_PATH = ".agents/envelope/envelope.yaml";
 const CONTENT_SCAN_EXTENSIONS = new Set([
   ".js",
   ".mjs",
@@ -81,7 +82,7 @@ function gitOutput(root, args) {
 }
 
 function readArgs(argv) {
-  const options = { root: process.cwd(), save: false, content: false };
+  const options = { root: process.cwd(), save: false, content: false, integratedEnvelope: false };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === "--help" || arg === "-h") {
@@ -94,6 +95,10 @@ function readArgs(argv) {
     }
     if (arg === "--content-scan") {
       options.content = true;
+      continue;
+    }
+    if (arg === "--integrated-envelope") {
+      options.integratedEnvelope = true;
       continue;
     }
     if (arg !== "--root") {
@@ -232,6 +237,40 @@ function discoverPointer(root) {
     status: "valid",
     identity: redactSecrets(identity),
   };
+}
+
+function discoverIntegratedEnvelope(root, enabled) {
+  if (!enabled) return { enabled: false };
+  const relativePath = INTEGRATED_ENVELOPE_PATH;
+  const envelopePath = path.join(root, relativePath);
+  let stat;
+  try {
+    stat = lstatSync(envelopePath);
+  } catch (error) {
+    if (error?.code === "ENOENT") return { enabled: true, present: false, path: relativePath };
+    return { enabled: true, present: true, path: relativePath, status: "unreadable" };
+  }
+  if (!stat.isFile()) return { enabled: true, present: true, path: relativePath, status: "unreadable" };
+  try {
+    const realRoot = realpathSync(root);
+    const realEnvelope = realpathSync(envelopePath);
+    if (!isInsidePath(realRoot, realEnvelope)) {
+      return { enabled: true, present: true, path: relativePath, status: "unreadable" };
+    }
+    const validation = validateEnvelopeYaml(readFileSync(realEnvelope, "utf8"));
+    return {
+      enabled: true,
+      present: true,
+      path: relativePath,
+      status: validation.ok ? "valid" : "invalid",
+      validation: {
+        ok: validation.ok,
+        errors: validation.errors.map(redactSecrets),
+      },
+    };
+  } catch {
+    return { enabled: true, present: true, path: relativePath, status: "unreadable" };
+  }
 }
 
 
@@ -440,7 +479,7 @@ function redactScanArtifact(value) {
 }
 
 
-export function scanFactory({ root = process.cwd(), generatedAt, content = false } = {}) {
+export function scanFactory({ root = process.cwd(), generatedAt, content = false, integratedEnvelope = false } = {}) {
   const requestedRoot = path.resolve(root);
   const repoRoot = path.resolve(gitOutput(requestedRoot, ["rev-parse", "--show-toplevel"]) || requestedRoot);
   const packageJson = safeJsonFile(path.join(repoRoot, "package.json"));
@@ -465,6 +504,7 @@ export function scanFactory({ root = process.cwd(), generatedAt, content = false
     stack,
     commands,
     pointer,
+    integratedEnvelope: discoverIntegratedEnvelope(repoRoot, integratedEnvelope),
     protectedSurfaces,
     science,
     localState: {
@@ -512,6 +552,19 @@ function formatPointer(pointer) {
   return "Pointer: unreadable";
 }
 
+function formatIntegratedEnvelope(envelope) {
+  if (!envelope?.enabled) return [];
+  if (!envelope.present) return [`Integrated envelope: absent (${envelope.path})`];
+  if (envelope.status === "valid") return [`Integrated envelope: valid (${envelope.path})`];
+  if (envelope.status === "invalid") {
+    return [
+      `Integrated envelope: invalid (${envelope.path})`,
+      ...envelope.validation.errors.map((error) => `  - ${error}`),
+    ];
+  }
+  return [`Integrated envelope: unreadable (${envelope.path})`];
+}
+
 export function formatScanSummary(scan) {
   const stack = scan.stack
     .map((entry) => (entry.packageManager ? `${entry.name}/${entry.packageManager}` : entry.name))
@@ -533,6 +586,7 @@ export function formatScanSummary(scan) {
       ...scan.content.redactedSignals.map((signal) => `  - ${signal.path}: ${signal.kind} redacted`),
     ]
     : [];
+  const integratedEnvelopeLines = formatIntegratedEnvelope(scan.integratedEnvelope);
 
   return redactSecrets([
     "Factory scan",
@@ -541,6 +595,7 @@ export function formatScanSummary(scan) {
     `Repo: ${scan.target.name}`,
     `Branch: ${scan.git.currentBranch} (default: ${scan.git.defaultBranch})`,
     formatPointer(scan.pointer),
+    ...integratedEnvelopeLines,
     `Dirty state: ${scan.git.dirty.isDirty ? `dirty (${scan.git.dirty.count} paths)` : "clean"}`,
     `Stack: ${stack}`,
     "Commands:",
@@ -563,7 +618,7 @@ export function main(argv = process.argv.slice(2)) {
     process.stdout.write(`${USAGE}\n`);
     return 0;
   }
-  let scan = scanFactory({ root: options.root, content: options.content });
+  let scan = scanFactory({ root: options.root, content: options.content, integratedEnvelope: options.integratedEnvelope });
   if (options.save) scan = saveScanState(scan, { root: options.root });
   process.stdout.write(formatScanSummary(scan));
   return 0;
