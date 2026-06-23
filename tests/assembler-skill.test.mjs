@@ -40,3 +40,34 @@ test("assembler routes issue creation and spec content elsewhere", () => {
     assert.ok(skill.includes(`\`${route}\``), `${route} route missing`);
   }
 });
+
+test("assembler replaces the bootstrap trio", () => {
+  assert.match(skill, /replaces the retired bootstrap trio/u);
+  for (const trio of ["repo-workflow-bootstrap", "workflow-kit", "setup-matt-pocock-skills"]) {
+    assert.ok(skill.includes(`\`${trio}\``), `${trio} not named`);
+  }
+});
+
+test("assembler wires the agent-skills block into AGENTS/CLAUDE", () => {
+  assert.match(skill, /## Agent skills/u);
+  assert.match(skill, /AGENTS\.md/u);
+  assert.match(skill, /CLAUDE\.md/u);
+});
+
+test("assembler scaffolds repo-specific skills and agents", () => {
+  assert.match(skill, /Repo-specific skills and agents/u);
+  assert.match(skill, /\.agents\/skills\//u);
+  assert.match(skill, /\.agents\/agents\//u);
+  assert.match(skill, /\(SCAFFOLD\.md\)/u);
+});
+
+test("assembler verifies the contract is complete", () => {
+  assert.match(skill, /\*\*Verify\.\*\*/u);
+  assert.match(skill, /\(VERIFY\.md\)/u);
+});
+
+test("assembler links its reference files", () => {
+  assert.match(skill, /\(CONTRACT\.md\)/u);
+  assert.match(skill, /\(SCAFFOLD\.md\)/u);
+  assert.match(skill, /\(VERIFY\.md\)/u);
+});

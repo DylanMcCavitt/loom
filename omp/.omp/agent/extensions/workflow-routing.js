@@ -31,9 +31,9 @@ const ROUTE_RULES = [
     any: ["write a prd", "create a prd", "turn this into a prd", "make a spec", "create a spec"],
   },
   {
-    route: "workflow-kit",
-    reason: "Existing workflow-kit skill owns reusable Oh My Pi workflow setup.",
-    any: ["workflow kit", "oh my pi globally", "project-specific skills"],
+    route: "assembler",
+    reason: "Assembler owns per-repo kit setup: the repo contract, harness wiring, and repo-specific skills (replaces the retired bootstrap trio).",
+    any: ["set up this repo", "set up a repo for the kit", "repo contract", "refresh the contract", "project-specific skills"],
   },
   {
     route: "openai-docs",
