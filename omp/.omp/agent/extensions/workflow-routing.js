@@ -33,7 +33,7 @@ const ROUTE_RULES = [
   {
     route: "assembler",
     reason: "Assembler owns per-repo kit setup: the repo contract, harness wiring, and repo-specific skills (replaces the retired bootstrap trio).",
-    any: ["set up this repo", "set up a repo for the kit", "repo contract", "refresh the contract", "project-specific skills"],
+    any: ["set up this repo", "set up a repo for the kit", "workflow kit", "set up the workflow kit", "workflow kit setup", "repo contract", "refresh the contract", "project-specific skills", "project-specific agents", "repo-specific skills", "repo-specific agents", "scaffold repo-specific agents"],
   },
   {
     route: "openai-docs",

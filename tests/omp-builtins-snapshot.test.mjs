@@ -34,13 +34,6 @@ function findRefreshableOmpPackageRoot() {
     current = path.dirname(current);
   }
 
-  const npmRoot = spawnSync("npm", ["root", "-g"], { encoding: "utf8" });
-  if (npmRoot.status !== 0) return null;
-  const packageRoot = path.join(npmRoot.stdout.trim(), "@oh-my-pi/pi-coding-agent");
-  const packageJson = path.join(packageRoot, "package.json");
-  if (!existsSync(packageJson)) return null;
-  const pkg = JSON.parse(readFileSync(packageJson, "utf8"));
-  return pkg.name === "@oh-my-pi/pi-coding-agent" ? packageRoot : null;
 }
 
 function runNode(script, args = []) {

@@ -1,8 +1,8 @@
 # The repo contract: full shape
 
-Everything `assembler` writes lives in the target repo at `.agents/contract/`
-(plus the `## Agent skills` block in the repo's `AGENTS.md`/`CLAUDE.md`). Each
-binding is plain Markdown a human can read and edit.
+`assembler` writes only repo-local workflow bindings and scaffolds: `.agents/contract/`,
+repo-specific `.agents/skills/`, repo-specific `.agents/agents/`, and the `## Agent skills`
+block in the repo's `AGENTS.md`/`CLAUDE.md`. Each binding is plain Markdown a human can read and edit.
 
 ## `linear-map.md`
 
