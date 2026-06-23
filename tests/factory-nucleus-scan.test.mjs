@@ -149,7 +149,7 @@ test("default factory scan reports a clean Node repo without writing files", () 
     assert.match(result.stdout, /build: npm run build \(package\.json\)/u);
     assert.match(result.stdout, /test: npm test \(package\.json\)/u);
     assert.match(result.stdout, /lint: npm run lint \(package\.json\)/u);
-    assert.match(result.stdout, /Science level: logistic/u);
+    assert.match(result.stdout, /Science level: green/u);
     assertNoUserFileWrites(root, before);
 
     const scan = scanFactory({ root, generatedAt });
