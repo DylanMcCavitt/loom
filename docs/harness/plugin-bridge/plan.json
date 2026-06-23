@@ -23,9 +23,9 @@
   "decisions": {
     "dualManifest": "YES. One component root (loom-nucleus/) carries sibling .codex-plugin/plugin.json and .claude-plugin/plugin.json over shared skills/, agents/, hooks/ (design 2.1). Codex consumes skills + hooks; Claude additionally consumes agents.",
     "writeBoth": "Write BOTH the marketplace catalog AND the loom-nucleus plugin source to a live home path (resolved open question 6).",
-    "marketplaceRoot": "~/.agents/plugins",
+    "marketplaceRoot": "~/.agents/plugins (marketplace.json lives here; Codex auto-discovers it and reports the marketplace ROOT as $HOME)",
     "pluginSourceRoot": "~/.agents/plugins/loom-nucleus",
-    "sourcePathReconciliation": "Plugin source is co-located UNDER the personal marketplace root, so the Codex marketplace source.path stays './loom-nucleus' (./-prefixed and inside the marketplace root, reconciling the Codex 'keep source.path inside that root' guidance with the 'can point elsewhere' note from design 3.4). The design also names ~/.codex/plugins/<name>/ as a non-cache personal source dir; co-locating under ~/.agents/plugins keeps one cross-harness root and a relative source path.",
+    "sourcePathReconciliation": "VERIFIED LIVE (LOO-15, codex-cli 0.142.0): Codex auto-discovers ~/.agents/plugins/marketplace.json with marketplace ROOT = $HOME and resolves source.path relative to that root, so source.path is './.agents/plugins/loom-nucleus' (./-prefixed, inside the $HOME root), NOT './loom-nucleus'. Install with `codex plugin add loom-nucleus@loom-nucleus-plugins` (the verb is `add`, not `install`); no `marketplace add` is needed (auto-discovered). policy.installation=AVAILABLE, authentication=ON_INSTALL, category=Productivity all parse and install+enable cleanly.",
     "claudeMarketplace": "Repo-scoped .claude-plugin/marketplace.json is tracked in-repo (also read by Codex as a legacy-compatible repo marketplace) and is rendered + gated + reported, never written to HOME.",
     "versionPinning": "Pin an explicit plugin version (0.1.0) rather than relying on commit-SHA versioning (resolved open question 7).",
     "stopHookTrust": "Ship the Stop verifier dormant. Document a one-time manual /hooks trust step; AFK auto-arming of the verifier is deferred (resolved open questions 8: option (a)).",
@@ -65,7 +65,7 @@
       "template": ".agents/plugins/marketplace.json",
       "destination": "~/.agents/plugins/marketplace.json",
       "dispositionHarness": "codex",
-      "notes": "Codex-native personal marketplace. Entry carries source/policy/category; source.path './loom-nucleus' stays inside the marketplace root."
+      "notes": "Codex-native personal marketplace, auto-discovered at root $HOME. source.path './.agents/plugins/loom-nucleus' resolves relative to that root (verified live, LOO-15)."
     },
     {
       "id": "claude-marketplace",

@@ -365,6 +365,7 @@ marker backup); it never silently leaves a half-installed plugin.
 - **[Open]** Marketplace identity/versioning: pin `version` explicitly in
   `plugin.json` (recommended; Claude otherwise uses commit SHA and treats every
   commit as a new version).
+- **[Verified live — LOO-15, codex-cli 0.142.0]** Codex **auto-discovers** `~/.agents/plugins/marketplace.json` (no `codex plugin marketplace add` needed) and reports the marketplace **root as `$HOME`**, resolving `source.path` relative to that root. The plugin source is therefore referenced as `./.agents/plugins/loom-nucleus` (not `./loom-nucleus`). Install with `codex plugin add <plugin>@<marketplace>` (the CLI verb is `add`, not `install`); it copies into `~/.codex/plugins/cache/<marketplace>/<plugin>/<version>/` and reports `installed, enabled`. `policy.installation: AVAILABLE`, `policy.authentication: ON_INSTALL`, and `category: Productivity` all parse and install cleanly for a credential-less local plugin.
 
 ---
 

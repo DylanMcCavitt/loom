@@ -203,7 +203,10 @@ test("rendered plugin and marketplace manifests parse and carry required fields"
   const codexEntry = codexMarket.plugins.find((entry) => entry.name === "loom-nucleus");
   assert.ok(codexEntry, "Codex marketplace must list loom-nucleus");
   assert.equal(codexEntry.source.source, "local");
-  assert.ok(codexEntry.source.path.startsWith("./"), "Codex source.path must be ./-prefixed");
+  // Verified live (LOO-15, codex-cli 0.142.0): Codex auto-discovers ~/.agents/plugins/marketplace.json
+  // with marketplace ROOT = $HOME and resolves source.path relative to that root, so the plugin at
+  // ~/.agents/plugins/loom-nucleus requires this exact path (not "./loom-nucleus").
+  assert.equal(codexEntry.source.path, "./.agents/plugins/loom-nucleus", "Codex source.path must resolve to the plugin under the $HOME marketplace root");
   assert.ok(["AVAILABLE", "INSTALLED_BY_DEFAULT", "NOT_AVAILABLE"].includes(codexEntry.policy.installation));
   assert.ok(typeof codexEntry.policy.authentication === "string");
   assert.ok(typeof codexEntry.category === "string" && codexEntry.category.length > 0);
