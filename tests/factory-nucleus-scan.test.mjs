@@ -258,6 +258,7 @@ test("factory scan --save writes only scan state outside the target repo", () =>
       assert.equal(savedScan.localState.writes, true);
       assert.equal(savedScan.localState.scan, state.scan);
       assert.equal(savedScan.remoteApis.called, false);
+      assert.deepEqual(savedScan.pointer, { present: true, status: "valid", identity: "test" });
     });
     assertNoUserFileWrites(root, beforeRepo);
   });
@@ -283,6 +284,209 @@ test("factory scan --save redacts secret-looking branch names in saved scan stat
       assert.equal(savedScan.git.currentBranch, "feature/key_[REDACTED]");
       assert.equal(savedScan.git.defaultBranch, "feature/key_[REDACTED]");
     });
+  });
+});
+
+test("factory scan reads .loom.yml pointer identity only", () => {
+  withTempRepo({
+    "package.json": `${JSON.stringify({ scripts: { test: "node --test" } }, null, 2)}\n`,
+    ".loom.yml": "factory: test-factory\n",
+  }, (root) => {
+    const before = walkFiles(root);
+    const result = runScan(root);
+    const scan = scanFactory({ root, generatedAt });
+
+    assert.match(result.stdout, /Pointer: test-factory/u);
+    assert.deepEqual(scan.pointer, { present: true, status: "valid", identity: "test-factory" });
+    assertNoUserFileWrites(root, before);
+  });
+});
+
+test("factory scan ignores policy-bearing .loom.yml values", () => {
+  const fakeToken = `ghp_${"12345678901234567890"}`;
+  withTempRepo({
+    "package.json": `${JSON.stringify({ scripts: { test: "node --test" } }, null, 2)}\n`,
+    ".loom.yml": `factory: test-factory\ntracker:\n  token: ${fakeToken}\ncommands:\n  test: npm test\n`,
+  }, (root) => {
+    const before = walkFiles(root);
+    withScanSave(root, ({ home, result }) => {
+      const state = resolveFactoryStatePaths({
+        homeDir: home,
+        targetRepoPath: root,
+        factoryId: path.basename(root),
+        generatedAt,
+      });
+      const savedText = readFileSync(state.scan, "utf8");
+      const savedScan = JSON.parse(savedText);
+
+      assert.match(result.stdout, /Pointer: ignored policy-bearing \.loom\.yml \(tracker, commands\)/u);
+      assert.doesNotMatch(result.stdout, new RegExp(fakeToken, "u"));
+      assert.doesNotMatch(savedText, new RegExp(fakeToken, "u"));
+      assert.ok(savedScan.science.missingUnlocks.includes("factory envelope"));
+      assert.deepEqual(savedScan.pointer, {
+        present: true,
+        status: "ignored-policy",
+        ignoredKeys: ["tracker", "commands"],
+      });
+    });
+    assertNoUserFileWrites(root, before);
+  });
+});
+
+test("factory scan treats quoted pointer policy keys as policy-bearing", () => {
+  withTempRepo({
+    "package.json": `${JSON.stringify({ scripts: { test: "node --test" } }, null, 2)}\n`,
+    ".loom.yml": `factory: test-factory\n"commands":\n  test: npm test\n`,
+  }, (root) => {
+    const scan = scanFactory({ root, generatedAt });
+
+    assert.deepEqual(scan.pointer, {
+      present: true,
+      status: "ignored-policy",
+      ignoredKeys: ["commands"],
+    });
+  });
+});
+
+test("factory scan rejects unbalanced pointer quotes", () => {
+  for (const loomYml of [`"factory: prod\n`, `factory: "prod\n`]) {
+    withTempRepo({
+      "package.json": `${JSON.stringify({ scripts: { test: "node --test" } }, null, 2)}\n`,
+      ".loom.yml": loomYml,
+    }, (root) => {
+      const result = runScan(root);
+      const scan = scanFactory({ root, generatedAt });
+
+      assert.match(result.stdout, /Pointer: ignored policy-bearing \.loom\.yml \(unparsed\)/u);
+      assert.deepEqual(scan.pointer, {
+        present: true,
+        status: "ignored-policy",
+        ignoredKeys: ["unparsed"],
+      });
+      assert.ok(scan.science.missingUnlocks.includes("factory envelope"));
+    });
+  }
+});
+
+test("factory scan rejects leading indented pointer content", () => {
+  withTempRepo({
+    "package.json": `${JSON.stringify({ scripts: { test: "node --test" } }, null, 2)}\n`,
+    ".loom.yml": "  commands:\n    test: npm test\nfactory: prod\n",
+  }, (root) => {
+    const result = runScan(root);
+    const scan = scanFactory({ root, generatedAt });
+
+    assert.match(result.stdout, /Pointer: ignored policy-bearing \.loom\.yml \(unparsed\)/u);
+    assert.deepEqual(scan.pointer, {
+      present: true,
+      status: "ignored-policy",
+      ignoredKeys: ["unparsed"],
+    });
+    assert.ok(scan.science.missingUnlocks.includes("factory envelope"));
+  });
+});
+
+test("factory scan rejects structured pointer identity values", () => {
+  const privatePath = "/Users/alice/private";
+  withTempRepo({
+    "package.json": `${JSON.stringify({ scripts: { test: "node --test" } }, null, 2)}\n`,
+    ".loom.yml": `id: safe\nfactory: { id: test, repo: { root: ${privatePath} }, commands: { test: npm test } }\n`,
+  }, (root) => {
+    const before = walkFiles(root);
+    withScanSave(root, ({ home, result }) => {
+      const state = resolveFactoryStatePaths({
+        homeDir: home,
+        targetRepoPath: root,
+        factoryId: path.basename(root),
+        generatedAt,
+      });
+      const savedText = readFileSync(state.scan, "utf8");
+      const savedScan = JSON.parse(savedText);
+
+      assert.match(result.stdout, /Pointer: ignored policy-bearing \.loom\.yml \(factory\)/u);
+      assert.doesNotMatch(result.stdout, new RegExp(privatePath.replaceAll("/", "\\/"), "u"));
+      assert.doesNotMatch(savedText, new RegExp(privatePath.replaceAll("/", "\\/"), "u"));
+      assert.ok(savedScan.science.missingUnlocks.includes("factory envelope"));
+      assert.deepEqual(savedScan.pointer, {
+        present: true,
+        status: "ignored-policy",
+        ignoredKeys: ["factory"],
+      });
+    });
+    assertNoUserFileWrites(root, before);
+  });
+});
+
+test("factory scan rejects block-valued pointer identity keys", () => {
+  withTempRepo({
+    "package.json": `${JSON.stringify({ scripts: { test: "node --test" } }, null, 2)}\n`,
+    ".loom.yml": "id: safe\nfactory:\n  commands:\n    test: npm test\n",
+  }, (root) => {
+    const result = runScan(root);
+    const scan = scanFactory({ root, generatedAt });
+
+    assert.match(result.stdout, /Pointer: ignored policy-bearing \.loom\.yml \(factory\)/u);
+    assert.deepEqual(scan.pointer, {
+      present: true,
+      status: "ignored-policy",
+      ignoredKeys: ["factory"],
+    });
+    assert.ok(scan.science.missingUnlocks.includes("factory envelope"));
+  });
+});
+
+test("factory scan rejects indented content after scalar pointer identities", () => {
+  withTempRepo({
+    "package.json": `${JSON.stringify({ scripts: { test: "node --test" } }, null, 2)}\n`,
+    ".loom.yml": "id: safe\nfactory: real\n  commands:\n    test: npm test\n",
+  }, (root) => {
+    const result = runScan(root);
+    const scan = scanFactory({ root, generatedAt });
+
+    assert.match(result.stdout, /Pointer: ignored policy-bearing \.loom\.yml \(factory\)/u);
+    assert.deepEqual(scan.pointer, {
+      present: true,
+      status: "ignored-policy",
+      ignoredKeys: ["factory"],
+    });
+    assert.ok(scan.science.missingUnlocks.includes("factory envelope"));
+  });
+});
+
+test("factory scan does not follow symlinked .loom.yml pointers", () => {
+  withTempRepo({
+    "package.json": `${JSON.stringify({ scripts: { test: "node --test" } }, null, 2)}\n`,
+    ".loom.yml": "factory: inside\n",
+  }, (root) => {
+    const outside = mkdtempSync(path.join(tmpdir(), "factory-pointer-outside-"));
+    try {
+      writeFileSync(path.join(outside, ".loom.yml"), "factory: external\n");
+      rmSync(path.join(root, ".loom.yml"), { force: true });
+      symlinkSync(path.join(outside, ".loom.yml"), path.join(root, ".loom.yml"));
+
+      const result = runScan(root);
+      const scan = scanFactory({ root, generatedAt });
+
+      assert.match(result.stdout, /Pointer: unreadable/u);
+      assert.doesNotMatch(result.stdout, /external/u);
+      assert.deepEqual(scan.pointer, { present: true, status: "unreadable" });
+    } finally {
+      rmSync(outside, { recursive: true, force: true });
+    }
+  });
+});
+
+test("factory scan reports dangling .loom.yml symlinks as unreadable", () => {
+  withTempRepo({
+    "package.json": `${JSON.stringify({ scripts: { test: "node --test" } }, null, 2)}\n`,
+  }, (root) => {
+    symlinkSync(path.join(root, "missing.yml"), path.join(root, ".loom.yml"));
+
+    const result = runScan(root);
+    const scan = scanFactory({ root, generatedAt });
+
+    assert.match(result.stdout, /Pointer: unreadable/u);
+    assert.deepEqual(scan.pointer, { present: true, status: "unreadable" });
   });
 });
 

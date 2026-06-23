@@ -30,6 +30,8 @@ const SECRET_VALUE_PATTERNS = Object.freeze([
   /(^|[^A-Za-z0-9])(sk-[A-Za-z0-9_-]{12,})/gu,
   /(^|[^A-Za-z0-9])(AKIA[0-9A-Z]{8,})/gu,
 ]);
+const POINTER_IDENTITY_KEYS = new Set(["factory", "factoryId", "id"]);
+
 
 const PROTECTED_SURFACES = Object.freeze([
   {
@@ -114,6 +116,124 @@ function safeJsonFile(filePath) {
     return null;
   }
 }
+
+function isInsidePath(parent, child) {
+  const relative = path.relative(parent, child);
+  return relative === "" || (!!relative && !relative.startsWith("..") && !path.isAbsolute(relative));
+}
+function isPointerIdentity(value) {
+  return /^[A-Za-z0-9][A-Za-z0-9_-]*$/u.test(value);
+}
+
+function parsePointerValue(rawValue) {
+  const value = rawValue?.trim() ?? "";
+  if (!value) return "";
+  const first = value.at(0);
+  if (first === "\"" || first === "'") {
+    return value.at(-1) === first && value.length > 1 ? value.slice(1, -1) : null;
+  }
+  return value.endsWith("\"") || value.endsWith("'") ? null : value;
+}
+
+function parsePointerEntry(line) {
+  const match = line.trim().match(/^(?:"([A-Za-z][A-Za-z0-9_-]*)"|'([A-Za-z][A-Za-z0-9_-]*)'|([A-Za-z][A-Za-z0-9_-]*)):(?:\s*(.*))?$/u);
+  if (!match) return null;
+  const value = parsePointerValue(match[4]);
+  if (value === null) return null;
+  return { key: match[1] ?? match[2] ?? match[3], value };
+}
+
+function hasIndentedContent(lines, startIndex) {
+  for (let index = startIndex + 1; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (!line.trim() || line.trim().startsWith("#")) continue;
+    if (line === line.trimStart()) return false;
+    return true;
+  }
+  return false;
+}
+
+function hasLeadingIndentedContent(lines) {
+  let sawTopLevel = false;
+  for (const line of lines) {
+    if (!line.trim() || line.trim().startsWith("#")) continue;
+    if (line === line.trimStart()) {
+      sawTopLevel = true;
+      continue;
+    }
+    if (!sawTopLevel) return true;
+  }
+  return false;
+}
+
+function pointerBlockIdentityKeys(lines) {
+  const keys = [];
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (!line.trim() || line.trim().startsWith("#") || line !== line.trimStart()) continue;
+    const entry = parsePointerEntry(line);
+    if (!entry || !POINTER_IDENTITY_KEYS.has(entry.key)) continue;
+    if (hasIndentedContent(lines, index)) keys.push(entry.key);
+  }
+  return keys;
+}
+
+
+function discoverPointer(root) {
+  const pointerPath = path.join(root, ".loom.yml");
+  let stat;
+  try {
+    stat = lstatSync(pointerPath);
+  } catch (error) {
+    if (error?.code === "ENOENT") return { present: false };
+    return { present: true, status: "unreadable" };
+  }
+  if (!stat.isFile()) return { present: true, status: "unreadable" };
+  let text;
+  try {
+    const realRoot = realpathSync(root);
+    const realPointer = realpathSync(pointerPath);
+    if (!isInsidePath(realRoot, realPointer)) return { present: true, status: "unreadable" };
+    text = readFileSync(realPointer, "utf8");
+  } catch {
+    return { present: true, status: "unreadable" };
+  }
+  const lines = text.split(/\r?\n/u);
+  const topLevelLines = lines
+    .filter((line) => line.trim() && !line.trim().startsWith("#") && line === line.trimStart());
+  const parsedEntries = topLevelLines.map(parsePointerEntry);
+  const entries = parsedEntries.filter(Boolean);
+  const malformedTopLevelCount = parsedEntries.filter((match) => !match).length + (hasLeadingIndentedContent(lines) ? 1 : 0);
+  const blockIdentityKeys = pointerBlockIdentityKeys(lines);
+  const identityEntries = entries.filter((entry) => POINTER_IDENTITY_KEYS.has(entry.key) && entry.value.trim());
+  const invalidIdentityKeys = identityEntries
+    .filter((entry) => !isPointerIdentity(entry.value.trim()))
+    .map((entry) => entry.key);
+  const policyKeys = entries
+    .map((entry) => entry.key)
+    .filter((key) => !POINTER_IDENTITY_KEYS.has(key));
+  const ignoredKeys = [...new Set([
+    ...policyKeys,
+    ...invalidIdentityKeys,
+    ...blockIdentityKeys,
+    ...(malformedTopLevelCount > 0 ? ["unparsed"] : []),
+  ])];
+  if (ignoredKeys.length > 0) {
+    return {
+      present: true,
+      status: "ignored-policy",
+      ignoredKeys: ignoredKeys.map(redactSecrets),
+    };
+  }
+  const identity = identityEntries[0]?.value.trim();
+  if (!identity) return { present: true, status: "missing-identity" };
+  return {
+    present: true,
+    status: "valid",
+    identity: redactSecrets(identity),
+  };
+}
+
 
 function hasPath(root, relativePath) {
   return existsSync(path.join(root, relativePath));
@@ -217,15 +337,16 @@ function directoryHasFiles(root, relativePath) {
   return readdirSync(fullPath).length > 0;
 }
 
-function computeScience({ stack, commands, dirty, protectedSurfaces, root }) {
+function computeScience({ stack, commands, dirty, protectedSurfaces, root, pointer }) {
   const missingUnlocks = [];
+  const hasEnvelope = directoryHasFiles(root, ".agents/envelope");
   if (stack.every((entry) => entry.name === "unknown")) missingUnlocks.push("stack detection");
   for (const kind of COMMAND_KINDS) {
     if (commands[kind].status === "absent") missingUnlocks.push(`${kind} command`);
   }
   if (!directoryHasFiles(root, ".github/workflows")) missingUnlocks.push("ci workflow");
-  if (!directoryHasFiles(root, ".agents/envelope") && !hasPath(root, ".loom.yml")) missingUnlocks.push("factory envelope");
-  if (!directoryHasFiles(root, ".agents/envelope")) missingUnlocks.push("tracker bind");
+  if (!hasEnvelope && pointer?.status !== "valid") missingUnlocks.push("factory envelope");
+  if (!hasEnvelope) missingUnlocks.push("tracker bind");
   if (dirty.isDirty) missingUnlocks.push("clean worktree");
 
   let level = "pre-automation";
@@ -237,7 +358,7 @@ function computeScience({ stack, commands, dirty, protectedSurfaces, root }) {
   ) {
     level = "logistic";
   }
-  if (level === "logistic" && directoryHasFiles(root, ".agents/envelope")) level = "chemical";
+  if (level === "logistic" && hasEnvelope) level = "chemical";
 
   return { level, missingUnlocks };
 }
@@ -260,10 +381,6 @@ function collectContentScanFiles(root) {
 }
 
 
-function isInsidePath(parent, child) {
-  const relative = path.relative(parent, child);
-  return relative === "" || (!!relative && !relative.startsWith("..") && !path.isAbsolute(relative));
-}
 
 function scanContentSignals(root) {
   const realRoot = realpathSync(root);
@@ -332,7 +449,8 @@ export function scanFactory({ root = process.cwd(), generatedAt, content = false
   const branch = currentBranch(repoRoot);
   const dirty = dirtyState(repoRoot);
   const protectedSurfaces = detectProtectedSurfaces(repoRoot);
-  const science = computeScience({ stack, commands, dirty, protectedSurfaces, root: repoRoot });
+  const pointer = discoverPointer(repoRoot);
+  const science = computeScience({ stack, commands, dirty, protectedSurfaces, root: repoRoot, pointer });
 
   return withArtifactMetadata("factory-scan", {
     mode: "zero-footprint",
@@ -346,6 +464,7 @@ export function scanFactory({ root = process.cwd(), generatedAt, content = false
     },
     stack,
     commands,
+    pointer,
     protectedSurfaces,
     science,
     localState: {
@@ -385,6 +504,14 @@ function formatCommand(command) {
   return `${command.command} (${command.source})`;
 }
 
+function formatPointer(pointer) {
+  if (!pointer?.present) return "Pointer: absent";
+  if (pointer.status === "valid") return `Pointer: ${pointer.identity}`;
+  if (pointer.status === "ignored-policy") return `Pointer: ignored policy-bearing .loom.yml (${pointer.ignoredKeys.join(", ")})`;
+  if (pointer.status === "missing-identity") return "Pointer: missing identity";
+  return "Pointer: unreadable";
+}
+
 export function formatScanSummary(scan) {
   const stack = scan.stack
     .map((entry) => (entry.packageManager ? `${entry.name}/${entry.packageManager}` : entry.name))
@@ -413,6 +540,7 @@ export function formatScanSummary(scan) {
     "Remote APIs: none",
     `Repo: ${scan.target.name}`,
     `Branch: ${scan.git.currentBranch} (default: ${scan.git.defaultBranch})`,
+    formatPointer(scan.pointer),
     `Dirty state: ${scan.git.dirty.isDirty ? `dirty (${scan.git.dirty.count} paths)` : "clean"}`,
     `Stack: ${stack}`,
     "Commands:",
