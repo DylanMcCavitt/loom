@@ -248,3 +248,26 @@ test("factory scan --save writes only scan state outside the target repo", () =>
     assertNoUserFileWrites(root, beforeRepo);
   });
 });
+
+test("factory scan --save redacts secret-looking branch names in saved scan state", () => {
+  const fakeToken = `ghp_${"12345678901234567890"}`;
+  withTempRepo({
+    "package.json": `${JSON.stringify({ scripts: { test: "node --test" } }, null, 2)}\n`,
+  }, (root) => {
+    run("git", ["branch", "-m", `feature/key_${fakeToken}`], { cwd: root });
+    withScanSave(root, ({ home }) => {
+      const state = resolveFactoryStatePaths({
+        homeDir: home,
+        targetRepoPath: root,
+        factoryId: path.basename(root),
+        generatedAt,
+      });
+      const savedText = readFileSync(state.scan, "utf8");
+      const savedScan = JSON.parse(savedText);
+
+      assert.doesNotMatch(savedText, new RegExp(fakeToken, "u"));
+      assert.equal(savedScan.git.currentBranch, "feature/key_[REDACTED]");
+      assert.equal(savedScan.git.defaultBranch, "feature/key_[REDACTED]");
+    });
+  });
+});

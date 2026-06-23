@@ -232,6 +232,16 @@ export function redactSecrets(value) {
   return text;
 }
 
+function redactScanArtifact(value) {
+  if (typeof value === "string") return redactSecrets(value);
+  if (Array.isArray(value)) return value.map((item) => redactScanArtifact(item));
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, nested]) => [key, redactScanArtifact(nested)]));
+  }
+  return value;
+}
+
+
 export function scanFactory({ root = process.cwd(), generatedAt } = {}) {
   const requestedRoot = path.resolve(root);
   const repoRoot = path.resolve(gitOutput(requestedRoot, ["rev-parse", "--show-toplevel"]) || requestedRoot);
@@ -272,17 +282,17 @@ export function saveScanState(scan, { homeDir = process.env.HOME || os.homedir()
   const state = resolveFactoryStatePaths({
     homeDir,
     targetRepoPath: repoRoot,
-    factoryId: scan.target.name,
+    factoryId: redactSecrets(scan.target.name),
     generatedAt,
   });
-  const savedScan = {
+  const savedScan = redactScanArtifact({
     ...scan,
     mode: "scan-save",
     localState: {
       writes: true,
       scan: state.scan,
     },
-  };
+  });
   mkdirSync(path.dirname(state.scan), { recursive: true });
   writeFileSync(state.scan, `${JSON.stringify(savedScan, null, 2)}\n`);
   return savedScan;
