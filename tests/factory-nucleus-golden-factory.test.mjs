@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -58,6 +59,10 @@ test("materialized golden factory scans as a clean Node factory", () => {
   const root = mkdtempSync(path.join(tmpdir(), "golden-factory-scan-"));
   try {
     materializeGoldenFactory(root);
+    // Commit into a self-contained repo so scanFactory resolves this tree (not an enclosing checkout).
+    spawnSync("git", ["init", "-q", "-b", "main"], { cwd: root, encoding: "utf8" });
+    spawnSync("git", ["add", "."], { cwd: root, encoding: "utf8" });
+    spawnSync("git", ["-c", "user.email=factory@example.invalid", "-c", "user.name=Factory Test", "commit", "-q", "-m", "golden factory"], { cwd: root, encoding: "utf8" });
     const scan = scanFactory({ root, generatedAt });
 
     assert.ok(scan.stack.some((entry) => entry.name === "node"), "expected a detected node stack");

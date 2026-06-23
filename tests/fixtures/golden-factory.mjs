@@ -56,10 +56,12 @@ export const GOLDEN_FACTORY_PATHS = Object.freeze(Object.keys(GOLDEN_FACTORY_FIL
 
 export function materializeGoldenFactory(root) {
   if (!root) throw new Error("a destination root is required to materialize the golden factory");
+  const written = [];
   for (const [relativePath, content] of Object.entries(GOLDEN_FACTORY_FILES)) {
     const filePath = path.join(root, relativePath);
     mkdirSync(path.dirname(filePath), { recursive: true });
     writeFileSync(filePath, content);
+    written.push(relativePath);
   }
-  return [...GOLDEN_FACTORY_PATHS];
+  return written.sort();
 }
