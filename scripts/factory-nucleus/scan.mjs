@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
@@ -265,8 +265,14 @@ function scanContentSignals(root) {
   let skippedFiles = 0;
   for (const filePath of collectContentScanFiles(root).sort()) {
     const relativePath = path.relative(root, filePath);
-    const stat = statSync(filePath);
-    if (stat.size > 128 * 1024) {
+    let stat;
+    try {
+      stat = lstatSync(filePath);
+    } catch {
+      skippedFiles += 1;
+      continue;
+    }
+    if (!stat.isFile() || stat.size > 128 * 1024) {
       skippedFiles += 1;
       continue;
     }

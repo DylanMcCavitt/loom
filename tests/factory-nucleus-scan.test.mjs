@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
@@ -344,5 +344,50 @@ test("factory scan --content-scan --save omits secret-looking values from saved 
       assert.equal(savedScan.content.redactedSignals[0].redacted, true);
     });
     assertNoUserFileWrites(root, before);
+  });
+});
+
+test("factory scan --content-scan skips tracked files missing from the working tree", () => {
+  withTempRepo({
+    "package.json": `${JSON.stringify({ scripts: { test: "node --test" } }, null, 2)}\n`,
+    "src/deleted.js": "console.log('tracked then deleted');\n",
+  }, (root) => {
+    rmSync(path.join(root, "src/deleted.js"));
+    const before = walkFiles(root);
+    withFactoryScan(root, ["--content-scan"], ({ result }) => {
+      assert.match(result.stdout, /Content signals:/u);
+      assert.doesNotMatch(result.stdout, /ENOENT/u);
+    });
+    const scan = scanFactory({ root, content: true, generatedAt });
+    assert.equal(scan.content.skippedFiles, 1);
+    assertNoUserFileWrites(root, before);
+  });
+});
+
+test("factory scan --content-scan skips tracked symlinks before reading content", () => {
+  const fakeToken = `ghp_${"12345678901234567890"}`;
+  withTempRepo({
+    "package.json": `${JSON.stringify({ scripts: { test: "node --test" } }, null, 2)}\n`,
+  }, (root) => {
+    const outside = mkdtempSync(path.join(tmpdir(), "factory-content-outside-"));
+    try {
+      const outsideSecret = path.join(outside, "credentials.js");
+      writeFileSync(outsideSecret, `const token = "${fakeToken}";\n`);
+      mkdirSync(path.join(root, "src"), { recursive: true });
+      symlinkSync(outsideSecret, path.join(root, "src/config.js"));
+      run("git", ["add", "src/config.js"], { cwd: root });
+      run("git", ["-c", "user.email=factory@example.invalid", "-c", "user.name=Factory Test", "commit", "-q", "-m", "add symlink"], { cwd: root });
+
+      withFactoryScan(root, ["--content-scan"], ({ result }) => {
+        assert.match(result.stdout, /Content signals:/u);
+        assert.match(result.stdout, /redacted secret-like signals: 0/u);
+        assert.doesNotMatch(result.stdout, new RegExp(fakeToken, "u"));
+      });
+      const scan = scanFactory({ root, content: true, generatedAt });
+      assert.equal(scan.content.skippedFiles, 1);
+      assert.equal(scan.content.redactedSignals.length, 0);
+    } finally {
+      rmSync(outside, { recursive: true, force: true });
+    }
   });
 });
