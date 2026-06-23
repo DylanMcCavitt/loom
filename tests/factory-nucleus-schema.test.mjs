@@ -68,6 +68,20 @@ test("envelope YAML keeps colon-bearing list scalars and nested array item mappi
   assert.equal(result.ok, true, result.errors.join("\n"));
 });
 
+test("envelope YAML rejects duplicate array item keys instead of overwriting", () => {
+  const duplicateCircuitKeyYaml = validEnvelopeYaml.replace(`  - name: proof-required
+    gate: proof
+    outcome: block
+    enforcement: validate`, `  - name: proof-required
+    name: tracker-bound
+    gate: proof
+    outcome: block
+    enforcement: validate`);
+  const result = validateEnvelopeYaml(duplicateCircuitKeyYaml);
+  assert.equal(result.ok, false);
+  assert.ok(result.errors.some((error) => error.includes("duplicate key 'name'")), result.errors.join("\n"));
+});
+
 test("malformed, unknown, and unsafe envelope config fails clearly", () => {
   assert.deepEqual(validateEnvelopeYaml("schemaVersion 1").ok, false);
 
@@ -223,6 +237,9 @@ test("structured artifact metadata is required and generated consistently", () =
     assert.deepEqual(metadata, { schemaVersion: 1, kind, generatedAt });
     assert.equal(validateArtifactMetadata(metadata, kind).ok, true);
   }
+  const stamped = withArtifactMetadata("recipe", { schemaVersion: 99, kind: "envelope", generatedAt: "1999-01-01T00:00:00.000Z" }, generatedAt);
+  assert.deepEqual(stamped, { schemaVersion: 1, kind: "recipe", generatedAt });
+
   const missing = validateArtifactMetadata({ schemaVersion: 1, kind: "factory-scan" }, "factory-scan");
   assert.equal(missing.ok, false);
   assert.ok(missing.errors.some((error) => error.includes("$.generatedAt: required")), missing.errors.join("\n"));

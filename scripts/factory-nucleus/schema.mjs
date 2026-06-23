@@ -354,6 +354,9 @@ function parseArray(lines, start, indent) {
       }
       if (i < lines.length && lines[i].indent > indent) {
         const [child, next] = parseObject(lines, i, lines[i].indent);
+        for (const childKey of Object.keys(child)) {
+          if (Object.hasOwn(item, childKey)) throw new Error(`YAML parse error on line ${line.index}: duplicate key '${childKey}'`);
+        }
         Object.assign(item, child);
         i = next;
       }
@@ -517,7 +520,7 @@ export function artifactMetadata(kind, generatedAt = new Date()) {
 }
 
 export function withArtifactMetadata(kind, payload = {}, generatedAt) {
-  return { ...artifactMetadata(kind, generatedAt), ...payload };
+  return { ...payload, ...artifactMetadata(kind, generatedAt) };
 }
 
 function sanitizeSegment(value) {
