@@ -1,7 +1,8 @@
 #!/usr/bin/env node
+import { main as envelopeMain } from "./envelope.mjs";
 import { main as scanMain } from "./scan.mjs";
 
-const USAGE = "Usage: node scripts/factory-nucleus/factory.mjs scan [--root <path>] [--save] [--content-scan]";
+const USAGE = "Usage: node scripts/factory-nucleus/factory.mjs <scan|init-envelope> [options]";
 
 export function main(argv = process.argv.slice(2)) {
   const [command, ...rest] = argv;
@@ -9,10 +10,9 @@ export function main(argv = process.argv.slice(2)) {
     process.stdout.write(`${USAGE}\n`);
     return command ? 0 : 1;
   }
-  if (command !== "scan") {
-    throw new Error(`Unknown factory command: ${command}`);
-  }
-  return scanMain(rest);
+  if (command === "scan") return scanMain(rest);
+  if (command === "init-envelope") return envelopeMain(rest);
+  throw new Error(`Unknown factory command: ${command}`);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
