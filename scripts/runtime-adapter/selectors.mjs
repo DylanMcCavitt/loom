@@ -11,7 +11,7 @@
 //
 // Layout (omp/16.0.5): ~/.omp/agent/sessions/<sanitized-cwd>/<ISO-timestamp>_<UUIDv7>.jsonl
 
-import { readdirSync, statSync } from "node:fs";
+import { lstatSync, readdirSync, realpathSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 
@@ -27,14 +27,24 @@ export function parseSessionFilename(name) {
   return { timestamp: match[1], sessionId: match[2].toLowerCase() };
 }
 
-// Contain `target` within `root`; throw on escape (traversal backstop).
-function withinRoot(root, target) {
+// Resolve `target` to a real, contained, regular file under `root`. Rejects symlinks and any
+// path that escapes the sessions root lexically OR after realpath resolution (defends against a
+// symlinked session file or ancestor dir pointing outside the local-only boundary).
+function resolveContainedFile(root, target) {
   const base = path.resolve(root);
-  const resolved = path.resolve(target);
-  if (resolved !== base && !resolved.startsWith(base + path.sep)) {
-    throw new Error(`path escapes sessions root: ${target}`);
+  const lexical = path.resolve(target);
+  if (lexical !== base && !lexical.startsWith(base + path.sep)) {
+    throw new Error("path escapes sessions root (lexical)");
   }
-  return resolved;
+  const stats = lstatSync(lexical); // throws ENOENT for a missing file
+  if (stats.isSymbolicLink()) throw new Error("symlink session file rejected");
+  if (!stats.isFile()) throw new Error("not a regular file");
+  const realRoot = realpathSync(base);
+  const realFile = realpathSync(lexical);
+  if (realFile !== realRoot && !realFile.startsWith(realRoot + path.sep)) {
+    throw new Error("path escapes sessions root (realpath)");
+  }
+  return realFile;
 }
 
 // List sessions from filenames + stat only (no content reads). Recurses one level of cwd dirs.
@@ -49,7 +59,7 @@ export function listSessions(sessionsDir = defaultSessionsDir()) {
   }
   const scanDir = (dir) => {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      if (entry.isDirectory()) continue;
+      if (!entry.isFile()) continue; // regular files only — skips dirs and symlinks
       const parsed = parseSessionFilename(entry.name);
       if (!parsed) continue;
       const sessionFile = path.join(dir, entry.name);
@@ -89,9 +99,9 @@ export function resolveSelector(selector = {}, options = {}) {
     }
     let resolved;
     try {
-      resolved = withinRoot(sessionsDir, selector.session_file);
+      resolved = resolveContainedFile(sessionsDir, selector.session_file);
     } catch {
-      return { ok: false, error: "selector_invalid", message: "session_file must be inside the sessions root." };
+      return { ok: false, error: "selector_invalid", message: "session_file must be an existing, non-symlink .jsonl inside the sessions root." };
     }
     const parsed = parseSessionFilename(path.basename(resolved));
     if (!parsed) {

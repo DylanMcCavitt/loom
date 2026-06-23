@@ -20,6 +20,9 @@ import { CONFIRMATION, confirmationFor, getOp } from "./policy.mjs";
 import { defaultSessionsDir, listSessions, resolveSelector } from "./selectors.mjs";
 
 const CONTENT_KEYS = new Set(["messages", "transcript", "content", "text", "entries", "history", "body", "prompt"]);
+// Tier R: only these string fields are forwarded verbatim (after scrubbing); every other string
+// is reduced to a length, so an unverified RPC field can never egress content.
+const SAFE_STRING_KEYS = new Set(["sessionId", "id", "name", "title", "model", "provider", "state", "status", "mode", "lane", "cwd", "timestamp", "createdAt", "updatedAt"]);
 
 function scrubString(value) {
   let out = value;
@@ -56,7 +59,10 @@ function projectMetadata(value) {
       else out[key] = val;
       continue;
     }
-    if (val === null || ["string", "number", "boolean"].includes(typeof val)) {
+    if (typeof val === "string") {
+      if (SAFE_STRING_KEYS.has(key)) out[key] = val;
+      else out[`${key}_chars`] = val.length;
+    } else if (val === null || typeof val === "number" || typeof val === "boolean") {
       out[key] = val;
     } else if (Array.isArray(val)) {
       out[`${key}_count`] = val.length;
@@ -76,12 +82,15 @@ export class RuntimeAdapter {
     this.nonce = options.nonce ?? randomBytes(16).toString("hex");
   }
 
-  mintToken(op, sessionId) {
-    return createHash("sha256").update(`${op}:${sessionId}:${this.nonce}`).digest("hex").slice(0, 32);
+  // Tokens bind to op + the canonical resolved-session identity (id AND file) + a per-instance
+  // nonce, so a token cannot be forged, reused for another op, or replayed against another file
+  // that happens to share a UUID basename.
+  mintToken(op, identity) {
+    return createHash("sha256").update(`${op}:${identity}:${this.nonce}`).digest("hex").slice(0, 32);
   }
 
-  verifyToken(op, sessionId, token) {
-    return typeof token === "string" && token === this.mintToken(op, sessionId);
+  verifyToken(op, identity, token) {
+    return typeof token === "string" && token === this.mintToken(op, identity);
   }
 
   async handle(envelope = {}) {
@@ -105,10 +114,11 @@ export class RuntimeAdapter {
       return { status: "refused", error: resolved.error, message: resolved.message, candidates: resolved.candidates };
     }
     const sessionId = resolved.sessionId;
+    const identity = `${resolved.sessionId}:${resolved.sessionFile}`;
 
     // 3. tier → confirmation
     const need = confirmationFor(def);
-    const tokenOk = this.verifyToken(op, sessionId, envelope.confirmationToken);
+    const tokenOk = this.verifyToken(op, identity, envelope.confirmationToken);
     if (need === CONFIRMATION.EXPLICIT) {
       if (!(envelope.explicitApproval === true && envelope.approved === true && tokenOk)) {
         return {
@@ -116,19 +126,19 @@ export class RuntimeAdapter {
           error: "denied_by_default",
           message: `"${op}" egresses content or mutates auth and is denied by default; requires explicitApproval + approved + a valid confirmationToken.`,
           tier: def.tier,
-          confirmationToken: this.mintToken(op, sessionId),
+          confirmationToken: this.mintToken(op, identity),
         };
       }
     } else if (need === CONFIRMATION.TOKEN_APPROVAL) {
       if (!tokenOk) {
-        return { status: "confirmation_required", op, tier: def.tier, session: { sessionId }, confirmationToken: this.mintToken(op, sessionId), needs: "token+approval" };
+        return { status: "confirmation_required", op, tier: def.tier, session: { sessionId }, confirmationToken: this.mintToken(op, identity), needs: "token+approval" };
       }
       if (envelope.approved !== true) {
         return { status: "approval_required", op, tier: def.tier, session: { sessionId }, message: "Tier D requires explicit human approval (approved:true)." };
       }
     } else if (need === CONFIRMATION.TOKEN) {
       if (!tokenOk) {
-        return { status: "confirmation_required", op, tier: def.tier, session: { sessionId }, confirmationToken: this.mintToken(op, sessionId), needs: "token" };
+        return { status: "confirmation_required", op, tier: def.tier, session: { sessionId }, confirmationToken: this.mintToken(op, identity), needs: "token" };
       }
     }
 

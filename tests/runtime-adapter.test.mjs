@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
@@ -116,6 +116,8 @@ test("adapter: Tier R returns metadata only and redacts secrets + home paths", a
   const serialized = JSON.stringify(res.result);
   assert.ok(!serialized.includes("/Users/"), "private home path redacted");
   assert.ok(!serialized.includes("ABCDEFGHIJKLMNOP"), "secret-looking value redacted");
+  assert.equal(res.result.note, undefined, "non-allow-listed string not forwarded");
+  assert.equal(typeof res.result.note_chars, "number", "unknown string reduced to a length");
   rmSync(root, { recursive: true, force: true });
 });
 
@@ -163,8 +165,10 @@ test("adapter: denied-by-default ops are refused", async () => {
 test("adapter: unsupported op reports not_implemented (after gating)", async () => {
   const root = makeSessionsDir();
   const adapter = new RuntimeAdapter({ sessionsDir: root, makeRpcHost: fakeHostFactory() });
-  const token = adapter.mintToken("session.move", ID_A);
-  const res = await adapter.handle({ op: "session.move", selector: { session_id: "01900000" }, confirmationToken: token, approved: true });
+  // Tier D: walk the gate via the issued token, then approve, to reach dispatch.
+  const need = await adapter.handle({ op: "session.move", selector: { session_id: "01900000" } });
+  assert.equal(need.status, "confirmation_required");
+  const res = await adapter.handle({ op: "session.move", selector: { session_id: "01900000" }, confirmationToken: need.confirmationToken, approved: true });
   assert.equal(res.status, "not_implemented");
   rmSync(root, { recursive: true, force: true });
 });
@@ -208,4 +212,23 @@ test("mcp server: initialize, tools/list, and a tools/call", async () => {
   assert.equal(call.result.structuredContent.status, "ok");
   assert.equal(call.result.structuredContent.result.sessions.length, 3);
   rmSync(root, { recursive: true, force: true });
+});
+
+test("selectors: a symlinked session file is rejected (local-only containment)", () => {
+  const root = makeSessionsDir();
+  const outside = mkdtempSync(path.join(tmpdir(), "loo7-outside-"));
+  const target = path.join(outside, "leak.jsonl");
+  writeFileSync(target, '{"header":1}\n');
+  const link = path.join(root, "work", `2026-06-18T23-53-59-394Z_${ID_A.replace(/.$/u, "9")}.jsonl`);
+  symlinkSync(target, link);
+  try {
+    // session_file pointing at the symlink is refused even though the basename looks valid.
+    const byFile = resolveSelector({ session_file: link }, { sessionsDir: root });
+    assert.equal(byFile.ok, false);
+    // and the symlink is not enumerated as a session.
+    assert.ok(!listSessions(root).some((s) => s.sessionFile === link));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
+  }
 });
