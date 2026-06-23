@@ -125,6 +125,24 @@ function isPointerIdentity(value) {
   return /^[A-Za-z0-9][A-Za-z0-9_-]*$/u.test(value);
 }
 
+function parsePointerValue(rawValue) {
+  const value = rawValue?.trim() ?? "";
+  if (!value) return "";
+  const first = value.at(0);
+  if (first === "\"" || first === "'") {
+    return value.at(-1) === first && value.length > 1 ? value.slice(1, -1) : null;
+  }
+  return value.endsWith("\"") || value.endsWith("'") ? null : value;
+}
+
+function parsePointerEntry(line) {
+  const match = line.trim().match(/^(?:"([A-Za-z][A-Za-z0-9_-]*)"|'([A-Za-z][A-Za-z0-9_-]*)'|([A-Za-z][A-Za-z0-9_-]*)):(?:\s*(.*))?$/u);
+  if (!match) return null;
+  const value = parsePointerValue(match[4]);
+  if (value === null) return null;
+  return { key: match[1] ?? match[2] ?? match[3], value };
+}
+
 function hasIndentedContent(lines, startIndex) {
   for (let index = startIndex + 1; index < lines.length; index += 1) {
     const line = lines[index];
@@ -140,9 +158,9 @@ function pointerBlockIdentityKeys(lines) {
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
     if (!line.trim() || line.trim().startsWith("#") || line !== line.trimStart()) continue;
-    const match = line.trim().match(/^["']?([A-Za-z][A-Za-z0-9_-]*)["']?:(?:\s*(.*))?$/u);
-    if (!match || !POINTER_IDENTITY_KEYS.has(match[1])) continue;
-    if (hasIndentedContent(lines, index)) keys.push(match[1]);
+    const entry = parsePointerEntry(line);
+    if (!entry || !POINTER_IDENTITY_KEYS.has(entry.key)) continue;
+    if (hasIndentedContent(lines, index)) keys.push(entry.key);
   }
   return keys;
 }
@@ -170,10 +188,8 @@ function discoverPointer(root) {
   const lines = text.split(/\r?\n/u);
   const topLevelLines = lines
     .filter((line) => line.trim() && !line.trim().startsWith("#") && line === line.trimStart());
-  const parsedEntries = topLevelLines.map((line) => line.trim().match(/^["']?([A-Za-z][A-Za-z0-9_-]*)["']?:(?:\s*(.*))?$/u));
-  const entries = parsedEntries
-    .filter(Boolean)
-    .map((match) => ({ key: match[1], value: match[2]?.replace(/^["']|["']$/gu, "") ?? "" }));
+  const parsedEntries = topLevelLines.map(parsePointerEntry);
+  const entries = parsedEntries.filter(Boolean);
   const malformedTopLevelCount = parsedEntries.filter((match) => !match).length;
   const blockIdentityKeys = pointerBlockIdentityKeys(lines);
   const identityEntries = entries.filter((entry) => POINTER_IDENTITY_KEYS.has(entry.key) && entry.value.trim());

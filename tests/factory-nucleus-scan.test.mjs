@@ -348,6 +348,26 @@ test("factory scan treats quoted pointer policy keys as policy-bearing", () => {
   });
 });
 
+test("factory scan rejects unbalanced pointer quotes", () => {
+  for (const loomYml of [`"factory: prod\n`, `factory: "prod\n`]) {
+    withTempRepo({
+      "package.json": `${JSON.stringify({ scripts: { test: "node --test" } }, null, 2)}\n`,
+      ".loom.yml": loomYml,
+    }, (root) => {
+      const result = runScan(root);
+      const scan = scanFactory({ root, generatedAt });
+
+      assert.match(result.stdout, /Pointer: ignored policy-bearing \.loom\.yml \(unparsed\)/u);
+      assert.deepEqual(scan.pointer, {
+        present: true,
+        status: "ignored-policy",
+        ignoredKeys: ["unparsed"],
+      });
+      assert.ok(scan.science.missingUnlocks.includes("factory envelope"));
+    });
+  }
+});
+
 test("factory scan rejects structured pointer identity values", () => {
   const privatePath = "/Users/alice/private";
   withTempRepo({
