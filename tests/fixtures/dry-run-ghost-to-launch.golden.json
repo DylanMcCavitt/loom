@@ -1,0 +1,180 @@
+{
+  "recipe": "ghost-to-launch",
+  "mode": "plan",
+  "launchState": "launch-ready",
+  "maxSubagents": 3,
+  "stages": [
+    {
+      "name": "radar-preflight",
+      "status": "planned",
+      "circuits": [
+        "radar-clean",
+        "tracker-bound"
+      ],
+      "plannedActions": [
+        "read-radar"
+      ]
+    },
+    {
+      "name": "inserter-readiness",
+      "status": "planned",
+      "circuits": [
+        "tracker-bound"
+      ],
+      "plannedActions": [
+        "assess-readiness"
+      ]
+    },
+    {
+      "name": "roboports-implementation",
+      "status": "planned",
+      "circuits": [
+        "branch-isolated",
+        "proof-required"
+      ],
+      "plannedActions": [
+        "branch",
+        "pr"
+      ],
+      "subagents": [
+        {
+          "role": "implementer",
+          "scope": [
+            "acceptance-criteria"
+          ],
+          "objective": "Implement the ghost's acceptance criteria on its isolated branch",
+          "reads": [
+            "acceptance-criteria"
+          ],
+          "writes": [
+            "src"
+          ]
+        },
+        {
+          "role": "test-author",
+          "scope": [
+            "tests"
+          ],
+          "objective": "Add tests that prove the acceptance criteria",
+          "reads": [
+            "src"
+          ],
+          "writes": [
+            "tests"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "radar-drift-check",
+      "status": "planned",
+      "circuits": [
+        "radar-clean"
+      ],
+      "plannedActions": [
+        "check-drift"
+      ]
+    },
+    {
+      "name": "proof-pass",
+      "status": "planned",
+      "circuits": [
+        "proof-required"
+      ],
+      "plannedActions": [
+        "run-proof"
+      ],
+      "proof": [
+        "targeted node --test",
+        "npm run check"
+      ],
+      "subagents": [
+        {
+          "role": "proof-runner",
+          "scope": [
+            "proof"
+          ],
+          "objective": "Run targeted and full proof checks and record evidence",
+          "reads": [
+            "src",
+            "tests"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "rocket-launch-eligibility",
+      "status": "planned",
+      "circuits": [
+        "merge-gated",
+        "proof-required"
+      ],
+      "plannedActions": [
+        "check-merge"
+      ]
+    },
+    {
+      "name": "radar-post-launch-sync",
+      "status": "planned",
+      "circuits": [
+        "radar-clean"
+      ],
+      "plannedActions": [
+        "sync-radar"
+      ]
+    }
+  ],
+  "plannedActions": [
+    {
+      "id": "read-radar",
+      "kind": "read",
+      "target": "<ghost> radar",
+      "durable": false
+    },
+    {
+      "id": "assess-readiness",
+      "kind": "read",
+      "target": "<ghost>",
+      "durable": false
+    },
+    {
+      "id": "branch",
+      "kind": "branch",
+      "target": "<branch>",
+      "durable": true
+    },
+    {
+      "id": "pr",
+      "kind": "pr",
+      "target": "<ghost>",
+      "durable": true
+    },
+    {
+      "id": "check-drift",
+      "kind": "read",
+      "target": "<ghost> drift",
+      "durable": false
+    },
+    {
+      "id": "run-proof",
+      "kind": "read",
+      "target": "<ghost> proof",
+      "durable": false
+    },
+    {
+      "id": "check-merge",
+      "kind": "read",
+      "target": "<ghost> merge-eligibility",
+      "durable": false
+    },
+    {
+      "id": "sync-radar",
+      "kind": "read",
+      "target": "<ghost> post-launch",
+      "durable": false
+    }
+  ],
+  "schemaVersion": 1,
+  "kind": "recipe-plan",
+  "generatedAt": "2026-06-23T00:00:00.000Z"
+}
