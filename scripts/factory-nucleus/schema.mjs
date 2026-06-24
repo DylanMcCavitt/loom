@@ -42,6 +42,8 @@ export const GHOST_STATES = Object.freeze([
 
 export const LAUNCH_STATES = Object.freeze(["launch-ready", "launched"]);
 
+export const DRIFT_CLASSES = Object.freeze(["none", "low-risk", "material", "unknown"]);
+
 const metadataProperties = {
   schemaVersion: { type: "integer", const: SCHEMA_VERSION },
   kind: { type: "string", enum: ARTIFACT_KINDS },
@@ -308,6 +310,21 @@ export const RUN_SUMMARY_SCHEMA = Object.freeze({
     result: { type: "string", minLength: 1 },
     gaps: optionalStringArray,
     ghostId: { type: "string", minLength: 1 },
+  },
+  additionalProperties: false,
+});
+
+export const RADAR_CHECK_SCHEMA = Object.freeze({
+  type: "object",
+  required: ["schemaVersion", "kind", "generatedAt", "driftClass", "affectedGhosts", "suggestedSyncActions", "suggestedRoute", "evidence"],
+  properties: {
+    ...metadataProperties,
+    kind: { type: "string", const: "radar-check" },
+    driftClass: { type: "string", enum: DRIFT_CLASSES },
+    affectedGhosts: optionalStringArray,
+    suggestedSyncActions: optionalStringArray,
+    suggestedRoute: { type: "string", minLength: 1 },
+    evidence: optionalStringArray,
   },
   additionalProperties: false,
 });
@@ -590,6 +607,10 @@ export function validateAdapterGhost(value) {
 
 export function validateRunSummary(value) {
   return validateArtifact(value, RUN_SUMMARY_SCHEMA);
+}
+
+export function validateRadarCheck(value) {
+  return validateArtifact(value, RADAR_CHECK_SCHEMA);
 }
 
 export function validateArtifactMetadata(value, expectedKind) {
