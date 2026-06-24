@@ -9,6 +9,7 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 
 import {
   COVERAGE_CHECKS,
@@ -19,7 +20,7 @@ import {
   runDryRunEval,
 } from "../scripts/validate-factory-nucleus-dry-run.mjs";
 
-const script = new URL("../scripts/validate-factory-nucleus-dry-run.mjs", import.meta.url).pathname;
+const script = fileURLToPath(new URL("../scripts/validate-factory-nucleus-dry-run.mjs", import.meta.url));
 const golden = JSON.parse(readFileSync(new URL("fixtures/dry-run-ghost-to-launch.golden.json", import.meta.url), "utf8"));
 
 // Every element FN-35's acceptance criteria says the dry-run must cover.
