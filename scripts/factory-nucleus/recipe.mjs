@@ -67,7 +67,7 @@ function plannedAction(id, ghost, branch, blueprint) {
     case "sync-radar":
       return { id, kind: "read", target: `${ghostId} post-launch`, durable: false };
     case "request-writes":
-      return { id, kind: "read", target: `${ghost.id} github-writes`, durable: false };
+      return { id, kind: "read", target: `${ghostId} github-writes`, durable: false };
     default:
       throw new Error(`internal: no planned action spec for ${id}`);
   }
