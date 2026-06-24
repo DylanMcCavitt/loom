@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -14,6 +14,7 @@ import {
   planGhostToLaunch,
   planMain,
   renderPlanSummary,
+  savePlan,
 } from "../scripts/factory-nucleus/recipe.mjs";
 
 const generatedAt = "2026-06-23T00:00:00.000Z";
@@ -43,6 +44,16 @@ function captureStdout(fn) {
     process.stdout.write = original;
   }
   return buffer;
+}
+
+function walkFiles(dir) {
+  const files = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) files.push(...walkFiles(full));
+    else files.push(full);
+  }
+  return files;
 }
 
 test("a ready ghost produces a valid ghost-to-launch plan with all stages in order", () => {
@@ -163,14 +174,14 @@ test("renderPlanSummary lists ordered stages and marks durable actions as repres
   assert.match(summary, /Remote APIs: none/u);
 });
 
-test("plan mode performs no implementation writes in the working directory", () => {
+test("plan --no-save skips local state and writes nothing to the working directory", () => {
   const tmp = mkdtempSync(path.join(tmpdir(), "fn18-plan-"));
   const original = process.cwd();
   let code;
   const out = captureStdout(() => {
     process.chdir(tmp);
     try {
-      code = planMain(["--provider", "linear", "--tracker", linearFixturePath, "--ghost", "LOO-2"]);
+      code = planMain(["--provider", "linear", "--tracker", linearFixturePath, "--ghost", "LOO-2", "--no-save"]);
     } finally {
       process.chdir(original);
     }
@@ -179,8 +190,65 @@ test("plan mode performs no implementation writes in the working directory", () 
     assert.equal(code, 0);
     assert.deepEqual(readdirSync(tmp), [], "plan mode wrote files into the working directory");
     assert.match(out, /Recipe: ghost-to-launch/u);
+    assert.match(out, /Local state: not saved \(--no-save\)/u);
   } finally {
     rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("savePlan writes the recipe-plan under local factory state, outside the target repo", () => {
+  const home = mkdtempSync(path.join(tmpdir(), "fn19-home-"));
+  const repo = mkdtempSync(path.join(tmpdir(), "fn19-repo-"));
+  try {
+    const tracker = linearTracker();
+    const plan = planGhostToLaunch({ ghost: tracker.getGhost("LOO-2"), tracker, generatedAt });
+    const { path: planFile } = savePlan(plan, { homeDir: home, root: repo, ghostId: "LOO-2", generatedAt });
+
+    assert.ok(existsSync(planFile), "saved plan file should exist");
+    assert.equal(path.basename(planFile), "loo-2.json");
+    assert.ok(planFile.startsWith(path.resolve(home)), "plan saved under the home factory state");
+    assert.deepEqual(readdirSync(repo), [], "savePlan wrote nothing into the target repo");
+
+    const saved = JSON.parse(readFileSync(planFile, "utf8"));
+    assert.equal(saved.kind, "recipe-plan");
+    assert.equal(saved.schemaVersion, plan.schemaVersion);
+    assert.equal(saved.generatedAt, generatedAt);
+    assert.equal(validateRecipePlan(saved).ok, true, validateRecipePlan(saved).errors.join("\n"));
+    assert.deepEqual(saved.stages.map((stage) => stage.name), GHOST_TO_LAUNCH_STAGE_NAMES);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+    rmSync(repo, { recursive: true, force: true });
+  }
+});
+
+test("plan CLI saves the plan by default and still prints the summary", () => {
+  const home = mkdtempSync(path.join(tmpdir(), "fn19-cli-home-"));
+  const repo = mkdtempSync(path.join(tmpdir(), "fn19-cli-repo-"));
+  const originalHome = process.env.HOME;
+  const originalCwd = process.cwd();
+  let code;
+  const out = captureStdout(() => {
+    process.env.HOME = home;
+    process.chdir(repo);
+    try {
+      code = planMain(["--provider", "linear", "--tracker", linearFixturePath, "--ghost", "LOO-2"]);
+    } finally {
+      process.chdir(originalCwd);
+      if (originalHome === undefined) delete process.env.HOME;
+      else process.env.HOME = originalHome;
+    }
+  });
+  try {
+    assert.equal(code, 0);
+    assert.deepEqual(readdirSync(repo), [], "default save wrote nothing into the target repo");
+    assert.match(out, /Recipe: ghost-to-launch/u);
+    assert.match(out, /Local state: plan saved/u);
+    const saved = walkFiles(home).filter((file) => file.endsWith(`${path.sep}plans${path.sep}loo-2.json`));
+    assert.equal(saved.length, 1, `expected one saved plan under home, got ${saved.length}`);
+    assert.equal(JSON.parse(readFileSync(saved[0], "utf8")).kind, "recipe-plan");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+    rmSync(repo, { recursive: true, force: true });
   }
 });
 
@@ -196,12 +264,12 @@ test("plan CLI validates its required flags and provider", () => {
     helpCode = planMain(["--help"]);
   });
   assert.equal(helpCode, 0);
-  assert.match(help, /Usage: .*plan --provider/u);
+  assert.match(help, /Usage: .*plan --provider.*--no-save/u);
 
   // The github fixture path also resolves through the CLI without writes.
   let githubCode;
   captureStdout(() => {
-    githubCode = planMain(["--provider", "github", "--tracker", githubFixturePath, "--ghost", "#2"]);
+    githubCode = planMain(["--provider", "github", "--tracker", githubFixturePath, "--ghost", "#2", "--no-save"]);
   });
   assert.equal(githubCode, 0);
 });

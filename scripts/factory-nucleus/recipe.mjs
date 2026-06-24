@@ -9,11 +9,14 @@
 // a later run mode would perform) -- here they are represented, not run. Saving
 // the plan under local factory state is FN-19's job, not this one.
 
-import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { redactSecrets } from "./scan.mjs";
-import { validateRecipePlan, withArtifactMetadata } from "./schema.mjs";
+import { resolveFactoryStatePaths, validateRecipePlan, withArtifactMetadata } from "./schema.mjs";
 import { branchForGhost } from "./tracker.mjs";
 import { createGithubTracker } from "./tracker-github.mjs";
 import { createLinearTracker } from "./tracker-linear.mjs";
@@ -123,6 +126,40 @@ export function renderPlanSummary(plan, { ghost } = {}) {
   return lines.join("\n");
 }
 
+// Resolve the enclosing git repo root, or null when not inside a repo.
+function gitToplevel(root) {
+  const result = spawnSync("git", ["-C", root, "rev-parse", "--show-toplevel"], {
+    encoding: "utf8",
+    env: { ...process.env, GIT_OPTIONAL_LOCKS: "0" },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  if (result.status !== 0) return null;
+  return result.stdout.trim();
+}
+
+function slugGhost(ghostId) {
+  return String(ghostId).toLowerCase().replace(/[^a-z0-9]+/gu, "-").replace(/^-+|-+$/gu, "");
+}
+
+// Save a recipe-plan under local factory state (homeDir/.loom/...), keyed by the
+// same factory id as scan/envelope so they share one state root. Writes ONLY
+// under the home factory state root -- never the target repo
+// (resolveFactoryStatePaths refuses a root inside it). Returns the saved path.
+export function savePlan(plan, { homeDir = process.env.HOME || os.homedir(), root = process.cwd(), ghostId, generatedAt } = {}) {
+  const requestedRoot = path.resolve(root);
+  const repoRoot = path.resolve(gitToplevel(requestedRoot) || requestedRoot);
+  const state = resolveFactoryStatePaths({
+    homeDir,
+    targetRepoPath: repoRoot,
+    factoryId: redactSecrets(path.basename(repoRoot)),
+    generatedAt,
+  });
+  const file = path.join(state.plans, `${slugGhost(ghostId)}.json`);
+  mkdirSync(state.plans, { recursive: true });
+  writeFileSync(file, `${redactSecrets(JSON.stringify(plan, null, 2))}\n`);
+  return { path: file };
+}
+
 function planArgs(argv) {
   const flags = {
     "--provider": "provider",
@@ -136,6 +173,10 @@ function planArgs(argv) {
     const arg = argv[index];
     if (arg === "--help" || arg === "-h") {
       options.help = true;
+      continue;
+    }
+    if (arg === "--no-save") {
+      options.noSave = true;
       continue;
     }
     const key = flags[arg];
@@ -157,7 +198,7 @@ function buildTracker(provider, fixturePath) {
   return provider === "linear" ? createLinearTracker(fixture) : createGithubTracker(fixture);
 }
 
-const PLAN_USAGE = "Usage: node scripts/factory-nucleus/factory.mjs plan --provider <linear|github> --tracker <fixture.json> --ghost <id> [--branch-prefix <prefix>] [--blueprint <ref>]";
+const PLAN_USAGE = "Usage: node scripts/factory-nucleus/factory.mjs plan --provider <linear|github> --tracker <fixture.json> --ghost <id> [--branch-prefix <prefix>] [--blueprint <ref>] [--no-save]";
 
 export function planMain(argv = process.argv.slice(2)) {
   const options = planArgs(argv);
@@ -179,7 +220,9 @@ export function planMain(argv = process.argv.slice(2)) {
     blueprint: options.blueprint,
     branchPrefix: options.branchPrefix ?? DEFAULT_BRANCH_PREFIX,
   });
+  const saved = options.noSave ? null : savePlan(plan, { ghostId: options.ghost });
   process.stdout.write(renderPlanSummary(plan, { ghost }));
+  process.stdout.write(`Local state: ${saved ? "plan saved" : "not saved (--no-save)"}\n`);
   return 0;
 }
 
