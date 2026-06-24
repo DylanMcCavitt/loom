@@ -558,6 +558,8 @@ test("ghost-to-launch plan includes check-only radar preflight and post-launch s
   assert.ok(names.includes("radar-preflight"));
   assert.ok(names.includes("radar-post-launch-sync"));
   for (const r of RADAR_STAGES) assert.ok(names.includes(r), `missing radar stage ${r}`);
+  // ...and no radar-prefixed stage escapes the canonical list (can't drift under-inclusive).
+  assert.deepEqual(names.filter((n) => n.startsWith("radar-")), [...RADAR_STAGES]);
 
   // Acceptance (3): every radar stage is check-only -- each planned action resolves to a non-durable read.
   const actionsById = new Map(plan.plannedActions.map((a) => [a.id, a]));
