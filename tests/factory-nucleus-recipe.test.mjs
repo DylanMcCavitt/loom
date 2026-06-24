@@ -18,6 +18,7 @@ import {
   planMain,
   renderPlanSummary,
   resolveStageWriteScopes,
+  RADAR_STAGES,
   savePlan,
   RECIPE_DESIRED_SUBAGENTS,
   selectMaxSubagents,
@@ -547,4 +548,27 @@ test("plan max subagents is the min of envelope cap and recipe request", () => {
   const uncapped = planGhostToLaunch({ ghost: linearTracker().getGhost("LOO-2"), tracker: linearTracker(), generatedAt });
   assert.equal(uncapped.maxSubagents, RECIPE_DESIRED_SUBAGENTS);
   assert.equal(validateRecipePlan(uncapped).ok, true);
+});
+
+test("ghost-to-launch plan includes check-only radar preflight and post-launch stages", () => {
+  const plan = planGhostToLaunch({ ghost: linearTracker().getGhost("LOO-2"), tracker: linearTracker(), generatedAt });
+  const names = plan.stages.map((s) => s.name);
+
+  // Acceptance (1)+(2): the plan includes radar preflight and a post-launch radar stage.
+  assert.ok(names.includes("radar-preflight"));
+  assert.ok(names.includes("radar-post-launch-sync"));
+  for (const r of RADAR_STAGES) assert.ok(names.includes(r), `missing radar stage ${r}`);
+
+  // Acceptance (3): every radar stage is check-only -- each planned action resolves to a non-durable read.
+  const actionsById = new Map(plan.plannedActions.map((a) => [a.id, a]));
+  for (const stage of plan.stages.filter((s) => RADAR_STAGES.includes(s.name))) {
+    for (const id of stage.plannedActions) {
+      const action = actionsById.get(id);
+      assert.ok(action, `radar stage ${stage.name} references unknown action ${id}`);
+      assert.equal(action.kind, "read", `radar action ${id} must be a read (check-only)`);
+      assert.equal(action.durable, false, `radar action ${id} must be non-durable (check-only)`);
+    }
+    // The radar stages themselves carry no durable work: they stay planned, not escalated.
+    assert.equal(stage.status, "planned", `radar stage ${stage.name} must stay planned (no durable work)`);
+  }
 });

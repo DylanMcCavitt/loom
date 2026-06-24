@@ -46,6 +46,10 @@ export const GHOST_TO_LAUNCH_STAGES = Object.freeze([
 
 export const GHOST_TO_LAUNCH_STAGE_NAMES = Object.freeze(GHOST_TO_LAUNCH_STAGES.map((stage) => stage.name));
 
+// The radar touchpoints in the ghost-to-launch pipeline (check-only in V1):
+// a preflight scan, a mid-pipeline drift check, and a post-launch sync check.
+export const RADAR_STAGES = Object.freeze(["radar-preflight", "radar-drift-check", "radar-post-launch-sync"]);
+
 // Build the planned-action record for an id. Only branch/pr are durable (they
 // represent the sole writes a run would make); every check is an inert read.
 function plannedAction(id, ghost, branch, blueprint) {
