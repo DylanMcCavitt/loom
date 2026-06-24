@@ -736,3 +736,33 @@ test("factory scan --content-scan skips tracked paths through symlinked ancestor
     }
   });
 });
+
+test("scan emits a non-authoritative diagnostic max-subagent recommendation", () => {
+  withTempRepo({
+    "package.json": `${JSON.stringify({ scripts: { test: "node --test" } }, null, 2)}\n`,
+  }, (root) => {
+    const scan = scanFactory({ root, generatedAt });
+    const rec = scan.recommendations.maxSubagents;
+    assert.equal(rec.authoritative, false, "recommendation must be non-authoritative");
+    assert.ok(Number.isInteger(rec.value) && rec.value >= 1 && rec.value <= 8, `value out of range: ${rec.value}`);
+    assert.match(rec.basis, /envelope/u);
+    assert.match(rec.basis, /diagnostic/u);
+
+    // Diagnostic only: surfaced in scan output but the envelope agents.maxSubagents
+    // cap stays the authority for recipe planning (proven by the recipe plan tests).
+    const result = runScan(root);
+    assert.match(result.stdout, /Max subagents \(diagnostic, non-authoritative\): \d+/u);
+  });
+});
+
+test("recipe planning never consumes the scan recommendation (envelope cap stays authoritative)", () => {
+  // Acceptance: the envelope agents.maxSubagents cap governs recipe planning.
+  // The scan recommendation is diagnostic only, so the planning module must not
+  // reference it. (Idiom mirrors the radar source-purity test.)
+  const recipeSource = readFileSync(new URL("../scripts/factory-nucleus/recipe.mjs", import.meta.url), "utf8");
+  assert.doesNotMatch(
+    recipeSource,
+    /recommendations/u,
+    "recipe planning must not consume the scan recommendation; the envelope agents.maxSubagents cap is authoritative",
+  );
+});
