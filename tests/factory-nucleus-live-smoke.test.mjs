@@ -138,12 +138,18 @@ test(
     const gh = (args) => spawnSync("gh", args, { encoding: "utf8", timeout: 30000 });
 
     const title = `factory-live-smoke ${new Date().toISOString()} (pid ${process.pid})`;
-    let issueNumber = null;
+    // Track the created issue by ref (the URL until the number is parsed) so the
+    // `finally` tears it down even if a later step throws — once the issue exists
+    // on GitHub the self-clean contract is unconditional.
+    let issueRef = null;
     try {
       const created = gh(["issue", "create", "--repo", repo, "--title", title, "--body", "Disposable Factory Nucleus live smoke issue; safe to delete."]);
       assert.equal(created.status, 0, `gh issue create failed: ${created.stderr || created.stdout}`);
-      issueNumber = Number(created.stdout.trim().match(/\/issues\/(\d+)\b/u)?.[1]);
-      assert.ok(Number.isInteger(issueNumber) && issueNumber > 0, `could not parse issue number from gh output: ${created.stdout}`);
+      const createdUrl = created.stdout.trim();
+      issueRef = createdUrl; // delete by URL even if the number parse below fails
+      const issueNumber = Number(createdUrl.match(/\/issues\/(\d+)\b/u)?.[1]);
+      assert.ok(Number.isInteger(issueNumber) && issueNumber > 0, `could not parse issue number from gh output: ${createdUrl}`);
+      issueRef = String(issueNumber); // prefer the bare number once known
 
       const viewed = gh(["issue", "view", String(issueNumber), "--repo", repo, "--json", "number,title,state,labels,stateReason"]);
       assert.equal(viewed.status, 0, `gh issue view failed: ${viewed.stderr || viewed.stdout}`);
@@ -158,11 +164,11 @@ test(
       assert.equal(ghost.title, title, "issue title carries to the ghost");
       assert.equal(ghost.state, "backlog", "a fresh open issue with no readiness label maps to backlog");
     } finally {
-      if (issueNumber) {
-        const deleted = gh(["issue", "delete", String(issueNumber), "--repo", repo, "--yes"]);
+      if (issueRef) {
+        const deleted = gh(["issue", "delete", issueRef, "--repo", repo, "--yes"]);
         if (deleted.status !== 0) {
           // Best-effort cleanup: surface the residue for manual removal.
-          console.error(`live GitHub smoke: failed to delete issue #${issueNumber} in ${repo}: ${deleted.stderr || deleted.stdout}`);
+          console.error(`live GitHub smoke: failed to delete issue ${issueRef} in ${repo}: ${deleted.stderr || deleted.stdout}`);
         }
       }
     }

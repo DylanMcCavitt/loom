@@ -35,9 +35,10 @@ export function resolveLiveSmokeConfig(env = process.env) {
   const hasLinearToken = Boolean(env[LIVE_SMOKE_ENV.linearToken]);
   const hasGithubToken = Boolean(env[LIVE_SMOKE_ENV.githubToken]);
 
-  // Per-adapter required variables; report absent ones by NAME only. The two
-  // adapters gate independently so a GitHub-only (or Linear-only) live smoke can
-  // opt in without configuring the other transport's sandbox.
+  // Per-adapter required variables; report absent ones by NAME only. Readiness is
+  // reported per adapter (`githubReady`/`linearReady`) so each live smoke gates on
+  // its own transport: the GitHub smoke opts in on `LOO_LIVE_SMOKE=1` and fails
+  // fast when its own sandbox vars are missing, independent of Linear's config.
   const linearRequired = [
     [LIVE_SMOKE_ENV.linearTeam, Boolean(team)],
     [LIVE_SMOKE_ENV.linearProject, Boolean(project)],
