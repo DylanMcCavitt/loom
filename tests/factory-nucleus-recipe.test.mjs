@@ -530,6 +530,10 @@ test("plan max subagents is the min of envelope cap and recipe request", () => {
   assert.equal(selectMaxSubagents({ envelope: { agents: { maxSubagents: 10 } } }), RECIPE_DESIRED_SUBAGENTS);
   assert.equal(selectMaxSubagents({ envelope: {} }), RECIPE_DESIRED_SUBAGENTS);
   assert.equal(selectMaxSubagents({ requested: 5 }), 5);
+  // Guard edges: an integer cap of 0 is honored (conservative lockdown); a
+  // non-integer cap is ignored so it never corrupts the min.
+  assert.equal(selectMaxSubagents({ envelope: { agents: { maxSubagents: 0 } } }), 0);
+  assert.equal(selectMaxSubagents({ envelope: { agents: { maxSubagents: 2.5 } } }), RECIPE_DESIRED_SUBAGENTS);
 
   // Plan: maxSubagents reflects min(envelope cap, recipe request) and validates.
   const capped = planGhostToLaunch({ ghost: linearTracker().getGhost("LOO-2"), tracker: linearTracker(), generatedAt, envelope: { agents: { maxSubagents: 1 } } });
