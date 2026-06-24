@@ -6,6 +6,10 @@ Linear's native GitHub integration (branch name carries the Linear issue id, the
 PR auto-links and auto-closes the issue on merge). Decisions are recorded in
 [ADR 0003](../decisions/0003-factorio-workflow-kit.md).
 
+Factory Nucleus itself ships a tracker-neutral planning contract: GitHub Issues
+is the public baseline and Linear is the preferred/private control plane. See
+[tracker modes](../factory-nucleus/tracker-modes.md).
+
 This manifest is the build envelope. Each skill is authored eval-first: write its
 `evals.json` and content-envelope test, then iterate `SKILL.md` until both pass.
 
