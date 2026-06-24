@@ -19,11 +19,10 @@ branch name alone when an adapter or issue record is available.
 
 Report exactly one class:
 
-- `clean` — no relevant drift found.
-- `tracker-drift` — issue state/labels/dependencies differ from the plan.
-- `repo-drift` — code, tests, or branch state moved away from the plan.
-- `proof-drift` — proof is missing, stale, or no longer supports the claim.
-- `blocked` — required evidence is unavailable or contradictory.
+- `none` — no relevant drift found.
+- `low-risk` — minor drift that does not threaten the plan (cosmetic or easily re-proven).
+- `material` — significant tracker, repo, or proof drift that needs work before launch.
+- `unknown` — required evidence is missing or contradictory, so the drift cannot be classified.
 
 ## Output shape
 
@@ -37,13 +36,13 @@ Return a concise check artifact with:
 
 ## Routing
 
-- Tracker state needs sorting or label/state repair → `inserter`.
-- Implementation changed or needs more work → `roboports`.
-- The only gap is evidence quality → `proof-pass`.
-- Everything is clean and launch-ready → `rocket-launch`.
+- No drift; launch-ready → `rocket-launch`.
+- Low-risk drift; only the evidence needs refreshing → `proof-pass`.
+- Material drift; implementation or branch work is needed → `roboports`.
+- Drift cannot be classified; triage and sort first → `inserter`.
 
 ## Invariants
 
 - Check-only: no tracker writes, blueprint rewrites, repo edits, or PR changes.
 - Evidence-grounded: every drift claim cites what was read or run.
-- Conservative: missing or conflicting evidence is `blocked`, not `clean`.
+- Conservative: missing or conflicting evidence is `unknown`, not `none`.

@@ -1,7 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readdirSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import path from "node:path";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import { DRIFT_CLASSES, validateRadarCheck } from "../scripts/factory-nucleus/schema.mjs";
@@ -24,12 +22,12 @@ test("DRIFT_CLASSES lists the four classes", () => {
 
 test("buildRadarCheck emits a valid radar-check artifact for each drift class", () => {
   const cases = [
-    { signals: {}, expected: "none" },
-    { signals: { lowRisk: ["a"] }, expected: "low-risk" },
-    { signals: { material: ["b"] }, expected: "material" },
-    { signals: { unknown: ["c"] }, expected: "unknown" },
+    { signals: {}, expected: "none", route: "rocket-launch" },
+    { signals: { lowRisk: ["a"] }, expected: "low-risk", route: "proof-pass" },
+    { signals: { material: ["b"] }, expected: "material", route: "roboports" },
+    { signals: { unknown: ["c"] }, expected: "unknown", route: "inserter" },
   ];
-  for (const { signals, expected } of cases) {
+  for (const { signals, expected, route } of cases) {
     const c = buildRadarCheck({
       ...signals,
       affectedGhosts: ["LOO-1"],
@@ -43,7 +41,7 @@ test("buildRadarCheck emits a valid radar-check artifact for each drift class", 
     assert.ok(Array.isArray(c.affectedGhosts));
     assert.ok(Array.isArray(c.suggestedSyncActions));
     assert.ok(Array.isArray(c.evidence));
-    assert.ok(typeof c.suggestedRoute === "string" && c.suggestedRoute.length > 0);
+    assert.equal(c.suggestedRoute, route);
   }
 });
 
@@ -54,14 +52,8 @@ test("a radar-check rejects extra fields (no write/rewrite directive can ride al
   assert.ok(result.errors.some((e) => e.includes("blueprintRewrite") && e.includes("unknown property")));
 });
 
-test("buildRadarCheck performs no writes (pure, check-only)", () => {
-  const tmp = mkdtempSync(path.join(tmpdir(), "fn29-"));
-  const before = readdirSync(tmp);
-  buildRadarCheck({ material: ["drift"], affectedGhosts: ["LOO-2"], generatedAt });
-  try {
-    assert.deepEqual(readdirSync(tmp), before);
-    assert.deepEqual(readdirSync(tmp), []);
-  } finally {
-    rmSync(tmp, { recursive: true, force: true });
-  }
+test("radar.mjs is structurally pure: no filesystem or child_process access", () => {
+  const source = readFileSync(new URL("../scripts/factory-nucleus/radar.mjs", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /node:fs/u, "radar must not import node:fs");
+  assert.doesNotMatch(source, /node:child_process/u, "radar must not import node:child_process");
 });

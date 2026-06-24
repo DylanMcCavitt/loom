@@ -23,7 +23,7 @@ function defaultRoute(driftClass) {
     case "low-risk":
       return "proof-pass";
     case "material":
-      return "inserter";
+      return "roboports";
     default:
       return "inserter";
   }
