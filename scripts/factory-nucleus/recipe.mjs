@@ -31,9 +31,9 @@ const DEFAULT_BRANCH_PREFIX = "factory";
 export const GHOST_TO_LAUNCH_STAGES = Object.freeze([
   Object.freeze({ name: "radar-preflight", circuits: Object.freeze(["radar-clean", "tracker-bound"]), actions: Object.freeze(["read-radar"]), blueprintAware: true }),
   Object.freeze({ name: "inserter-readiness", circuits: Object.freeze(["tracker-bound"]), actions: Object.freeze(["assess-readiness"]) }),
-  Object.freeze({ name: "roboports-implementation", circuits: Object.freeze(["branch-isolated", "proof-required"]), actions: Object.freeze(["branch", "pr"]), subagents: Object.freeze([Object.freeze({ role: "implementer", scope: Object.freeze(["acceptance-criteria"]), objective: "Implement the ghost's acceptance criteria on its isolated branch" }), Object.freeze({ role: "test-author", scope: Object.freeze(["tests"]), objective: "Add tests that prove the acceptance criteria" })]) }),
+  Object.freeze({ name: "roboports-implementation", circuits: Object.freeze(["branch-isolated", "proof-required"]), actions: Object.freeze(["branch", "pr"]), subagents: Object.freeze([Object.freeze({ role: "implementer", scope: Object.freeze(["acceptance-criteria"]), objective: "Implement the ghost's acceptance criteria on its isolated branch", reads: Object.freeze(["acceptance-criteria"]), writes: Object.freeze(["src"]) }), Object.freeze({ role: "test-author", scope: Object.freeze(["tests"]), objective: "Add tests that prove the acceptance criteria", reads: Object.freeze(["src"]), writes: Object.freeze(["tests"]) })]) }),
   Object.freeze({ name: "radar-drift-check", circuits: Object.freeze(["radar-clean"]), actions: Object.freeze(["check-drift"]) }),
-  Object.freeze({ name: "proof-pass", circuits: Object.freeze(["proof-required"]), actions: Object.freeze(["run-proof"]), proof: Object.freeze(["targeted node --test", "npm run check"]), subagents: Object.freeze([Object.freeze({ role: "proof-runner", scope: Object.freeze(["proof"]), objective: "Run targeted and full proof checks and record evidence" })]) }),
+  Object.freeze({ name: "proof-pass", circuits: Object.freeze(["proof-required"]), actions: Object.freeze(["run-proof"]), proof: Object.freeze(["targeted node --test", "npm run check"]), subagents: Object.freeze([Object.freeze({ role: "proof-runner", scope: Object.freeze(["proof"]), objective: "Run targeted and full proof checks and record evidence", reads: Object.freeze(["src", "tests"]) })]) }),
   Object.freeze({ name: "rocket-launch-eligibility", circuits: Object.freeze(["merge-gated", "proof-required"]), actions: Object.freeze(["check-merge"]) }),
   Object.freeze({ name: "radar-post-launch-sync", circuits: Object.freeze(["radar-clean"]), actions: Object.freeze(["sync-radar"]) }),
 ]);
@@ -68,6 +68,27 @@ function plannedAction(id, ghost, branch, blueprint) {
   }
 }
 
+// Write scopes claimed by more than one subagent in a stage. Reads never
+// conflict (many readers are fine); only overlapping WRITES contend.
+export function assessWriteScopes(subagents = []) {
+  const counts = new Map();
+  for (const sub of subagents) {
+    for (const scope of new Set(sub.writes ?? [])) {
+      counts.set(scope, (counts.get(scope) ?? 0) + 1);
+    }
+  }
+  return [...counts.entries()].filter(([, n]) => n > 1).map(([scope]) => scope).sort();
+}
+
+// V1 policy: a stage whose subagents contend for the same write scope is
+// escalated (hub must resolve), with the contended scopes recorded. Disjoint
+// writes leave the stage unchanged.
+export function resolveStageWriteScopes(stage) {
+  const conflicts = assessWriteScopes(stage.subagents);
+  if (conflicts.length === 0) return stage;
+  return { ...stage, status: "escalated", writeConflicts: conflicts };
+}
+
 // Produce a schema-valid ghost-to-launch recipe-plan for one ready ghost. Pure:
 // no filesystem, no network, no mutation of the ghost or tracker. Throws if the
 // ghost is not ready (by neutral state, and by tracker readiness when a tracker
@@ -90,8 +111,16 @@ export function planGhostToLaunch({ ghost, tracker, blueprint, branchPrefix = DE
     if (spec.blueprintAware && blueprint) plannedActions.push("read-blueprint");
     const stage = { name: spec.name, status: "planned", circuits: [...spec.circuits], plannedActions };
     if (spec.proof) stage.proof = [...spec.proof];
-    if (spec.subagents) stage.subagents = spec.subagents.map((sub) => ({ role: sub.role, scope: [...sub.scope], objective: sub.objective }));
-    return stage;
+    if (spec.subagents) {
+      stage.subagents = spec.subagents.map((sub) => ({
+        role: sub.role,
+        scope: [...sub.scope],
+        objective: sub.objective,
+        ...(sub.reads ? { reads: [...sub.reads] } : {}),
+        ...(sub.writes ? { writes: [...sub.writes] } : {}),
+      }));
+    }
+    return resolveStageWriteScopes(stage);
   });
 
   // Top-level plannedActions are exactly the ids the stages reference, in first
@@ -118,7 +147,9 @@ export function renderPlanSummary(plan, { ghost } = {}) {
   if (ghost) lines.push(`Ghost: ${ghost.id} (${redactSecrets(ghost.title ?? ghost.id)})`);
   lines.push(`Stages: ${plan.stages.length}`);
   for (const stage of plan.stages) {
-    lines.push(`  - ${stage.name} [${stage.status}] circuits: ${stage.circuits.join(", ")}; actions: ${stage.plannedActions.join(", ")}`);
+    let line = `  - ${stage.name} [${stage.status}] circuits: ${stage.circuits.join(", ")}; actions: ${stage.plannedActions.join(", ")}`;
+    if (stage.writeConflicts?.length) line += `; write-conflicts: ${stage.writeConflicts.join(", ")}`;
+    lines.push(line);
   }
   const durable = plan.plannedActions.filter((action) => action.durable).map((action) => action.id);
   lines.push(`Durable actions (represented, not executed): ${durable.length ? durable.join(", ") : "none"}`);

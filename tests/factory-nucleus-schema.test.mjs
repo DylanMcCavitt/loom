@@ -193,6 +193,27 @@ test("recipe-plan stages carry optional subagent role/scope/objective and reject
   assert.ok(missingResult.errors.some((error) => error.includes("subagents[0].objective") && error.includes("required")), missingResult.errors.join("\n"));
 });
 
+test("recipe-plan subagent reads/writes and stage writeConflicts validate; unknown subagent field rejected", () => {
+  const withScopes = {
+    ...recipePlan,
+    stages: [{
+      ...recipePlan.stages[0],
+      writeConflicts: ["b"],
+      subagents: [{ role: "implementer", scope: ["tests"], objective: "do x", reads: ["a"], writes: ["b"] }],
+    }],
+  };
+  const okResult = validateRecipePlan(withScopes);
+  assert.equal(okResult.ok, true, okResult.errors.join("\n"));
+
+  const unknownField = {
+    ...recipePlan,
+    stages: [{ ...recipePlan.stages[0], subagents: [{ role: "implementer", scope: ["tests"], objective: "do x", danger: "x" }] }],
+  };
+  const unknownResult = validateRecipePlan(unknownField);
+  assert.equal(unknownResult.ok, false);
+  assert.ok(unknownResult.errors.some((error) => error.includes("subagents[0].danger") && error.includes("unknown property")), unknownResult.errors.join("\n"));
+});
+
 test("recipe stages and recipe-plan stages reject dangling references", () => {
   const danglingCircuitRecipe = {
     ...recipe,

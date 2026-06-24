@@ -10,10 +10,12 @@ import { branchForGhost } from "../scripts/factory-nucleus/tracker.mjs";
 import { createGithubTracker } from "../scripts/factory-nucleus/tracker-github.mjs";
 import { createLinearTracker } from "../scripts/factory-nucleus/tracker-linear.mjs";
 import {
+  assessWriteScopes,
   GHOST_TO_LAUNCH_STAGE_NAMES,
   planGhostToLaunch,
   planMain,
   renderPlanSummary,
+  resolveStageWriteScopes,
   savePlan,
 } from "../scripts/factory-nucleus/recipe.mjs";
 
@@ -300,4 +302,65 @@ test("plan CLI validates its required flags and provider", () => {
     githubCode = planMain(["--provider", "github", "--tracker", githubFixturePath, "--ghost", "#2", "--no-save"]);
   });
   assert.equal(githubCode, 0);
+});
+
+test("default plan keeps disjoint write scopes (no escalation)", () => {
+  const tracker = linearTracker();
+  const ghost = tracker.getGhost("LOO-2");
+  const plan = planGhostToLaunch({ ghost, tracker, generatedAt });
+
+  assert.ok(plan.stages.every((stage) => stage.status === "planned"), "disjoint writes -> every stage planned");
+  for (const stage of plan.stages) {
+    assert.ok(!(stage.writeConflicts?.length), `stage ${stage.name} has no write conflicts`);
+  }
+
+  const roboports = plan.stages.find((stage) => stage.name === "roboports-implementation");
+  const implementer = roboports.subagents.find((sub) => sub.role === "implementer");
+  assert.deepEqual(implementer.writes, ["src"]);
+  assert.deepEqual(implementer.reads, ["acceptance-criteria"]);
+  const testAuthor = roboports.subagents.find((sub) => sub.role === "test-author");
+  assert.deepEqual(testAuthor.writes, ["tests"]);
+});
+
+test("overlapping write scopes escalate the stage (negative fixture)", () => {
+  const stage = {
+    name: "x",
+    status: "planned",
+    circuits: ["c"],
+    plannedActions: ["a"],
+    subagents: [
+      { role: "one", scope: ["s"], objective: "o", writes: ["src"] },
+      { role: "two", scope: ["s"], objective: "o", writes: ["src"] },
+    ],
+  };
+  const resolved = resolveStageWriteScopes(stage);
+  assert.equal(resolved.status, "escalated");
+  assert.ok(resolved.writeConflicts.includes("src"));
+});
+
+test("assessWriteScopes flags only multi-writer scopes", () => {
+  assert.deepEqual(assessWriteScopes([{ writes: ["src"] }, { writes: ["src", "tests"] }]), ["src"]);
+  assert.deepEqual(assessWriteScopes([{ writes: ["src"] }, { writes: ["tests"] }]), []);
+  assert.deepEqual(assessWriteScopes([{ writes: ["src", "src"] }]), []);
+});
+
+test("renderPlanSummary surfaces write conflicts", () => {
+  const tracker = linearTracker();
+  const ghost = tracker.getGhost("LOO-2");
+  const plan = planGhostToLaunch({ ghost, tracker, generatedAt });
+
+  const conflicted = resolveStageWriteScopes({
+    name: "roboports-implementation",
+    status: "planned",
+    circuits: ["branch-isolated"],
+    plannedActions: ["branch"],
+    subagents: [
+      { role: "one", scope: ["s"], objective: "o", writes: ["src"] },
+      { role: "two", scope: ["s"], objective: "o", writes: ["src"] },
+    ],
+  });
+  plan.stages = plan.stages.map((stage) => (stage.name === "roboports-implementation" ? conflicted : stage));
+
+  const summary = renderPlanSummary(plan, { ghost });
+  assert.match(summary, /write-conflicts: src/u);
 });
