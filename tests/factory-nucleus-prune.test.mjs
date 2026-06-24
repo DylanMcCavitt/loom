@@ -93,6 +93,24 @@ test("prune never deletes the envelope, scan/radar latest, or target-repo files"
     assert.ok(existsSync(state.scan), "scan latest preserved");
     assert.ok(existsSync(state.radar), "radar latest preserved");
     assert.equal(existsSync(repoFile), true, "target-repo file untouched");
+
+    // The real safety net: a state root that would land inside the repo is refused.
+    assert.throws(
+      () => pruneFactoryState({ homeDir: path.join(root, "nested"), root, keep: 1 }),
+      /outside the target repo/u,
+    );
+  });
+});
+
+test("prune matches explicit retain by name with or without the .json suffix", () => {
+  withTemp(({ root, home }) => {
+    const state = stateFor(home, root);
+    seed(state, { plans: { "a.json": 1000, "b.json": 2000, "c.json": 3000 } });
+
+    // keep=1 keeps newest (c); retain keeps a (via ".json") and b (via bare name).
+    pruneFactoryState({ homeDir: home, root, keep: 1, retain: ["a.json", "b"] });
+
+    assert.deepEqual(names(state.plans), ["a.json", "b.json", "c.json"]);
   });
 });
 

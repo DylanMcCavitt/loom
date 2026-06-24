@@ -71,7 +71,7 @@ export function pruneFactoryState({
         const file = path.join(dir, entry.name);
         return { name: entry.name, file, mtimeMs: statSync(file).mtimeMs };
       })
-      .sort((a, b) => b.mtimeMs - a.mtimeMs); // newest first
+      .sort((a, b) => b.mtimeMs - a.mtimeMs || a.name.localeCompare(b.name)); // newest first, name tiebreak
     entries.forEach((entry, index) => {
       const rel = path.relative(state.root, entry.file);
       if (index < keepCount || retainSet.has(retainKey(entry.name))) {
