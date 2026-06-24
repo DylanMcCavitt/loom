@@ -8,11 +8,28 @@ exercises the real trackers end to end — and explains why it stays out of the
 default checks.
 
 Status: FN-36 shipped the **design + config + a skipped scaffold**. FN-45 ships
-the **running GitHub Issues smoke** (`gh`-backed, opt-in, self-cleaning) — see
-the GitHub-only invocation below. The Linear half stays deferred to FN-46 /
-LOO-83 (transport decision pending); it never authenticates or creates a live
-object until then. Both halves gate independently via `resolveLiveSmokeConfig`
-(`githubReady` / `linearReady`).
+the **running GitHub Issues smoke** (`gh`-backed, opt-in, self-cleaning). FN-46
+ships the **running Linear smoke** (Linear GraphQL client over `LINEAR_API_KEY`,
+opt-in, self-cleaning) — see the transport decision below. Both halves gate
+independently via `resolveLiveSmokeConfig` (`githubReady` / `linearReady`), so a
+default `npm run check` skips both and a single-adapter opt-in run runs only its
+half.
+
+## Transport decision (FN-46): Linear GraphQL client over a personal API key
+
+The running Linear smoke talks to Linear over its **GraphQL API**
+(`POST https://api.linear.app/graphql`) with a personal API key in the
+`Authorization` header **raw** (not `Bearer`), called via Node's built-in `fetch`
+directly from `node --test`. The alternative — driving the live writes through the
+agent's Linear **MCP** tools — was **rejected**: the `node --test` process is a
+plain Node process with no access to the agent harness's MCP tools, so an
+automated, CI-runnable smoke (FN-47 dispatches it) must be self-contained. The
+GraphQL loop is `issueCreate` → `issue(id)` → `issueDelete`; the sandbox
+team/project are resolved from `LOO_LIVE_LINEAR_TEAM` / `LOO_LIVE_LINEAR_PROJECT`
+by id, key, or name. This mirrors the FN-45 GitHub half (a self-contained client
+inside the test — `gh` there, `fetch` GraphQL here), keeping all network code out
+of the pure `resolveLiveSmokeConfig` module (`scripts/factory-nucleus/live-smoke.mjs`);
+only the pure GraphQL→adapter normalizer `normalizeLinearIssue` lives there.
 
 ## Why live smoke is outside the default checks
 
@@ -54,32 +71,46 @@ LOO_LIVE_GITHUB_REPO=<owner>/<sandbox-repo> GITHUB_TOKEN=<token> \
 node --test tests/factory-nucleus-live-smoke.test.mjs
 ```
 
-The GitHub half (FN-45) runs today and needs only the GitHub sandbox env (`gh`
-reads `GITHUB_TOKEN` from the environment; the Linear half stays skipped):
+Either half can run alone with only its own sandbox env. GitHub only (`gh` reads
+`GITHUB_TOKEN` from the environment; the Linear half skips):
 
 ```
 LOO_LIVE_SMOKE=1 LOO_LIVE_GITHUB_REPO=<owner>/<sandbox-repo> GITHUB_TOKEN="$(gh auth token)" \
 node --test tests/factory-nucleus-live-smoke.test.mjs
 ```
 
-Without `LOO_LIVE_SMOKE=1` the live smoke test is **skipped**, so the default
-`npm run check` path stays hermetic. If the flag is set but a required variable
-is missing, the run fails fast with the exact missing variable names (it never
-falls back to a real or "current" tracker).
+Linear only (the GitHub half is skipped/fails fast — see gating below):
+
+```
+LOO_LIVE_SMOKE=1 \
+LOO_LIVE_LINEAR_TEAM=<sandbox-team> LOO_LIVE_LINEAR_PROJECT=<sandbox-project> LINEAR_API_KEY=<token> \
+node --test tests/factory-nucleus-live-smoke.test.mjs
+```
+
+Without `LOO_LIVE_SMOKE=1` both live tests are **skipped**, so the default
+`npm run check` path stays hermetic. Per-adapter gating differs by design: the
+**Linear** test gates on `linearReady` — it runs only when opted in *and* the full
+Linear sandbox env is present, and otherwise **skips** (so a GitHub-only opt-in run
+never trips it). The **GitHub** test gates on the opt-in flag and then **fails
+fast** naming any missing GitHub variable (it never falls back to a real or
+"current" repo), so a Linear-only opt-in run will report the absent GitHub vars.
 
 ## Cleanup expectations (self-cleanup per run)
 
 The live smoke **owns and removes everything it creates**:
 
 1. **Create** a disposable ghost in the Linear sandbox project and an issue in
-   the GitHub sandbox repo (clearly marked, e.g. a `factory-live-smoke` label and
-   a timestamped title).
+   the GitHub sandbox repo, each clearly marked by a timestamped
+   `factory-live-smoke` title and a "safe to delete" body.
 2. **Verify** each adapter resolves the created object through the
    tracker-neutral contract (identity, state, labels, dependency, the branch/PR
    bridge representation).
 3. **Delete** both in a `finally` block so a failed assertion still tears the
    objects down (best-effort on delete failure, logged for manual cleanup). The
    run is idempotent and safe to repeat; it must leave no residue in the sandbox.
+   The Linear half uses `issueDelete`, which trashes the issue (removed from views
+   immediately and auto-purged after Linear's grace period; `permanentlyDelete` is
+   admin-only, so the default delete stays portable for any sandbox key).
 
-Non-goals: no GitHub Projects; live smoke is never the default path; this issue
-does not execute live smoke or create live objects.
+Non-goals: no GitHub Projects; live smoke is never the default path and never
+targets a real planning team or production repo.

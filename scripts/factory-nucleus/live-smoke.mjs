@@ -87,3 +87,26 @@ export function normalizeGithubIssue(raw = {}) {
   if (raw.stateReason != null) issue.stateReason = String(raw.stateReason).toLowerCase();
   return issue;
 }
+
+// Normalize a Linear GraphQL `issue` payload into the Linear adapter's fixture
+// issue shape (scripts/factory-nucleus/tracker-linear.mjs). The GraphQL API nests
+// the workflow state under `state { name type }`, the project under
+// `project { id }`, and labels under a `labels { nodes { name } }` connection,
+// whereas the adapter expects flat `status`/`statusType`/`projectId` and a string
+// `labels` array; this bridges the live GraphQL shape to the adapter contract.
+// The ghost id is Linear's human identifier (e.g. "LOO-2"), not the internal
+// UUID. Pure: no network.
+export function normalizeLinearIssue(raw = {}) {
+  const labelNodes = raw.labels?.nodes ?? raw.labels ?? [];
+  const labels = labelNodes
+    .map((label) => (typeof label === "string" ? label : label?.name))
+    .filter((name) => name != null);
+  return {
+    id: raw.identifier ?? raw.id,
+    title: raw.title,
+    projectId: raw.project?.id ?? raw.projectId ?? null,
+    status: raw.state?.name ?? raw.status,
+    statusType: raw.state?.type ?? raw.statusType,
+    labels,
+  };
+}
