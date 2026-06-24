@@ -7,7 +7,7 @@ import path from "node:path";
 import { scanFactory, redactSecrets } from "./scan.mjs";
 import { parseYaml, resolveFactoryStatePaths, validateEnvelopeYaml, withArtifactMetadata } from "./schema.mjs";
 
-const USAGE = "Usage: node scripts/factory-nucleus/envelope.mjs [--root <path>]";
+const USAGE = "Usage: node scripts/factory-nucleus/envelope.mjs [--root <path>] [--json]";
 
 function git(root, args) {
   return spawnSync("git", ["-C", root, ...args], {
@@ -29,6 +29,10 @@ function readArgs(argv) {
     const arg = argv[index];
     if (arg === "--help" || arg === "-h") {
       options.help = true;
+      continue;
+    }
+    if (arg === "--json") {
+      options.json = true;
       continue;
     }
     if (arg !== "--root") {
@@ -202,6 +206,10 @@ export function main(argv = process.argv.slice(2)) {
     return 0;
   }
   const result = initEnvelope({ root: options.root });
+  if (options.json) {
+    process.stdout.write(`${JSON.stringify(result.envelope, null, 2)}\n`);
+    return 0;
+  }
   process.stdout.write([
     "Factory envelope",
     "Mode: init-envelope (writes local envelope state only; no target-repo writes)",
@@ -223,6 +231,10 @@ function bindArgs(argv) {
       options.help = true;
       continue;
     }
+    if (arg === "--json") {
+      options.json = true;
+      continue;
+    }
     const key = flags[arg];
     if (!key) throw new Error(`Unknown option: ${arg}`);
     const next = argv[index + 1];
@@ -233,7 +245,7 @@ function bindArgs(argv) {
   return options;
 }
 
-const BIND_USAGE = "Usage: node scripts/factory-nucleus/factory.mjs bind-tracker --provider <linear|github> [--team <team>] [--project <project>] [--repo <owner/name>] [--root <path>]";
+const BIND_USAGE = "Usage: node scripts/factory-nucleus/factory.mjs bind-tracker --provider <linear|github> [--team <team>] [--project <project>] [--repo <owner/name>] [--root <path>] [--json]";
 
 export function bindMain(argv = process.argv.slice(2)) {
   const options = bindArgs(argv);
@@ -242,6 +254,10 @@ export function bindMain(argv = process.argv.slice(2)) {
     return 0;
   }
   const result = bindTracker(options);
+  if (options.json) {
+    process.stdout.write(`${JSON.stringify(result.envelope, null, 2)}\n`);
+    return 0;
+  }
   const trackerLine = result.tracker.provider === "linear"
     ? `Tracker: linear (project ${result.tracker.project})`
     : `Tracker: github (repo ${result.tracker.repo})`;

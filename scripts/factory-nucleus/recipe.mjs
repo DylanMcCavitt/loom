@@ -265,6 +265,10 @@ function planArgs(argv) {
       options.noSave = true;
       continue;
     }
+    if (arg === "--json") {
+      options.json = true;
+      continue;
+    }
     const key = flags[arg];
     if (!key) throw new Error(`Unknown option: ${arg}`);
     const next = argv[index + 1];
@@ -284,7 +288,7 @@ function buildTracker(provider, fixturePath) {
   return provider === "linear" ? createLinearTracker(fixture) : createGithubTracker(fixture);
 }
 
-const PLAN_USAGE = "Usage: node scripts/factory-nucleus/factory.mjs plan --provider <linear|github> --tracker <fixture.json> --ghost <id> [--branch-prefix <prefix>] [--blueprint <ref>] [--no-save]";
+const PLAN_USAGE = "Usage: node scripts/factory-nucleus/factory.mjs plan --provider <linear|github> --tracker <fixture.json> --ghost <id> [--branch-prefix <prefix>] [--blueprint <ref>] [--no-save] [--json]";
 
 export function planMain(argv = process.argv.slice(2)) {
   const options = planArgs(argv);
@@ -307,6 +311,11 @@ export function planMain(argv = process.argv.slice(2)) {
     branchPrefix: options.branchPrefix ?? DEFAULT_BRANCH_PREFIX,
   });
   const saved = options.noSave ? null : savePlan(plan, { ghostId: options.ghost });
+  if (options.json) {
+    process.stdout.write(`${redactSecrets(JSON.stringify(plan, null, 2))}\n`);
+    process.stderr.write(`Local state: ${saved ? "plan saved" : "not saved (--no-save)"}\n`);
+    return 0;
+  }
   process.stdout.write(renderPlanSummary(plan, { ghost }));
   process.stdout.write(`Local state: ${saved ? "plan saved" : "not saved (--no-save)"}\n`);
   return 0;

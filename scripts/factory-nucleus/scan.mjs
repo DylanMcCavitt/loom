@@ -7,7 +7,7 @@ import path from "node:path";
 import { resolveFactoryStatePaths, validateEnvelopeYaml, withArtifactMetadata } from "./schema.mjs";
 import { computeScienceLevel } from "./science.mjs";
 
-const USAGE = "Usage: node scripts/factory-nucleus/scan.mjs [--root <path>] [--save] [--content-scan] [--integrated-envelope]";
+const USAGE = "Usage: node scripts/factory-nucleus/scan.mjs [--root <path>] [--save] [--content-scan] [--integrated-envelope] [--json]";
 const COMMAND_KINDS = Object.freeze(["build", "test", "lint"]);
 const CONTENT_SCAN_IGNORES = new Set([".git", ".github", ".agents", "node_modules", "dist", "build", "coverage", ".loom"]);
 const INTEGRATED_ENVELOPE_PATH = ".agents/envelope/envelope.yaml";
@@ -83,7 +83,7 @@ function gitOutput(root, args) {
 }
 
 function readArgs(argv) {
-  const options = { root: process.cwd(), save: false, content: false, integratedEnvelope: false };
+  const options = { root: process.cwd(), save: false, content: false, integratedEnvelope: false, json: false };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === "--help" || arg === "-h") {
@@ -96,6 +96,10 @@ function readArgs(argv) {
     }
     if (arg === "--content-scan") {
       options.content = true;
+      continue;
+    }
+    if (arg === "--json") {
+      options.json = true;
       continue;
     }
     if (arg === "--integrated-envelope") {
@@ -608,6 +612,10 @@ export function main(argv = process.argv.slice(2)) {
   }
   let scan = scanFactory({ root: options.root, content: options.content, integratedEnvelope: options.integratedEnvelope });
   if (options.save) scan = saveScanState(scan, { root: options.root });
+  if (options.json) {
+    process.stdout.write(`${JSON.stringify(redactScanArtifact(scan), null, 2)}\n`);
+    return 0;
+  }
   process.stdout.write(formatScanSummary(scan));
   return 0;
 }
