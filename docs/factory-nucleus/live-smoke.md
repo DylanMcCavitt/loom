@@ -7,9 +7,12 @@ out). This page designs the **optional, opt-in** live tracker smoke that
 exercises the real trackers end to end — and explains why it stays out of the
 default checks.
 
-Status: this issue (FN-36) ships the **design + config + a skipped scaffold**.
-The live `create → verify → delete` implementation is deferred to a separate
-issue; nothing here authenticates, calls a tracker, or creates a live object.
+Status: FN-36 shipped the **design + config + a skipped scaffold**. FN-45 ships
+the **running GitHub Issues smoke** (`gh`-backed, opt-in, self-cleaning) — see
+the GitHub-only invocation below. The Linear half stays deferred to FN-46 /
+LOO-83 (transport decision pending); it never authenticates or creates a live
+object until then. Both halves gate independently via `resolveLiveSmokeConfig`
+(`githubReady` / `linearReady`).
 
 ## Why live smoke is outside the default checks
 
@@ -48,6 +51,14 @@ lists any missing required variables by name.
 LOO_LIVE_SMOKE=1 \
 LOO_LIVE_LINEAR_TEAM=<sandbox-team> LOO_LIVE_LINEAR_PROJECT=<sandbox-project> LINEAR_API_KEY=<token> \
 LOO_LIVE_GITHUB_REPO=<owner>/<sandbox-repo> GITHUB_TOKEN=<token> \
+node --test tests/factory-nucleus-live-smoke.test.mjs
+```
+
+The GitHub half (FN-45) runs today and needs only the GitHub sandbox env (`gh`
+reads `GITHUB_TOKEN` from the environment; the Linear half stays skipped):
+
+```
+LOO_LIVE_SMOKE=1 LOO_LIVE_GITHUB_REPO=<owner>/<sandbox-repo> GITHUB_TOKEN="$(gh auth token)" \
 node --test tests/factory-nucleus-live-smoke.test.mjs
 ```
 

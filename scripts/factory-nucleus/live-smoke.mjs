@@ -24,8 +24,9 @@ export const LIVE_SMOKE_ENV = Object.freeze({
 
 // Resolve the live-smoke config from an environment map (defaults to process.env).
 // Returns sandbox identifiers (not secrets) plus token *presence* booleans, the
-// list of missing required variable NAMES (never values), and whether a full run
-// is `ready`. Pure: no filesystem, no network, no auth.
+// list of missing required variable NAMES (never values), and readiness flags:
+// `githubReady`/`linearReady` per adapter and `ready` (both). Pure: no
+// filesystem, no network, no auth.
 export function resolveLiveSmokeConfig(env = process.env) {
   const enabled = env[LIVE_SMOKE_ENV.optIn] === "1";
   const team = env[LIVE_SMOKE_ENV.linearTeam] || null;
@@ -34,15 +35,22 @@ export function resolveLiveSmokeConfig(env = process.env) {
   const hasLinearToken = Boolean(env[LIVE_SMOKE_ENV.linearToken]);
   const hasGithubToken = Boolean(env[LIVE_SMOKE_ENV.githubToken]);
 
-  // Required for a full run; report absent variables by NAME only.
-  const required = [
+  // Per-adapter required variables; report absent ones by NAME only. The two
+  // adapters gate independently so a GitHub-only (or Linear-only) live smoke can
+  // opt in without configuring the other transport's sandbox.
+  const linearRequired = [
     [LIVE_SMOKE_ENV.linearTeam, Boolean(team)],
     [LIVE_SMOKE_ENV.linearProject, Boolean(project)],
     [LIVE_SMOKE_ENV.linearToken, hasLinearToken],
+  ];
+  const githubRequired = [
     [LIVE_SMOKE_ENV.githubRepo, Boolean(repo)],
     [LIVE_SMOKE_ENV.githubToken, hasGithubToken],
   ];
-  const missing = required.filter(([, present]) => !present).map(([name]) => name);
+  const linearMissing = linearRequired.filter(([, present]) => !present).map(([name]) => name);
+  const githubMissing = githubRequired.filter(([, present]) => !present).map(([name]) => name);
+  const linearReady = enabled && linearMissing.length === 0;
+  const githubReady = enabled && githubMissing.length === 0;
 
   return {
     enabled,
@@ -50,7 +58,31 @@ export function resolveLiveSmokeConfig(env = process.env) {
     github: repo ? { repo } : null,
     hasLinearToken,
     hasGithubToken,
-    missing,
-    ready: enabled && missing.length === 0,
+    linearMissing,
+    githubMissing,
+    missing: [...linearMissing, ...githubMissing],
+    linearReady,
+    githubReady,
+    ready: linearReady && githubReady,
   };
+}
+
+// Normalize a `gh issue view --json number,title,state,labels,stateReason`
+// payload into the GitHub adapter's fixture issue shape
+// (scripts/factory-nucleus/tracker-github.mjs). The gh CLI returns an uppercase
+// state/stateReason (e.g. "OPEN"/"CLOSED"/"NOT_PLANNED") and label objects,
+// whereas the adapter expects REST-style lowercase state and string labels; this
+// bridges the live `gh` shape to the adapter contract. Pure: no network.
+export function normalizeGithubIssue(raw = {}) {
+  const labels = (raw.labels ?? [])
+    .map((label) => (typeof label === "string" ? label : label?.name))
+    .filter((name) => name != null);
+  const issue = {
+    number: raw.number,
+    title: raw.title,
+    state: raw.state ? String(raw.state).toLowerCase() : raw.state,
+    labels,
+  };
+  if (raw.stateReason != null) issue.stateReason = String(raw.stateReason).toLowerCase();
+  return issue;
 }
