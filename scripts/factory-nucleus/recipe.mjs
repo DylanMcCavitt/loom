@@ -104,11 +104,24 @@ export function permitsGithubWrites(envelope) {
   return !branchGate || branchGate.outcome === "allow";
 }
 
+// Autonomous merge is allowed ONLY when the envelope explicitly enables it AND
+// every quality gate is satisfied: green CI, clean radar, proven proof. Strict
+// === true checks mean any missing/false signal (or no envelope) denies merge,
+// so autonomous merge is never enabled by default.
+export function permitsAutonomousMerge({ envelope, ciGreen, radarClean, proofProven } = {}) {
+  return (
+    envelope?.delivery?.autoMerge === true &&
+    ciGreen === true &&
+    radarClean === true &&
+    proofProven === true
+  );
+}
+
 // Produce a schema-valid ghost-to-launch recipe-plan for one ready ghost. Pure:
 // no filesystem, no network, no mutation of the ghost or tracker. Throws if the
 // ghost is not ready (by neutral state, and by tracker readiness when a tracker
 // is supplied so an undone dependency also blocks planning).
-export function planGhostToLaunch({ ghost, tracker, blueprint, branchPrefix = DEFAULT_BRANCH_PREFIX, generatedAt, envelope } = {}) {
+export function planGhostToLaunch({ ghost, tracker, blueprint, branchPrefix = DEFAULT_BRANCH_PREFIX, generatedAt, envelope, launch = {} } = {}) {
   if (!ghost || typeof ghost !== "object") throw new Error("planGhostToLaunch requires a ghost");
   if (!ghost.id) throw new Error("planGhostToLaunch requires a ghost with an id");
   if (ghost.state !== READY_STATE) {
@@ -121,6 +134,7 @@ export function planGhostToLaunch({ ghost, tracker, blueprint, branchPrefix = DE
 
   const branch = branchForGhost({ ghostId: ghost.id, title: ghost.title, branchPrefix });
   const writesAllowed = permitsGithubWrites(envelope);
+  const launched = permitsAutonomousMerge({ envelope, ...launch });
 
   const stages = GHOST_TO_LAUNCH_STAGES.map((spec) => {
     const plannedActions = [...spec.actions];
@@ -151,7 +165,7 @@ export function planGhostToLaunch({ ghost, tracker, blueprint, branchPrefix = DE
   }
   const plannedActions = referenced.map((id) => plannedAction(id, ghost, branch, blueprint));
 
-  const plan = withArtifactMetadata("recipe-plan", { recipe: RECIPE_NAME, mode: "plan", launchState: "launch-ready", stages, plannedActions }, generatedAt);
+  const plan = withArtifactMetadata("recipe-plan", { recipe: RECIPE_NAME, mode: "plan", launchState: launched ? "launched" : "launch-ready", stages, plannedActions }, generatedAt);
   const result = validateRecipePlan(plan);
   if (!result.ok) throw new Error(`invalid ghost-to-launch plan for ${ghost.id}: ${result.errors.join("; ")}`);
   return plan;

@@ -12,6 +12,7 @@ import { createLinearTracker } from "../scripts/factory-nucleus/tracker-linear.m
 import {
   assessWriteScopes,
   GHOST_TO_LAUNCH_STAGE_NAMES,
+  permitsAutonomousMerge,
   permitsGithubWrites,
   planGhostToLaunch,
   planMain,
@@ -448,4 +449,74 @@ test("no envelope keeps the default branch/PR actions", () => {
 
   const roboports = plan.stages.find((stage) => stage.name === "roboports-implementation");
   assert.deepEqual(roboports.plannedActions, ["branch", "pr"]);
+});
+
+test("permitsAutonomousMerge requires explicit permission and all quality gates", () => {
+  assert.equal(
+    permitsAutonomousMerge({ envelope: { delivery: { autoMerge: true } }, ciGreen: true, radarClean: true, proofProven: true }),
+    true,
+  );
+
+  // Missing permission denies, with or without an envelope.
+  assert.equal(
+    permitsAutonomousMerge({ envelope: { delivery: { autoMerge: false } }, ciGreen: true, radarClean: true, proofProven: true }),
+    false,
+  );
+  assert.equal(permitsAutonomousMerge({ ciGreen: true, radarClean: true, proofProven: true }), false);
+
+  // Any failing quality gate denies, even with explicit permission.
+  assert.equal(
+    permitsAutonomousMerge({ envelope: { delivery: { autoMerge: true } }, ciGreen: false, radarClean: true, proofProven: true }),
+    false,
+  );
+  assert.equal(
+    permitsAutonomousMerge({ envelope: { delivery: { autoMerge: true } }, ciGreen: true, radarClean: false, proofProven: true }),
+    false,
+  );
+  assert.equal(
+    permitsAutonomousMerge({ envelope: { delivery: { autoMerge: true } }, ciGreen: true, radarClean: true, proofProven: false }),
+    false,
+  );
+
+  // No args at all denies (never enabled by default).
+  assert.equal(permitsAutonomousMerge(), false);
+
+  // Truthy-but-not-true signals must NOT arm the safety-critical merge gate.
+  assert.equal(
+    permitsAutonomousMerge({ envelope: { delivery: { autoMerge: true } }, ciGreen: 1, radarClean: "yes", proofProven: {} }),
+    false,
+  );
+});
+
+test("autonomous merge is not enabled by default (plan stops at launch-ready)", () => {
+  const plan = planGhostToLaunch({ ghost: linearTracker().getGhost("LOO-2"), tracker: linearTracker(), generatedAt });
+
+  assert.equal(plan.launchState, "launch-ready");
+  assert.equal(validateRecipePlan(plan).ok, true);
+});
+
+test("explicit permission + green CI + clean radar + proven proof launches", () => {
+  const plan = planGhostToLaunch({
+    ghost: linearTracker().getGhost("LOO-2"),
+    tracker: linearTracker(),
+    generatedAt,
+    envelope: { delivery: { autoMerge: true } },
+    launch: { ciGreen: true, radarClean: true, proofProven: true },
+  });
+
+  assert.equal(plan.launchState, "launched");
+  assert.equal(validateRecipePlan(plan).ok, true);
+});
+
+test("a failing quality gate keeps the plan at launch-ready", () => {
+  const plan = planGhostToLaunch({
+    ghost: linearTracker().getGhost("LOO-2"),
+    tracker: linearTracker(),
+    generatedAt,
+    envelope: { delivery: { autoMerge: true } },
+    launch: { ciGreen: true, radarClean: true, proofProven: false },
+  });
+
+  assert.equal(plan.launchState, "launch-ready");
+  assert.equal(validateRecipePlan(plan).ok, true);
 });
