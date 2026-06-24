@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 
-import { initEnvelope } from "../scripts/factory-nucleus/envelope.mjs";
+import { exportEnvelope, importEnvelope, initEnvelope, redactEnvelope } from "../scripts/factory-nucleus/envelope.mjs";
 import { resolveFactoryStatePaths, validateEnvelopeYaml } from "../scripts/factory-nucleus/schema.mjs";
 
 const factoryCli = new URL("../scripts/factory-nucleus/factory.mjs", import.meta.url).pathname;
@@ -276,4 +276,57 @@ test("factory bind-tracker rejects invalid binds and leaves the envelope unchang
       }
     });
   }
+});
+
+// A schema-valid envelope used for the portable export/import round-trip tests.
+const SAMPLE_ENVELOPE = {
+  schemaVersion: 1,
+  kind: "envelope",
+  generatedAt,
+  factory: { id: "loom", repo: { name: "loom", root: "." } },
+  tracker: { provider: "linear", team: "Loom", project: "Factory Nucleus" },
+  delivery: { defaultBranch: "main", branchPrefix: "factory", autoMerge: false },
+  proof: { commands: ["npm run check"] },
+  agents: { maxSubagents: 4, allowFullTranscriptCapture: false },
+  circuits: [
+    { name: "proof-required", gate: "proof", outcome: "block", enforcement: "validate", reason: "Launch requires proof." },
+  ],
+};
+
+test("envelope export/import round-trips a clean durable policy", () => {
+  const { yaml, envelope } = exportEnvelope(SAMPLE_ENVELOPE);
+  // A clean envelope has nothing to redact, so export preserves the policy.
+  assert.deepEqual(envelope, SAMPLE_ENVELOPE);
+  assert.equal(validateEnvelopeYaml(yaml).ok, true);
+  assert.deepEqual(importEnvelope(yaml), SAMPLE_ENVELOPE);
+});
+
+test("envelope export redacts secret-looking values and still validates", () => {
+  const withSecret = {
+    ...SAMPLE_ENVELOPE,
+    delivery: { ...SAMPLE_ENVELOPE.delivery, branchPrefix: "ghp_branchsecret0123456789" },
+    proof: { commands: ["npm run check", "deploy --key sk-livesecret0123456789"] },
+  };
+  const { yaml } = exportEnvelope(withSecret);
+
+  // The secret bodies must not survive export; redaction markers replace them.
+  assert.doesNotMatch(yaml, /livesecret0123456789/u);
+  assert.doesNotMatch(yaml, /branchsecret0123456789/u);
+  assert.match(yaml, /\[REDACTED\]/u);
+
+  // The redacted export still validates and round-trips to the redacted policy.
+  assert.equal(validateEnvelopeYaml(yaml).ok, true);
+  assert.deepEqual(importEnvelope(yaml), redactEnvelope(withSecret));
+});
+
+test("envelope import rejects schema-invalid input", () => {
+  assert.throws(
+    () => importEnvelope("schemaVersion: 1\nkind: envelope\n"),
+    /invalid imported envelope/u,
+  );
+});
+
+test("envelope export fails closed on an invalid envelope", () => {
+  const broken = { ...SAMPLE_ENVELOPE, tracker: { provider: "gitlab" } };
+  assert.throws(() => exportEnvelope(broken), /refusing to export an invalid envelope/u);
 });

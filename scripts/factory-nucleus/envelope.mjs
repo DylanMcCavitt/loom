@@ -199,6 +199,44 @@ export function bindTracker({ root = process.cwd(), homeDir = process.env.HOME |
   return { envelope, path: state.envelope, repoRoot, tracker };
 }
 
+// Recursively redact secret-looking string values from an envelope so a copy
+// can be shared. Mirrors scan.mjs's redactScanArtifact for the envelope shape;
+// the envelope already carries only a relative repo root, so no home/state
+// paths are present to leak.
+function redactEnvelopeValues(value) {
+  if (typeof value === "string") return redactSecrets(value);
+  if (Array.isArray(value)) return value.map(redactEnvelopeValues);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, nested]) => [key, redactEnvelopeValues(nested)]));
+  }
+  return value;
+}
+
+export function redactEnvelope(envelope) {
+  return redactEnvelopeValues(envelope);
+}
+
+// Export durable envelope policy as portable, redacted YAML: secret-looking
+// values are stripped, and the output is re-validated so a redaction that
+// somehow broke the schema fails closed rather than exporting junk. The result
+// round-trips through importEnvelope.
+export function exportEnvelope(envelope) {
+  const redacted = redactEnvelope(envelope);
+  const yaml = renderEnvelopeYaml(redacted);
+  const validation = validateEnvelopeYaml(yaml);
+  if (!validation.ok) throw new Error(`refusing to export an invalid envelope: ${validation.errors.join("; ")}`);
+  return { envelope: redacted, yaml };
+}
+
+// Import a portable envelope: validate against the envelope schema, then return
+// the parsed durable policy. Throws on schema-invalid input so a caller never
+// trusts an unverified envelope.
+export function importEnvelope(text) {
+  const validation = validateEnvelopeYaml(text);
+  if (!validation.ok) throw new Error(`invalid imported envelope: ${validation.errors.join("; ")}`);
+  return parseYaml(text);
+}
+
 export function main(argv = process.argv.slice(2)) {
   const options = readArgs(argv);
   if (options.help) {
