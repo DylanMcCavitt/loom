@@ -148,12 +148,13 @@ function planArgs(argv) {
   return options;
 }
 
-function buildTracker(provider, fixturePath, generatedAt) {
+function buildTracker(provider, fixturePath) {
+  if (provider !== "linear" && provider !== "github") {
+    throw new Error(`Unknown tracker provider: ${provider} (expected linear or github)`);
+  }
   const resolved = fixturePath.startsWith("file://") ? fileURLToPath(fixturePath) : fixturePath;
   const fixture = JSON.parse(readFileSync(resolved, "utf8"));
-  if (provider === "linear") return createLinearTracker(fixture, { generatedAt });
-  if (provider === "github") return createGithubTracker(fixture, { generatedAt });
-  throw new Error(`Unknown tracker provider: ${provider} (expected linear or github)`);
+  return provider === "linear" ? createLinearTracker(fixture) : createGithubTracker(fixture);
 }
 
 const PLAN_USAGE = "Usage: node scripts/factory-nucleus/factory.mjs plan --provider <linear|github> --tracker <fixture.json> --ghost <id> [--branch-prefix <prefix>] [--blueprint <ref>]";
