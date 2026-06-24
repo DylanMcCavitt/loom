@@ -25,6 +25,9 @@ export const RECIPE_NAME = "ghost-to-launch";
 const READY_STATE = "ready";
 const DEFAULT_BRANCH_PREFIX = "factory";
 
+// GitHub write actions (branch + PR) gated by the envelope's branch circuit.
+const GITHUB_WRITE_ACTIONS = Object.freeze(["branch", "pr"]);
+
 // The ordered ghost-to-launch pipeline. Each stage names its step, the circuits
 // that gate it, and the ids of the planned actions it would drive. `blueprintAware`
 // stages additionally read the blueprint when one is supplied.
@@ -63,6 +66,8 @@ function plannedAction(id, ghost, branch, blueprint) {
       return { id, kind: "read", target: `${ghostId} merge-eligibility`, durable: false };
     case "sync-radar":
       return { id, kind: "read", target: `${ghostId} post-launch`, durable: false };
+    case "request-writes":
+      return { id, kind: "read", target: `${ghostId} github-writes`, durable: false };
     default:
       throw new Error(`internal: no planned action spec for ${id}`);
   }
@@ -89,11 +94,21 @@ export function resolveStageWriteScopes(stage) {
   return { ...stage, status: "escalated", writeConflicts: conflicts };
 }
 
+// GitHub writes (branch + PR, short of merge) are gated by the envelope's
+// "branch" circuit. No envelope / no branch circuit => unconstrained planning.
+// The separate "merge" gate is intentionally NOT consulted here.
+export function permitsGithubWrites(envelope) {
+  const circuits = envelope?.circuits;
+  if (!Array.isArray(circuits)) return true;
+  const branchGate = circuits.find((c) => c?.gate === "branch");
+  return !branchGate || branchGate.outcome === "allow";
+}
+
 // Produce a schema-valid ghost-to-launch recipe-plan for one ready ghost. Pure:
 // no filesystem, no network, no mutation of the ghost or tracker. Throws if the
 // ghost is not ready (by neutral state, and by tracker readiness when a tracker
 // is supplied so an undone dependency also blocks planning).
-export function planGhostToLaunch({ ghost, tracker, blueprint, branchPrefix = DEFAULT_BRANCH_PREFIX, generatedAt } = {}) {
+export function planGhostToLaunch({ ghost, tracker, blueprint, branchPrefix = DEFAULT_BRANCH_PREFIX, generatedAt, envelope } = {}) {
   if (!ghost || typeof ghost !== "object") throw new Error("planGhostToLaunch requires a ghost");
   if (!ghost.id) throw new Error("planGhostToLaunch requires a ghost with an id");
   if (ghost.state !== READY_STATE) {
@@ -105,6 +120,7 @@ export function planGhostToLaunch({ ghost, tracker, blueprint, branchPrefix = DE
   }
 
   const branch = branchForGhost({ ghostId: ghost.id, title: ghost.title, branchPrefix });
+  const writesAllowed = permitsGithubWrites(envelope);
 
   const stages = GHOST_TO_LAUNCH_STAGES.map((spec) => {
     const plannedActions = [...spec.actions];
@@ -119,6 +135,10 @@ export function planGhostToLaunch({ ghost, tracker, blueprint, branchPrefix = DE
         ...(sub.reads ? { reads: [...sub.reads] } : {}),
         ...(sub.writes ? { writes: [...sub.writes] } : {}),
       }));
+    }
+    if (!writesAllowed && stage.plannedActions.some((id) => GITHUB_WRITE_ACTIONS.includes(id))) {
+      stage.plannedActions = ["request-writes"];
+      stage.status = "escalated";
     }
     return resolveStageWriteScopes(stage);
   });

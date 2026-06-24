@@ -12,6 +12,7 @@ import { createLinearTracker } from "../scripts/factory-nucleus/tracker-linear.m
 import {
   assessWriteScopes,
   GHOST_TO_LAUNCH_STAGE_NAMES,
+  permitsGithubWrites,
   planGhostToLaunch,
   planMain,
   renderPlanSummary,
@@ -376,4 +377,63 @@ test("renderPlanSummary surfaces write conflicts", () => {
 
   const summary = renderPlanSummary(plan, { ghost });
   assert.match(summary, /write-conflicts: src/u);
+});
+
+test("permitsGithubWrites reads the branch circuit", () => {
+  assert.equal(permitsGithubWrites(undefined), true);
+  assert.equal(permitsGithubWrites({}), true);
+  assert.equal(permitsGithubWrites({ circuits: [{ gate: "branch", outcome: "allow" }] }), true);
+  assert.equal(permitsGithubWrites({ circuits: [{ gate: "branch", outcome: "block" }] }), false);
+  assert.equal(permitsGithubWrites({ circuits: [{ gate: "branch", outcome: "escalate" }] }), false);
+  // The merge gate governs merge, not PR writes, so it never blocks GitHub writes here.
+  assert.equal(permitsGithubWrites({ circuits: [{ gate: "merge", outcome: "block" }] }), true);
+});
+
+test("an allowing envelope keeps the branch/PR durable actions", () => {
+  const plan = planGhostToLaunch({
+    ghost: linearTracker().getGhost("LOO-2"),
+    tracker: linearTracker(),
+    generatedAt,
+    envelope: { circuits: [{ name: "writes-ok", gate: "branch", outcome: "allow" }] },
+  });
+
+  const roboports = plan.stages.find((stage) => stage.name === "roboports-implementation");
+  assert.deepEqual(roboports.plannedActions, ["branch", "pr"]);
+  assert.equal(roboports.status, "planned");
+  assert.equal(validateRecipePlan(plan).ok, true);
+});
+
+test("a blocking envelope drops PR writes and escalates, leaving merge separate", () => {
+  const plan = planGhostToLaunch({
+    ghost: linearTracker().getGhost("LOO-2"),
+    tracker: linearTracker(),
+    generatedAt,
+    envelope: { circuits: [{ name: "no-writes", gate: "branch", outcome: "block" }] },
+  });
+
+  const roboports = plan.stages.find((stage) => stage.name === "roboports-implementation");
+  assert.deepEqual(roboports.plannedActions, ["request-writes"]);
+  assert.equal(roboports.status, "escalated");
+
+  // No branch/PR write survives in the top-level planned actions.
+  assert.ok(!plan.plannedActions.some((action) => action.id === "pr"));
+  assert.ok(!plan.plannedActions.some((action) => action.id === "branch"));
+
+  // Merge planning is untouched: its stage and check-merge action remain.
+  const eligibility = plan.stages.find((stage) => stage.name === "rocket-launch-eligibility");
+  assert.ok(eligibility, "rocket-launch-eligibility stage still exists");
+  assert.ok(eligibility.plannedActions.includes("check-merge"));
+
+  assert.equal(validateRecipePlan(plan).ok, true);
+});
+
+test("no envelope keeps the default branch/PR actions", () => {
+  const plan = planGhostToLaunch({
+    ghost: linearTracker().getGhost("LOO-2"),
+    tracker: linearTracker(),
+    generatedAt,
+  });
+
+  const roboports = plan.stages.find((stage) => stage.name === "roboports-implementation");
+  assert.deepEqual(roboports.plannedActions, ["branch", "pr"]);
 });
