@@ -470,6 +470,18 @@ function redactScanArtifact(value) {
   return value;
 }
 
+// Diagnostic, non-authoritative max-subagent recommendation. The envelope's
+// agents.maxSubagents cap is the authority for recipe planning; this is only a
+// scan-time hint derived from the machine's available parallelism (capped).
+function recommendMaxSubagents() {
+  const parallelism = typeof os.availableParallelism === "function" ? os.availableParallelism() : os.cpus().length;
+  return {
+    value: Math.max(1, Math.min(parallelism, 8)),
+    authoritative: false,
+    basis: "available CPU parallelism (capped at 8); diagnostic only — the envelope agents.maxSubagents cap governs recipe planning",
+  };
+}
+
 
 export function scanFactory({ root = process.cwd(), generatedAt, content = false, integratedEnvelope = false } = {}) {
   const requestedRoot = path.resolve(root);
@@ -499,6 +511,9 @@ export function scanFactory({ root = process.cwd(), generatedAt, content = false
     integratedEnvelope: discoverIntegratedEnvelope(repoRoot, integratedEnvelope),
     protectedSurfaces,
     science,
+    recommendations: {
+      maxSubagents: recommendMaxSubagents(),
+    },
     localState: {
       writes: false,
     },
@@ -597,6 +612,7 @@ export function formatScanSummary(scan) {
     "Protected surface suggestions:",
     ...protectedSurfaceLines,
     `Science level: ${scan.science.level}`,
+    `Max subagents (diagnostic, non-authoritative): ${scan.recommendations.maxSubagents.value}`,
     "Missing unlocks:",
     ...missingUnlockLines,
     ...contentLines,
