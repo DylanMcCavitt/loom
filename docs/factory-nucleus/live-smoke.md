@@ -112,5 +112,33 @@ The live smoke **owns and removes everything it creates**:
    immediately and auto-purged after Linear's grace period; `permanentlyDelete` is
    admin-only, so the default delete stays portable for any sandbox key).
 
+## Opt-in CI (manual dispatch)
+
+The live smoke also runs in CI on demand, via the separate
+`.github/workflows/live-smoke.yml` workflow (FN-47). It is triggered **only by
+manual `workflow_dispatch`** — never on push or pull request — so the default
+`.github/workflows/check.yml` stays the hermetic, always-on pipeline and never
+runs live smoke. Being a separate workflow, a live-smoke failure is **advisory**:
+it never blocks the default `check` run.
+
+The job installs deps, sets `LOO_LIVE_SMOKE=1`, and runs only
+`tests/factory-nucleus-live-smoke.test.mjs` with the sandbox env supplied from
+**repo secrets** (optionally overridden per run by dispatch inputs). Nothing
+secret is committed; the workflow only references secrets:
+
+| Secret | Role |
+| --- | --- |
+| `LIVE_SMOKE_LINEAR_KEY` | Linear personal API key for the sandbox workspace |
+| `LIVE_SMOKE_LINEAR_TEAM` | disposable Linear team (key/name/id); never the real team |
+| `LIVE_SMOKE_LINEAR_PROJECT` | disposable Linear project (name/id) |
+| `LIVE_SMOKE_GITHUB_PAT` | PAT with issue access to the sandbox repo |
+| `LIVE_SMOKE_GITHUB_REPO` | disposable GitHub sandbox repo (`owner/name`); never production |
+
+`LIVE_SMOKE_GITHUB_PAT` is a personal access token, **not** the Actions-provided
+`GITHUB_TOKEN`: the GitHub half writes issues to a *different* sandbox repo, which
+the default token cannot reach. Because both adapter halves run, configure the
+Linear and GitHub secrets together — a partial set makes the Linear half skip and
+the GitHub half fail fast.
+
 Non-goals: no GitHub Projects; live smoke is never the default path and never
 targets a real planning team or production repo.
