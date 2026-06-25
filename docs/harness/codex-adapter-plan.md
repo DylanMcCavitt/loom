@@ -170,6 +170,13 @@ In dry-run (default, AFK-safe) it renders the Codex templates and the decided OM
 
 The gated `--write` path executes the strict-manual approval policy below; it never bypasses it. It refuses to run unless the dry-run render and the safety gate pass clean, is create-missing-only (skips any existing non-marker live file with `exists:` and leaves user edits intact), backs up any kit-owned marker before updating it, and applies idempotently against a marker manifest (`~/.loom-harness/applied-manifest.json`) so a second run is a clean no-op.
 
+LOO-86 no longer activates the OMP-derived Codex custom-agent candidates. The direct
+`omp-*` role adapter path is paused because the target agent model changed: future
+activation should render shared Factorio workflow agents across OMP, Codex, and Claude,
+with no harness-specific prefix. The follow-up plan should define the canonical shared
+agent contract, delegation DAG, `repair-pack` finding-fix loop, eval harness, and only
+then a create-missing/marker-owned activation path.
+
 Run the repo-wide offline checks:
 
 ```sh

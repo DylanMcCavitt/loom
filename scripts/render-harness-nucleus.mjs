@@ -551,23 +551,23 @@ function liveInspect(candidate, homeRoot, marker) {
     livePath = resolveLivePath(candidate.destination, homeRoot);
   } catch {
     // Unsafe (traversing/absolute) destination — the preflight reports it; never resolve it live.
-    return { livePath: null, status: "unsafe-destination", overwriteRisk: "rejected (unsafe path)" };
+    return { livePath: null, status: "unsafe-destination", overwriteRisk: "rejected (unsafe path)", ownership: "none" };
   }
   if (!livePath) {
-    return { livePath: null, status: "not-home-scoped", overwriteRisk: "project-scoped (not resolved against HOME)" };
+    return { livePath: null, status: "not-home-scoped", overwriteRisk: "project-scoped (not resolved against HOME)", ownership: "none" };
   }
   if (!pathExists(livePath)) {
-    return { livePath, status: "absent", overwriteRisk: "no existing file" };
+    return { livePath, status: "absent", overwriteRisk: "no existing file", ownership: "none" };
   }
   const marked = Boolean(marker.entries[candidate.destination]);
   if (!marked) {
-    return { livePath, status: "user-file", overwriteRisk: "would not overwrite (existing non-marker file skipped)" };
+    return { livePath, status: "user-file", overwriteRisk: "would not overwrite (existing non-marker file skipped)", ownership: "user-file" };
   }
   const current = sha256(readFileSync(livePath));
   if (current === sha256(candidate.content)) {
-    return { livePath, status: "already-applied", overwriteRisk: "already applied (no change)" };
+    return { livePath, status: "already-applied", overwriteRisk: "already applied (no change)", ownership: "marker-owned" };
   }
-  return { livePath, status: "marker-outdated", overwriteRisk: "would update kit-owned marker (backup taken)" };
+  return { livePath, status: "marker-outdated", overwriteRisk: "would update kit-owned marker (backup taken)", ownership: "marker-owned" };
 }
 
 // --- marker manifest -------------------------------------------------------------------------
@@ -620,6 +620,7 @@ function buildManifest(candidates, localOnly, homeRoot, marker, mode) {
       operation: candidate.operation,
       appliable: candidate.appliable,
       liveStatus: live.status,
+      ownership: live.ownership,
       overwriteRisk: live.overwriteRisk,
       requiredApproval: candidate.appliable ? "strict-manual" : "n/a (reported only)",
     });
@@ -654,6 +655,7 @@ function printTextManifest(manifest, findings) {
     lines.push(`  operation: ${entry.operation}`);
     lines.push(`  applied: ${manifest.mode === "dry-run" ? "not-applied (dry-run)" : entry.liveStatus}`);
     lines.push(`  liveStatus: ${entry.liveStatus}`);
+    lines.push(`  ownership: ${entry.ownership}`);
     lines.push(`  overwriteRisk: ${entry.overwriteRisk}`);
     lines.push(`  requiredApproval: ${entry.requiredApproval}`);
   }
@@ -665,6 +667,7 @@ function printTextManifest(manifest, findings) {
     lines.push(`  disposition: ${entry.disposition}`);
     lines.push(`  operation: ${entry.operation}`);
     lines.push(`  liveStatus: ${entry.liveStatus}`);
+    lines.push(`  ownership: ${entry.ownership}`);
   }
   lines.push("");
   lines.push("[skipped local-only surfaces] (never rendered as write targets)");

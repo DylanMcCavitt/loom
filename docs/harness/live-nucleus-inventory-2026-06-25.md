@@ -10,7 +10,7 @@ Scope: read-only baseline for LOO-85 before any nucleus apply work. Commands bel
 
 ## Already effective
 
-- `~/.agents/skills` is present as a symlink to `/Users/dylanmccavitt/loom/.agents/skills`.
+- `~/.agents/skills` is present as a symlink to `<repo>/.agents/skills`.
 - OMP live tracked files are present as symlinks into the repo mirror:
   - `~/.omp/agent/AGENTS.md` -> `../../loom/omp/.omp/agent/AGENTS.md`.
   - `~/.omp/agent/RULES.md` -> `../../loom/omp/.omp/agent/RULES.md`.
@@ -24,7 +24,7 @@ Scope: read-only baseline for LOO-85 before any nucleus apply work. Commands bel
   - `~/.claude/CLAUDE.md` is a present file.
   - `~/.claude/settings.json` is a present file.
   - `~/.claude/agents/` is a present directory.
-  - `~/.claude/skills` is present as a symlink to `/Users/dylanmccavitt/loom/.agents/skills`.
+  - `~/.claude/skills` is present as a symlink to `<repo>/.agents/skills`.
 
 ## Planned but not live
 
@@ -70,4 +70,4 @@ The safety gate rejected local-only surfaces as write targets and reported them 
 
 ## Result
 
-Read-only baseline is captured. OMP is already effective through live symlinks to repo mirror files. Shared skills are effective through `~/.agents/skills -> /Users/dylanmccavitt/loom/.agents/skills`; Claude also points `~/.claude/skills` at that root. Codex custom-agent candidates are planned but absent. Claude generated candidates are planned but not live-applied. Existing live Codex and Claude files require future HITL review before any write path.
+Read-only baseline is captured. OMP is already effective through live symlinks to repo mirror files. Shared skills are effective through `~/.agents/skills -> <repo>/.agents/skills`; Claude also points `~/.claude/skills` at that root. Codex custom-agent candidates are planned but absent. Claude generated candidates are planned but not live-applied. Existing live Codex and Claude files require future HITL review before any write path.
