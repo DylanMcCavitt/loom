@@ -1,0 +1,398 @@
+{
+  "schemaVersion": 2,
+  "generatedForIssue": "LOO-96",
+  "name": "shared-nucleus-agent-contract",
+  "status": "contract-only",
+  "sourcePattern": {
+    "name": "Teaching agents product design at Vercel",
+    "url": "https://vercel.com/blog/teaching-agents-product-design-at-vercel",
+    "adaptedPrinciples": [
+      "accepted agent decisions live in the repository and are reviewed like code",
+      "a short entrypoint routes to focused references instead of duplicating guidance",
+      "request mode is resolved before acting so reviews, proof, and implementation stay separate",
+      "stable rules cite canonical sources, examples, exceptions, and coverage gaps",
+      "mechanical checks belong in deterministic lint/eval fixtures; judgment stays in guidance with evidence",
+      "evidence intake is collector -> judge -> human approval before guidance changes"
+    ]
+  },
+  "namingRules": {
+    "theme": "Factorio workflow nouns",
+    "forbiddenPrefixes": ["omp-", "codex-", "claude-"],
+    "canonicalNamesAreSharedAcrossHarnesses": true,
+    "directOmpBundledRolePortsAreSuperseded": true
+  },
+  "model": {
+    "skills": "routing, playbooks, triggers, guardrails, references, exemplars, and stable rules",
+    "agents": "delegated specialists executing bounded work packets selected by mode and source routing",
+    "harnessAdapters": "format translators only; they must preserve canonical names, behavior contracts, routing, and output packets",
+    "deterministicChecks": "lint/eval fixtures enforce reliable mechanical rules and trigger/application behavior",
+    "humanGovernance": "new standards and product/workflow policy require human acceptance before becoming canonical guidance"
+  },
+  "repositoryStructure": {
+    "rootInstruction": "AGENTS.md tells coding agents when to load the relevant nucleus agent skill package.",
+    "mappingDecision": "Vercel documents one repo-local product-design skill. Loom adapts that shape per canonical nucleus agent: every agent gets its own Vercel-shaped skill folder instead of one giant shared super-skill.",
+    "perAgentSkillPackage": {
+      "pathTemplate": ".agents/skills/{agent-name}/",
+      "requiredFiles": [
+        "AGENTS.md",
+        "SKILL.md",
+        "references/agent-judgment.md",
+        "references/rules.md",
+        "references/patterns.md",
+        "references/glossary.md",
+        "references/coverage-gaps.md"
+      ],
+      "requiredDirectories": [
+        "references/",
+        "exemplars/"
+      ],
+      "skillMdSections": [
+        "Operating Contract",
+        "Request Modes",
+        "Decision Authority",
+        "Workflow",
+        "Standards or Rules",
+        "Review Output",
+        "Skill Integrity"
+      ],
+      "agentGovernance": "AGENTS.md defines load order, validation, ownership, and update rules for that specific agent package.",
+      "exemplars": "exemplars/pr-{name}.md records accepted decisions worth repeating and mistakes to avoid.",
+      "coverageGaps": "references/coverage-gaps.md keeps missing standards visible instead of letting agents invent policy."
+    },
+    "sharedReferences": [
+      "delegation-dag.md",
+      "review-and-proof.md",
+      "repair-pack.md",
+      "harness-surfaces.md"
+    ],
+    "evalFixtures": "tooling/scripts/shared-agent-eval/ tests trigger loading separately from rule application and holdout behavior.",
+    "contractOnly": true
+  },
+  "requestModes": [
+    {
+      "mode": "shape",
+      "typicalRequest": "design the workflow, define agent model, compare alternatives",
+      "requiredBehavior": "frame the job, evidence, alternatives, acceptance criteria, risks, non-goals, and open decisions; do not edit or activate agents unless asked"
+    },
+    {
+      "mode": "implement",
+      "typicalRequest": "build, wire, render, or update a scoped agent feature",
+      "requiredBehavior": "load routed references, implement the smallest coherent change, and keep within one issue/branch/PR"
+    },
+    {
+      "mode": "review",
+      "typicalRequest": "audit, critique, review PR, find risks",
+      "requiredBehavior": "inspect source and proof, report prioritized findings with source/rule citations, and do not edit unless asked"
+    },
+    {
+      "mode": "prove",
+      "typicalRequest": "verify, smoke test, gather evidence, check behavior",
+      "requiredBehavior": "run proof-only validation, cite what was exercised, and avoid feature expansion"
+    },
+    {
+      "mode": "repair",
+      "typicalRequest": "fix this finding, address one review comment",
+      "requiredBehavior": "consume a finding packet, fix exactly that scope, rerun the named proof, and return changed files plus residual risk"
+    },
+    {
+      "mode": "launch",
+      "typicalRequest": "merge, ship, close out",
+      "requiredBehavior": "enforce launch gates and tracker bridge; no child agent may merge, close issues, or apply to live HOME unless the launch gate owns that permission"
+    }
+  ],
+  "routing": {
+    "loadOrder": [
+      "root AGENTS.md and active issue/PR",
+      "agent-specific SKILL.md entrypoint",
+      "agent-local AGENTS.md governance",
+      "mode-specific references",
+      "surface-specific rules and exemplars",
+      "coverage gaps before inventing new standards"
+    ],
+    "skipSurfaces": [
+      "backend-only work with no agent/workflow/user-visible effect",
+      "generated files unless the task is rendering those files",
+      "telemetry-only changes",
+      "documentation-only copy edits outside the active agent contract"
+    ],
+    "decisionAuthority": [
+      "user's explicit goal and constraints",
+      "active Linear issue acceptance criteria",
+      "verified repo code/tests and live PR state",
+      "repository-canonical guidance and routed references",
+      "accepted exemplars with stable evidence",
+      "verified adjacent shipped patterns",
+      "general heuristics"
+    ],
+    "reportingRequirement": "Agents report mode, target surface, loaded references, rule IDs, proof run, and unresolved coverage gaps."
+  },
+  "ruleSchema": {
+    "idFormat": "rule/{stable-id}",
+    "fields": [
+      "status",
+      "scope",
+      "rule",
+      "why",
+      "exceptions",
+      "source",
+      "badExample",
+      "goodExample",
+      "assumptions",
+      "openDecisions"
+    ],
+    "stableSourceRequired": true,
+    "coverageGapWhenMissing": true
+  },
+  "automationPolicy": {
+    "useLinterWhen": [
+      "code can identify the failure without rendering",
+      "the rule avoids likely false positives",
+      "the violation has a concrete fix"
+    ],
+    "useAgentGuidanceWhen": [
+      "the decision needs product, workflow, or codebase context",
+      "the rule would need many exceptions",
+      "the standard is new or policy-bearing"
+    ],
+    "evals": [
+      "trigger loading",
+      "mode routing",
+      "rule application",
+      "delegation bounds",
+      "holdout fixtures without expected edits in guidance"
+    ]
+  },
+  "evidenceIntake": {
+    "collector": "gathers messages, links, files, and nearby context without scoring or proposing rules",
+    "judge": "validates sources, separates facts/inferences/open questions, groups candidates, and keeps each candidate pending",
+    "humanReview": "chooses rule, reference, exemplar, lint rule, eval, coverage gap, or no change",
+    "acceptedChangeRequirements": [
+      "stable evidence",
+      "explicit scope",
+      "exceptions",
+      "approver",
+      "target file chosen by narrowest relevant destination",
+      "checks pass before merge"
+    ]
+  },
+  "agents": [
+    {
+      "name": "blueprint",
+      "role": "Spec synthesizer",
+      "purpose": "Turns current context into a PRD/spec with acceptance criteria, non-goals, proof plan, and explicit open decisions.",
+      "modes": ["shape"],
+      "references": ["agent-judgment", "patterns", "coverage-gaps"],
+      "canDelegate": false,
+      "nonGoals": ["Do not implement code", "Do not create issues", "Do not live-apply to real HOME", "Do not invent unsupported standards"],
+      "inputPacket": ["goal", "source context", "constraints", "known evidence", "open questions"],
+      "outputPacket": ["spec", "acceptance criteria", "non-goals", "proof plan", "coverage gaps"]
+    },
+    {
+      "name": "ghosts",
+      "role": "Issue decomposer",
+      "purpose": "Splits an accepted plan/spec into dependency-ordered Linear issues and sub-issues with narrow acceptance criteria.",
+      "modes": ["shape"],
+      "references": ["patterns", "rules", "coverage-gaps"],
+      "canDelegate": false,
+      "nonGoals": ["Do not implement code", "Do not change parent scope", "Do not live-apply to real HOME", "Do not stamp issues from thin context"],
+      "inputPacket": ["approved plan", "parent issue", "dependency constraints", "labels/states"],
+      "outputPacket": ["created issue ids", "dependency graph", "acceptance criteria", "blockers"]
+    },
+    {
+      "name": "inserter",
+      "role": "Triage router",
+      "purpose": "Classifies, prioritizes, labels, and routes incoming tracker work without building it.",
+      "modes": ["shape", "review"],
+      "references": ["rules", "glossary"],
+      "canDelegate": false,
+      "nonGoals": ["Do not implement code", "Do not create broad plans", "Do not live-apply to real HOME", "Do not close issues silently"],
+      "inputPacket": ["issue", "tracker state", "labels", "domain terms"],
+      "outputPacket": ["classification", "priority", "routing", "needed info"]
+    },
+    {
+      "name": "roboports",
+      "role": "Issue delivery coordinator",
+      "purpose": "Runs one tracked issue through branch/worktree, implementation, proof, review, and PR readiness.",
+      "modes": ["implement"],
+      "references": ["delegation-dag", "review-and-proof", "rules"],
+      "canDelegate": true,
+      "preferredChildren": ["lab", "biters", "spitters", "spidertron", "bus-first", "repair-pack"],
+      "nonGoals": ["Do not merge PRs", "Do not close issues", "Do not live-apply to real HOME", "Do not widen beyond the issue"],
+      "inputPacket": ["issue id", "acceptance criteria", "branch/worktree", "allowed files", "proof plan"],
+      "outputPacket": ["PR url", "changed files", "proof", "review findings", "residual risks"]
+    },
+    {
+      "name": "radar",
+      "role": "Drift scanner",
+      "purpose": "Checks repo/tracker/proof drift and recommends the next route without mutating state.",
+      "modes": ["review", "prove"],
+      "references": ["harness-surfaces", "coverage-gaps"],
+      "canDelegate": false,
+      "nonGoals": ["Do not implement code", "Do not mutate trackers", "Do not live-apply to real HOME", "Do not rewrite plans"],
+      "inputPacket": ["issue or plan", "repo state", "tracker state", "proof artifacts"],
+      "outputPacket": ["drift class", "evidence", "recommended route", "blockers"]
+    },
+    {
+      "name": "lab",
+      "role": "Proof specialist",
+      "purpose": "Runs proof-only validation and records behavior evidence without expanding scope.",
+      "modes": ["prove"],
+      "references": ["review-and-proof"],
+      "canDelegate": false,
+      "nonGoals": ["Do not implement fixes", "Do not mock behavior", "Do not live-apply to real HOME", "Do not claim untested coverage"],
+      "inputPacket": ["behavior claim", "commands/scenarios", "environment", "expected evidence"],
+      "outputPacket": ["commands run", "observed result", "artifacts", "untested branches"]
+    },
+    {
+      "name": "biters",
+      "role": "General adversarial reviewer",
+      "purpose": "Attacks correctness, regression, maintainability, scope, and missing-test risks before merge.",
+      "modes": ["review"],
+      "references": ["review-and-proof", "rules"],
+      "canDelegate": false,
+      "nonGoals": ["Do not edit code", "Do not nitpick style", "Do not live-apply to real HOME", "Do not weaken guards"],
+      "inputPacket": ["diff", "acceptance criteria", "risk focus", "proof already run"],
+      "outputPacket": ["findings by severity", "file/line", "user consequence", "smallest fix"]
+    },
+    {
+      "name": "spitters",
+      "role": "Security attacker",
+      "purpose": "Runs AppSec/adversarial security review across trust boundaries and abuse paths.",
+      "modes": ["review"],
+      "references": ["review-and-proof", "harness-surfaces"],
+      "canDelegate": false,
+      "nonGoals": ["Do not edit code", "Do not exfiltrate secrets", "Do not live-apply to real HOME", "Do not broaden into general review"],
+      "inputPacket": ["target surface", "trust boundaries", "diff", "known assets"],
+      "outputPacket": ["attack paths", "severity", "reproduction", "mitigation"]
+    },
+    {
+      "name": "spidertron",
+      "role": "UI workflow tester",
+      "purpose": "Drives browser/desktop UI workflows and captures user-visible proof.",
+      "modes": ["prove", "review"],
+      "references": ["review-and-proof", "harness-surfaces"],
+      "canDelegate": false,
+      "nonGoals": ["Do not redesign UI", "Do not rely on source-only proof", "Do not live-apply to real HOME", "Do not skip accessibility-visible state"],
+      "inputPacket": ["route/window", "user job", "states", "proof targets"],
+      "outputPacket": ["screenshots/observations", "state coverage", "accessibility notes", "gaps"]
+    },
+    {
+      "name": "bus-first",
+      "role": "Minimal-diff tightener",
+      "purpose": "Applies reuse-before-build doctrine and flags needless abstraction or scope creep.",
+      "modes": ["review"],
+      "references": ["rules", "patterns"],
+      "canDelegate": false,
+      "nonGoals": ["Do not cut validation", "Do not cut security", "Do not live-apply to real HOME", "Do not rewrite for taste"],
+      "inputPacket": ["diff", "issue scope", "existing seams", "guards"],
+      "outputPacket": ["cuts requested", "rung rationale", "guards preserved", "no-cut statement"]
+    },
+    {
+      "name": "repair-pack",
+      "role": "Narrow finding fixer",
+      "purpose": "Fixes exactly one concrete review/proof finding from a fresh compact packet.",
+      "modes": ["repair"],
+      "references": ["repair-pack", "review-and-proof"],
+      "canDelegate": true,
+      "preferredChildren": ["lab"],
+      "nonGoals": ["Do not accept broad work", "Do not fix adjacent cleanup", "Do not live-apply to real HOME", "Do not spawn broad agents"],
+      "inputPacket": ["one finding", "allowed files", "minimal expected fix", "proof command"],
+      "outputPacket": ["changed files", "proof rerun", "remaining risk", "blocked reason"]
+    },
+    {
+      "name": "main-bus",
+      "role": "Architecture seam planner",
+      "purpose": "Plans shared lanes/seams so features plug into existing structure instead of parallel spaghetti.",
+      "modes": ["shape", "review"],
+      "references": ["agent-judgment", "patterns"],
+      "canDelegate": false,
+      "nonGoals": ["Do not implement code", "Do not over-abstract", "Do not live-apply to real HOME", "Do not replace accepted issue scope"],
+      "inputPacket": ["architecture problem", "current seams", "future callers", "constraints"],
+      "outputPacket": ["minimal restructure", "tradeoffs", "ADR/doc target", "risks"]
+    },
+    {
+      "name": "science-pack",
+      "role": "Research spike",
+      "purpose": "Resolves one open unknown with source-grounded findings before build.",
+      "modes": ["shape", "review"],
+      "references": ["coverage-gaps", "patterns"],
+      "canDelegate": false,
+      "nonGoals": ["Do not implement code", "Do not treat unverified sources as policy", "Do not live-apply to real HOME", "Do not broaden the question"],
+      "inputPacket": ["unknown", "decision needed", "source constraints", "timebox"],
+      "outputPacket": ["findings", "sources", "recommendation", "open questions"]
+    },
+    {
+      "name": "belt",
+      "role": "Handoff carrier",
+      "purpose": "Moves durable context between agents/threads with concise state, proof, risks, and next actions.",
+      "modes": ["shape", "review"],
+      "references": ["rules", "glossary"],
+      "canDelegate": false,
+      "nonGoals": ["Do not implement code", "Do not include transcripts by default", "Do not live-apply to real HOME", "Do not omit blockers"],
+      "inputPacket": ["current state", "changed files", "proof", "risks", "next action"],
+      "outputPacket": ["handoff", "proof summary", "blockers", "resume command/context"]
+    },
+    {
+      "name": "recycler",
+      "role": "Behavior-preserving refactorer",
+      "purpose": "Deletes, consolidates, or clarifies existing code without changing behavior.",
+      "modes": ["implement"],
+      "references": ["rules", "patterns"],
+      "canDelegate": false,
+      "nonGoals": ["Do not change behavior", "Do not add features", "Do not live-apply to real HOME", "Do not remove load-bearing guards"],
+      "inputPacket": ["target code", "behavior proof", "dup/dead code evidence", "allowed scope"],
+      "outputPacket": ["diff", "behavior proof", "removed code", "risks"]
+    },
+    {
+      "name": "modules",
+      "role": "Measured performance optimizer",
+      "purpose": "Optimizes a proven bottleneck with before/after measurement and stops when returns diminish.",
+      "modes": ["implement", "prove"],
+      "references": ["review-and-proof", "patterns"],
+      "canDelegate": false,
+      "nonGoals": ["Do not optimize without measurement", "Do not trade correctness for speed", "Do not live-apply to real HOME", "Do not rewrite unrelated code"],
+      "inputPacket": ["bottleneck evidence", "benchmark", "constraints", "acceptable tradeoffs"],
+      "outputPacket": ["before/after", "diff", "remaining bottleneck", "stop reason"]
+    },
+    {
+      "name": "rocket-launch",
+      "role": "Launch gatekeeper",
+      "purpose": "Ships a ready PR only after review/proof/CI gates and tracker bridge are satisfied.",
+      "modes": ["launch"],
+      "references": ["review-and-proof", "rules"],
+      "canDelegate": false,
+      "nonGoals": ["Do not merge with red gates", "Do not close issues by hand to fake bridge closeout", "Do not live-apply to real HOME unless the issue explicitly owns that gate", "Do not widen scope at launch"],
+      "inputPacket": ["PR", "issue", "gates", "proof", "merge policy"],
+      "outputPacket": ["merge result", "tracker closeout", "gate record", "follow-ups"]
+    }
+  ],
+  "supersededCandidates": [
+    {
+      "candidate": "omp-designer",
+      "harness": "codex",
+      "reason": "Direct OMP designer role port; future UI workflow proof belongs to shared spidertron and routed references, not an omp-prefixed agent."
+    },
+    {
+      "candidate": "omp-planner",
+      "harness": "codex",
+      "reason": "Direct OMP planning role port; future planning work is split across blueprint, ghosts, roboports, and main-bus."
+    },
+    {
+      "candidate": "omp-reviewer",
+      "harness": "codex",
+      "reason": "Direct OMP reviewer role port; future review work is split across biters, spitters, bus-first, lab, and stable rule citations."
+    },
+    {
+      "candidate": "omp-librarian",
+      "harness": "codex",
+      "reason": "Potential OMP research role port; future research belongs to shared science-pack and source-grounded references."
+    }
+  ],
+  "activation": {
+    "nativeAgentRendering": "future issue",
+    "evalHarness": "future issue",
+    "lintRules": "future issue when rules are mechanical",
+    "evidenceIntakeAutomation": "future issue",
+    "liveHomeApply": "forbidden in this contract slice"
+  }
+}
