@@ -175,6 +175,28 @@ test("--write applies create-missing-only, records markers, and a second run is 
   rmSync(home, { recursive: true, force: true });
 });
 
+test("dry-run verification reports marker ownership after write", () => {
+  const home = tempDir("render-home-");
+  try {
+    const write = runJson(["--write", "--home", home]);
+    assert.equal(write.result.status, 0, write.result.stderr);
+    const createdDestinations = write.manifest.actions
+      .filter((entry) => entry.action === "created")
+      .map((entry) => entry.destination);
+    assert.ok(createdDestinations.length > 0, "expected at least one created candidate");
+
+    const verify = runJson(["--home", home]);
+    assert.equal(verify.result.status, 0, verify.result.stderr);
+    for (const destination of createdDestinations) {
+      const candidate = verify.manifest.candidates.find((entry) => entry.destination === destination);
+      assert.equal(candidate?.liveStatus, "already-applied", `${destination} must verify as applied`);
+      assert.equal(candidate?.ownership, "marker-owned", `${destination} must verify as marker-owned`);
+    }
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
 test("--write skips a pre-existing non-marker user file and leaves it byte-for-byte intact", () => {
   const home = tempDir("render-home-");
   mkdirSync(path.join(home, ".codex", "agents"), { recursive: true });
