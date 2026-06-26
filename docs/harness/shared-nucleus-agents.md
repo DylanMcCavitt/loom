@@ -63,7 +63,7 @@ Shared nucleus packages run as a staged DAG, not an ad hoc nested swarm. The par
 Global policy:
 
 - Maximum autonomous depth is 3: root issue/PR owner at depth 0, each child wave increments depth by one.
-- Stop when depth is exhausted, no allowed child exists for the mode/scope, a packet would widen scope, a coverage gap blocks the decision, proof is red before launch, or native rendering/live HOME apply/merge/closeout is requested outside its gate.
+- Stop when depth is exhausted, no allowed child exists for the mode/scope, a packet would widen scope, a coverage gap blocks the decision, proof is red before launch, or native rendering/live HOME apply/merge/closeout is requested in this contract slice.
 - Child agents never merge PRs, close Linear issues, apply generated files to live HOME, create native OMP/Codex/Claude agent files in this contract slice, or invent standards when references are missing.
 - Every wave transition records parent, child agents, issue/PR id, mode, scope, loaded references, allowed next agents, proof state, and stop reason.
 
@@ -76,7 +76,7 @@ Mode boundaries:
 | `review` | `biters`, `spitters`, `bus-first`, `radar`, `main-bus`, `science-pack`, `belt` | Edit code, run broad implementation, merge/close issues, claim proof. |
 | `prove` | `lab`, `spidertron`, `radar`, `belt` | Change behavior, add features, mock proof, claim unexercised branches. |
 | `repair` | `repair-pack`, `lab`, `biters`, `bus-first` | Fix adjacent cleanup, accept multiple findings, change acceptance criteria, skip named proof. |
-| `launch` | `rocket-launch`, `lab`, `radar`, `belt` | Merge with red gates, close issues by hand, change scope, bypass tracker bridge. |
+| `launch` | `rocket-launch`, `lab`, `radar`, `belt` | Merge PRs, close Linear issues, live HOME apply, native agent rendering, change scope, bypass tracker bridge. |
 
 Per-agent child lists and wave-advance authority live in `agentDelegation` in `docs/harness/shared-nucleus-agents.json`. Review and proof may fan out in parallel across distinct lenses such as correctness, security, user-visible behavior, minimal diff, and workflow drift. Implementation children may run in parallel only when packets name disjoint files or the parent owns all integration edits.
 

@@ -185,7 +185,7 @@
       "requested action would widen beyond the parent packet",
       "coverage gap blocks a rule, standard, or source needed for the next step",
       "proof is red or missing before launch",
-      "native agent rendering, live HOME apply, PR merge, or issue closeout is requested outside the launch gate"
+      "native agent rendering, live HOME apply, PR merge, or issue closeout is requested in this contract slice"
     ],
     "forbiddenAutonomousActions": [
       "merge PRs",
@@ -229,8 +229,8 @@
     {
       "mode": "launch",
       "allowedNextAgents": ["rocket-launch", "lab", "radar", "belt"],
-      "forbiddenActions": ["merge with red gates", "close issues by hand", "change scope", "bypass tracker bridge"],
-      "advanceRule": "Only rocket-launch may perform the launch gate; proof/radar/belt may only provide evidence."
+      "forbiddenActions": ["merge PRs", "close Linear issues", "live HOME apply", "native agent rendering", "change scope", "bypass tracker bridge"],
+      "advanceRule": "Rocket-launch records launch-gate evidence for the tracker bridge; proof/radar/belt may only provide evidence."
     }
   ],
   "workflowTransitions": {
@@ -258,7 +258,8 @@
   "roboportsDAG": {
     "sequence": [
       "implement scoped issue work in one branch/worktree",
-      "fan out lab, biters, spitters, spidertron, and bus-first for proof and lens review",
+      "fan out lab, biters, spitters, and spidertron for proof and lens review",
+      "run bus-first after the first proof/review wave",
       "send one concrete finding at a time to repair-pack",
       "rerun the named proof through lab or the parent",
       "return review-ready PR packet to the parent; rocket-launch records launch-gate evidence while the tracker bridge owns closeout outside this contract slice"

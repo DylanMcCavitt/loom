@@ -90,6 +90,7 @@ test("delegation policy bounds autonomous waves and forbidden actions", () => {
   for (const stop of ["max depth reached", "coverage gap blocks a rule, standard, or source needed for the next step"]) {
     assert.ok(contract.delegationPolicy.hardStops.includes(stop), `${stop} must be a hard stop`);
   }
+  assert.ok(!contract.delegationPolicy.hardStops.some((stop) => /outside the launch gate/u.test(stop)));
   for (const action of ["merge PRs", "close Linear issues", "apply generated files to live HOME"]) {
     assert.ok(contract.delegationPolicy.forbiddenAutonomousActions.includes(action), `${action} must be forbidden`);
   }
@@ -105,7 +106,9 @@ test("delegation modes define allowed next agents and boundaries", () => {
   }
   const launch = contract.delegationModes.find((entry) => entry.mode === "launch");
   assert.ok(launch.allowedNextAgents.includes("rocket-launch"));
-  assert.ok(launch.forbiddenActions.some((action) => /red gates/u.test(action)));
+  for (const action of ["merge PRs", "close Linear issues", "live HOME apply", "native agent rendering"]) {
+    assert.ok(launch.forbiddenActions.includes(action), `${action} must be forbidden in launch mode`);
+  }
 });
 
 test("workflow transitions record orchestrator state and stop reasons", () => {
@@ -138,7 +141,8 @@ test("per-agent delegation lists are bounded to the canonical roster", () => {
 test("parallel fanout, roboports loop, and coverage gaps are explicit", () => {
   assert.ok(contract.parallelFanout.reviewProofLenses.includes("security"));
   assert.match(contract.parallelFanout.writeScopes, /disjoint files/u);
-  assert.ok(contract.roboportsDAG.sequence.some((step) => /lab, biters, spitters, spidertron/u.test(step)));
+  assert.ok(contract.roboportsDAG.sequence.some((step) => /lab, biters, spitters, and spidertron/u.test(step)));
+  assert.ok(contract.roboportsDAG.sequence.some((step) => /run bus-first after the first proof\/review wave/u.test(step)));
   assert.match(contract.roboportsDAG.loopBack, /repair-pack returns to lab/u);
   assert.match(contract.coverageGapPolicy.defaultAction, /stop or route/u);
   assert.ok(contract.coverageGapPolicy.routes.some((route) => /references\/coverage-gaps\.md/u.test(route)));
