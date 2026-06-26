@@ -18,14 +18,14 @@ display:
 task: 
   eager: preferred
   agentModelOverrides: 
+    designer: zai/glm-5.2
+    explore: google-antigravity/gemini-3.5-flash:high
+    librarian: openai-codex/gpt-5.5
     oracle: openai-codex/gpt-5.5:high
     plan: openai-codex/gpt-5.5:high
+    quick_task: google-antigravity/gemini-3.5-flash:high
     reviewer: openai-codex/gpt-5.5:high
     task: openai-codex/gpt-5.5:medium
-    designer: anthropic/claude-opus-4-8
-    explore: google-antigravity/gemini-3.5-flash:low
-    librarian: google-antigravity/gemini-3.5-flash:low
-    quick_task: google-antigravity/gemini-3.5-flash:low
 mcp: 
   discoveryMode: true
 advisor: 
@@ -38,10 +38,12 @@ inspect_image:
 checkpoint: 
   enabled: true
 modelRoles: 
-  default: openai-codex/gpt-5.5:medium
-  plan: openai-codex/gpt-5.5:off
-  slow: anthropic/claude-opus-4-8:xhigh
-  smol: google-antigravity/gemini-3.5-flash:low
+  plan: openai-codex/gpt-5.5:inherit
+  slow: openai-codex/gpt-5.5
+  smol: zai/glm-5.2:xhigh
+  advisor: anthropic/claude-opus-4-7
+  default: openai-codex/gpt-5.5:high
+  designer: google-antigravity/claude-opus-4-6
 dev: 
   autoqa: 
     consent: denied
@@ -58,3 +60,5 @@ retry:
       - anthropic/claude-opus-4-6
     anthropic/claude-opus-4-8: 
       - anthropic/claude-opus-4-6
+codexResets: 
+  autoRedeem: "yes"
