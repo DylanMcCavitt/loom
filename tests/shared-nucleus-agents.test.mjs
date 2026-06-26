@@ -136,6 +136,10 @@ test("per-agent delegation lists are bounded to the canonical roster", () => {
   }
   assert.deepEqual(contract.agentDelegation.lab.allowedChildren, []);
   assert.deepEqual(contract.agentDelegation.roboports.orderedWaves, [["lab", "biters", "spitters", "spidertron"], ["bus-first"], ["repair-pack"], ["lab"]]);
+  const rocketLaunch = contract.agents.find((agent) => agent.name === "rocket-launch");
+  assert.ok(!rocketLaunch.outputPacket.includes("merge result"));
+  assert.ok(!rocketLaunch.outputPacket.includes("tracker closeout"));
+  assert.ok(rocketLaunch.outputPacket.includes("tracker bridge evidence"));
 });
 
 test("parallel fanout, roboports loop, and coverage gaps are explicit", () => {

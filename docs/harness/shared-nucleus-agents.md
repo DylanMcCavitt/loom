@@ -116,7 +116,7 @@ Resolve conflicts in this order:
 | `belt` | Handoff carrier | `shape`, `review` | Moves durable context between agents/threads with concise state, proof, risks, and next actions. |
 | `recycler` | Behavior-preserving refactorer | `implement` | Deletes, consolidates, or clarifies existing code without changing behavior. |
 | `modules` | Measured performance optimizer | `implement`, `prove` | Optimizes a proven bottleneck with before/after measurement and stops when returns diminish. |
-| `rocket-launch` | Launch gatekeeper | `launch` | Ships a ready PR only after review/proof/CI gates and tracker bridge are satisfied. |
+| `rocket-launch` | Launch gatekeeper | `launch` | Records launch-gate readiness after review/proof/CI gates and tracker bridge evidence are satisfied. |
 
 ## Rule and evidence schema
 

@@ -477,13 +477,13 @@
     {
       "name": "rocket-launch",
       "role": "Launch gatekeeper",
-      "purpose": "Ships a ready PR only after review/proof/CI gates and tracker bridge are satisfied.",
+      "purpose": "Records launch-gate readiness only after review/proof/CI gates and tracker bridge evidence are satisfied.",
       "modes": ["launch"],
       "references": ["review-and-proof", "rules"],
       "canDelegate": false,
-      "nonGoals": ["Do not merge with red gates", "Do not close issues by hand to fake bridge closeout", "Do not live-apply to real HOME", "Do not widen scope at launch"],
-      "inputPacket": ["PR", "issue", "gates", "proof", "merge policy"],
-      "outputPacket": ["merge result", "tracker closeout", "gate record", "follow-ups"]
+      "nonGoals": ["Do not merge PRs in this contract slice", "Do not close issues by hand to fake bridge closeout", "Do not live-apply to real HOME", "Do not widen scope at launch"],
+      "inputPacket": ["PR", "issue", "gates", "proof", "tracker bridge evidence"],
+      "outputPacket": ["gate record", "tracker bridge evidence", "follow-ups"]
     }
   ],
   "supersededCandidates": [
