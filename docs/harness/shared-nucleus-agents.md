@@ -1,6 +1,6 @@
 # Shared nucleus agent contract
 
-Issue: LOO-96. Status: contract-only. This document defines the canonical shared agent model; it does not render or activate native OMP, Codex, or Claude agent files.
+Issues: LOO-96 base contract; LOO-97 autonomous delegation DAG. Status: contract-only. This document defines the canonical shared agent model; it does not render or activate native OMP, Codex, or Claude agent files.
 
 Source pattern: [Teaching agents product design at Vercel](https://vercel.com/blog/teaching-agents-product-design-at-vercel).
 
@@ -55,6 +55,34 @@ Every `SKILL.md` resolves mode before acting so audits do not become edits and p
 | `prove` | Verify behavior and collect evidence. | Proof-only; do not expand scope. |
 | `repair` | Fix one concrete finding from a compact packet. | One finding only; no drive-by cleanup. |
 | `launch` | Enforce merge/closeout gates. | No red gates; tracker bridge owns closeout. |
+
+## Autonomous delegation DAG
+
+Shared nucleus packages run as a staged DAG, not an ad hoc nested swarm. The parent agent that starts a wave owns integration, conflict resolution, final proof selection, and tracker/PR reporting.
+
+Global policy:
+
+- Maximum autonomous depth is 3: root issue/PR owner at depth 0, each child wave increments depth by one.
+- Stop when depth is exhausted, no allowed child exists for the mode/scope, a packet would widen scope, a coverage gap blocks the decision, proof is red before launch, or native rendering/live HOME apply/merge/closeout is requested outside its gate.
+- Child agents never merge PRs, close Linear issues, apply generated files to live HOME, create native OMP/Codex/Claude agent files in this contract slice, or invent standards when references are missing.
+- Every wave transition records parent, child agents, issue/PR id, mode, scope, loaded references, allowed next agents, proof state, and stop reason.
+
+Mode boundaries:
+
+| Mode | Allowed next agents | Forbidden autonomous actions |
+| --- | --- | --- |
+| `shape` | `blueprint`, `ghosts`, `main-bus`, `science-pack`, `radar`, `belt` | Implement code, render native agents, open launch PRs, merge, close issues. |
+| `implement` | `roboports`, `recycler`, `modules`, `lab`, `biters`, `spitters`, `spidertron`, `bus-first`, `repair-pack`, `belt` | Merge PRs, close issues, live HOME apply, delegate outside issue/worktree scope. |
+| `review` | `biters`, `spitters`, `bus-first`, `radar`, `main-bus`, `science-pack`, `belt` | Edit code, run broad implementation, merge/close issues, claim proof. |
+| `prove` | `lab`, `spidertron`, `radar`, `belt` | Change behavior, add features, mock proof, claim unexercised branches. |
+| `repair` | `repair-pack`, `lab`, `biters`, `bus-first` | Fix adjacent cleanup, accept multiple findings, change acceptance criteria, skip named proof. |
+| `launch` | `rocket-launch`, `lab`, `radar`, `belt` | Merge with red gates, close issues by hand, change scope, bypass tracker bridge. |
+
+Per-agent child lists and wave-advance authority live in `agentDelegation` in `docs/harness/shared-nucleus-agents.json`. Review and proof may fan out in parallel across distinct lenses such as correctness, security, user-visible behavior, minimal diff, and workflow drift. Implementation children may run in parallel only when packets name disjoint files or the parent owns all integration edits.
+
+`roboports` coordinates the implementation loop: implement the scoped issue in one branch/worktree; fan out `lab`, `biters`, `spitters`, and `spidertron` for proof and review; run `bus-first` after the first review/proof wave; send one concrete finding at a time to `repair-pack`; rerun named proof; return a review-ready PR packet to the parent. `rocket-launch` records launch-gate evidence while the tracker bridge owns closeout outside this contract slice.
+
+Coverage gaps stop or route work. Missing standards go to `references/coverage-gaps.md`, shape questions route to `blueprint`, `main-bus`, or `science-pack`, and deterministic checks are proposed only when the linter-vs-guidance rule passes.
 
 ## Decision authority
 
@@ -136,7 +164,7 @@ Every agent receives a bounded input packet and returns a bounded output packet.
 - report mode, target surface, loaded references, rule IDs, proof run, and unresolved coverage gaps;
 - no live HOME apply;
 - no scope widening beyond the packet;
-- no issue closeout or PR merge unless assigned by the specific launch gate;
+- no issue closeout or PR merge in this contract slice; launch records gates for the tracker bridge;
 - no native harness agent rendering in this contract slice.
 
 ## Superseded direct OMP-role candidates
@@ -148,9 +176,9 @@ Every agent receives a bounded input packet and returns a bounded output packet.
 
 These candidates may remain as historical adapter-plan context until a cleanup issue retires them from active renderer paths. They are not the desired shared nucleus agent model.
 
-## Deferred work
+## Related and deferred work
 
-- LOO-97 defines the autonomous delegation DAG and mode-bound delegation policy.
+- LOO-97 is this slice: autonomous delegation DAG and mode-bound delegation policy.
 - LOO-98 defines the `repair-pack` finding-fix loop.
 - LOO-99 adds retrieval-vs-application evals with judge and holdout fixtures.
 - LOO-100 retires OMP-prefixed active candidates.
