@@ -26,6 +26,7 @@ const EXPECTED_ROSTER = [
 ];
 
 const REQUEST_MODES = ["shape", "implement", "review", "prove", "repair", "launch"];
+const AGENT_NAMES = new Set(EXPECTED_ROSTER);
 const REQUIRED_RULE_FIELDS = [
   "status",
   "scope",
@@ -41,8 +42,8 @@ const REQUIRED_RULE_FIELDS = [
 const FORBIDDEN_PREFIXES = ["omp-", "codex-", "claude-"];
 
 test("shared nucleus agent contract records the canonical Factorio roster", () => {
-  assert.equal(contract.schemaVersion, 2);
-  assert.equal(contract.generatedForIssue, "LOO-96");
+  assert.equal(contract.schemaVersion, 3);
+  assert.equal(contract.generatedForIssue, "LOO-97");
   assert.equal(contract.status, "contract-only");
   assert.deepEqual(contract.agents.map((agent) => agent.name), EXPECTED_ROSTER);
   assert.equal(new Set(contract.agents.map((agent) => agent.name)).size, EXPECTED_ROSTER.length);
@@ -81,6 +82,75 @@ test("request modes are explicit and bounded", () => {
   }
   assert.match(markdown, /\| `shape` \|/u);
   assert.match(markdown, /\| `launch` \|/u);
+});
+
+test("delegation policy bounds autonomous waves and forbidden actions", () => {
+  assert.equal(contract.delegationPolicy.maxDepth, 3);
+  assert.match(contract.delegationPolicy.parentIntegrationOwnership, /parent/u);
+  for (const stop of ["max depth reached", "coverage gap blocks a rule, standard, or source needed for the next step"]) {
+    assert.ok(contract.delegationPolicy.hardStops.includes(stop), `${stop} must be a hard stop`);
+  }
+  assert.ok(!contract.delegationPolicy.hardStops.some((stop) => /outside the launch gate/u.test(stop)));
+  for (const action of ["merge PRs", "close Linear issues", "apply generated files to live HOME"]) {
+    assert.ok(contract.delegationPolicy.forbiddenAutonomousActions.includes(action), `${action} must be forbidden`);
+  }
+});
+
+test("delegation modes define allowed next agents and boundaries", () => {
+  assert.deepEqual(contract.delegationModes.map((entry) => entry.mode), REQUEST_MODES);
+  for (const entry of contract.delegationModes) {
+    assert.ok(entry.allowedNextAgents.length > 0, `${entry.mode} missing allowed next agents`);
+    assert.ok(entry.allowedNextAgents.every((agent) => AGENT_NAMES.has(agent)), `${entry.mode} has unknown child`);
+    assert.ok(entry.forbiddenActions.length > 0, `${entry.mode} missing forbidden actions`);
+    assert.ok(entry.advanceRule, `${entry.mode} missing advance rule`);
+  }
+  const launch = contract.delegationModes.find((entry) => entry.mode === "launch");
+  assert.ok(launch.allowedNextAgents.includes("rocket-launch"));
+  for (const action of ["merge PRs", "close Linear issues", "live HOME apply", "native agent rendering"]) {
+    assert.ok(launch.forbiddenActions.includes(action), `${action} must be forbidden in launch mode`);
+  }
+});
+
+test("workflow transitions record orchestrator state and stop reasons", () => {
+  for (const field of ["parentAgent", "childAgents", "issueOrPr", "mode", "scope", "loadedReferences", "allowedNextAgents", "proofState", "stopReason"]) {
+    assert.ok(contract.workflowTransitions.requiredFields.includes(field), `${field} transition field required`);
+  }
+  for (const state of ["planned", "passed", "failed", "blocked"]) {
+    assert.ok(contract.workflowTransitions.proofStates.includes(state), `${state} proof state required`);
+  }
+  assert.ok(contract.workflowTransitions.stopReasons.includes("coverage-gap"));
+  assert.match(markdown, /Every wave transition records parent, child agents, issue\/PR id/u);
+});
+
+test("per-agent delegation lists are bounded to the canonical roster", () => {
+  assert.deepEqual(Object.keys(contract.agentDelegation), EXPECTED_ROSTER);
+  const waveAdvancers = [];
+  for (const [agent, delegation] of Object.entries(contract.agentDelegation)) {
+    assert.ok(AGENT_NAMES.has(agent), `${agent} must be canonical`);
+    assert.ok(delegation.allowedChildren.every((child) => AGENT_NAMES.has(child)), `${agent} has unknown child`);
+    assert.equal(typeof delegation.mayAdvanceNextWave, "boolean", `${agent} missing wave authority`);
+    if (delegation.mayAdvanceNextWave) waveAdvancers.push(agent);
+  }
+  for (const agent of ["blueprint", "ghosts", "roboports", "repair-pack", "rocket-launch"]) {
+    assert.ok(waveAdvancers.includes(agent), `${agent} must be able to advance a wave`);
+  }
+  assert.deepEqual(contract.agentDelegation.lab.allowedChildren, []);
+  assert.deepEqual(contract.agentDelegation.roboports.orderedWaves, [["lab", "biters", "spitters", "spidertron"], ["bus-first"], ["repair-pack"], ["lab"]]);
+  const rocketLaunch = contract.agents.find((agent) => agent.name === "rocket-launch");
+  assert.ok(!rocketLaunch.outputPacket.includes("merge result"));
+  assert.ok(!rocketLaunch.outputPacket.includes("tracker closeout"));
+  assert.ok(rocketLaunch.outputPacket.includes("tracker bridge evidence"));
+});
+
+test("parallel fanout, roboports loop, and coverage gaps are explicit", () => {
+  assert.ok(contract.parallelFanout.reviewProofLenses.includes("security"));
+  assert.match(contract.parallelFanout.writeScopes, /disjoint files/u);
+  assert.ok(contract.roboportsDAG.sequence.some((step) => /lab, biters, spitters, and spidertron/u.test(step)));
+  assert.ok(contract.roboportsDAG.sequence.some((step) => /run bus-first after the first proof\/review wave/u.test(step)));
+  assert.match(contract.roboportsDAG.loopBack, /repair-pack returns to lab/u);
+  assert.match(contract.coverageGapPolicy.defaultAction, /stop or route/u);
+  assert.ok(contract.coverageGapPolicy.routes.some((route) => /references\/coverage-gaps\.md/u.test(route)));
+  assert.match(markdown, /Coverage gaps stop or route work/u);
 });
 
 test("routing has ordered load, skip, and decision-authority sources", () => {

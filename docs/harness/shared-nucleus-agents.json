@@ -1,6 +1,6 @@
 {
-  "schemaVersion": 2,
-  "generatedForIssue": "LOO-96",
+  "schemaVersion": 3,
+  "generatedForIssue": "LOO-97",
   "name": "shared-nucleus-agent-contract",
   "status": "contract-only",
   "sourcePattern": {
@@ -174,6 +174,126 @@
       "target file chosen by narrowest relevant destination",
       "checks pass before merge"
     ]
+  },
+  "delegationPolicy": {
+    "maxDepth": 3,
+    "depthModel": "Root issue/PR owner is depth 0; each autonomous child wave increments depth by one.",
+    "parentIntegrationOwnership": "The parent that spawned a wave owns integration, conflict resolution, final proof selection, and tracker/PR reporting.",
+    "hardStops": [
+      "max depth reached",
+      "no allowed child for the current mode and scope",
+      "requested action would widen beyond the parent packet",
+      "coverage gap blocks a rule, standard, or source needed for the next step",
+      "proof is red or missing before launch",
+      "native agent rendering, live HOME apply, PR merge, or issue closeout is requested in this contract slice"
+    ],
+    "forbiddenAutonomousActions": [
+      "merge PRs",
+      "close Linear issues",
+      "apply generated files to live HOME",
+      "create native OMP, Codex, or Claude agent files in this contract slice",
+      "invent new standards when references or rules are missing"
+    ]
+  },
+  "delegationModes": [
+    {
+      "mode": "shape",
+      "allowedNextAgents": ["blueprint", "ghosts", "main-bus", "science-pack", "radar", "belt"],
+      "forbiddenActions": ["implement code", "render native agents", "open launch PRs", "merge or close issues"],
+      "advanceRule": "Advance only from an accepted plan, issue decomposition, or documented coverage-gap route."
+    },
+    {
+      "mode": "implement",
+      "allowedNextAgents": ["roboports", "recycler", "modules", "lab", "biters", "spitters", "spidertron", "bus-first", "repair-pack", "belt"],
+      "forbiddenActions": ["merge PRs", "close issues", "live HOME apply", "delegate outside the issue/worktree scope"],
+      "advanceRule": "Advance through disjoint implementation scopes, then proof/review waves, then repair loops owned by the parent."
+    },
+    {
+      "mode": "review",
+      "allowedNextAgents": ["biters", "spitters", "bus-first", "radar", "main-bus", "science-pack", "belt"],
+      "forbiddenActions": ["edit code", "run broad implementation", "merge or close issues", "declare proof for untested behavior"],
+      "advanceRule": "Advance only by returning prioritized findings or a no-finding statement to the parent."
+    },
+    {
+      "mode": "prove",
+      "allowedNextAgents": ["lab", "spidertron", "radar", "belt"],
+      "forbiddenActions": ["change behavior", "add features", "mock proof", "claim unexercised branches"],
+      "advanceRule": "Advance only by returning observed evidence, artifacts, and untested branches."
+    },
+    {
+      "mode": "repair",
+      "allowedNextAgents": ["repair-pack", "lab", "biters", "bus-first"],
+      "forbiddenActions": ["fix adjacent cleanup", "accept multiple findings", "change acceptance criteria", "skip the named proof"],
+      "advanceRule": "Advance one concrete finding to one repair packet, then to the named proof/review rerun."
+    },
+    {
+      "mode": "launch",
+      "allowedNextAgents": ["rocket-launch", "lab", "radar", "belt"],
+      "forbiddenActions": ["merge PRs", "close Linear issues", "live HOME apply", "native agent rendering", "change scope", "bypass tracker bridge"],
+      "advanceRule": "Rocket-launch records launch-gate evidence for the tracker bridge; proof/radar/belt may only provide evidence."
+    }
+  ],
+  "workflowTransitions": {
+    "recordedBy": "parent orchestrator before and after every autonomous wave",
+    "requiredFields": [
+      "parentAgent",
+      "childAgents",
+      "issueOrPr",
+      "mode",
+      "scope",
+      "loadedReferences",
+      "allowedNextAgents",
+      "proofState",
+      "stopReason"
+    ],
+    "proofStates": ["not-required", "planned", "running", "passed", "failed", "blocked"],
+    "stopReasons": ["completed", "blocked", "max-depth", "coverage-gap", "red-proof", "scope-boundary", "no-allowed-child"]
+  },
+  "parallelFanout": {
+    "reviewProofLenses": ["correctness", "security", "user-visible behavior", "minimal diff", "workflow drift"],
+    "writeScopes": "Implementation children may run in parallel only when each packet names disjoint files or one parent owns all integration edits.",
+    "reviewScopes": "Review/proof children may inspect the same diff in parallel when each lens has a distinct finding contract.",
+    "coordination": "Siblings coordinate through the parent packet or explicit messages; they do not spawn a second unmanaged swarm."
+  },
+  "roboportsDAG": {
+    "sequence": [
+      "implement scoped issue work in one branch/worktree",
+      "fan out lab, biters, spitters, and spidertron for proof and lens review",
+      "run bus-first after the first proof/review wave",
+      "send one concrete finding at a time to repair-pack",
+      "rerun the named proof through lab or the parent",
+      "return review-ready PR packet to the parent; rocket-launch records launch-gate evidence while the tracker bridge owns closeout outside this contract slice"
+    ],
+    "loopBack": "repair-pack returns to lab and the parent; repeated findings require fresh compact packets.",
+    "stopConditions": ["no concrete finding", "coverage gap needs human decision", "red proof remains after repair", "launch gate not assigned"]
+  },
+  "coverageGapPolicy": {
+    "defaultAction": "stop or route instead of inventing new standards",
+    "routes": [
+      "record the missing standard in references/coverage-gaps.md",
+      "route shape questions to blueprint, main-bus, or science-pack",
+      "return blocker to parent when the issue acceptance criteria require human policy",
+      "propose deterministic checks only when the linter-vs-guidance rule passes"
+    ]
+  },
+  "agentDelegation": {
+    "blueprint": { "allowedChildren": ["main-bus", "science-pack", "ghosts", "belt"], "mayAdvanceNextWave": true },
+    "ghosts": { "allowedChildren": ["science-pack", "belt"], "mayAdvanceNextWave": true },
+    "inserter": { "allowedChildren": ["radar", "belt"], "mayAdvanceNextWave": false },
+    "roboports": { "allowedChildren": ["lab", "biters", "spitters", "spidertron", "bus-first", "repair-pack", "belt"], "orderedWaves": [["lab", "biters", "spitters", "spidertron"], ["bus-first"], ["repair-pack"], ["lab"]], "mayAdvanceNextWave": true },
+    "radar": { "allowedChildren": ["belt"], "mayAdvanceNextWave": false },
+    "lab": { "allowedChildren": [], "mayAdvanceNextWave": false },
+    "biters": { "allowedChildren": ["repair-pack", "belt"], "mayAdvanceNextWave": false },
+    "spitters": { "allowedChildren": ["repair-pack", "belt"], "mayAdvanceNextWave": false },
+    "spidertron": { "allowedChildren": ["repair-pack", "belt"], "mayAdvanceNextWave": false },
+    "bus-first": { "allowedChildren": ["repair-pack", "belt"], "mayAdvanceNextWave": false },
+    "repair-pack": { "allowedChildren": ["lab", "biters"], "mayAdvanceNextWave": true },
+    "main-bus": { "allowedChildren": ["science-pack", "blueprint", "belt"], "mayAdvanceNextWave": false },
+    "science-pack": { "allowedChildren": ["belt"], "mayAdvanceNextWave": false },
+    "belt": { "allowedChildren": [], "mayAdvanceNextWave": false },
+    "recycler": { "allowedChildren": ["lab", "biters", "bus-first", "repair-pack"], "mayAdvanceNextWave": true },
+    "modules": { "allowedChildren": ["lab", "biters", "bus-first", "repair-pack"], "mayAdvanceNextWave": true },
+    "rocket-launch": { "allowedChildren": ["lab", "radar", "belt"], "mayAdvanceNextWave": true }
   },
   "agents": [
     {
@@ -357,13 +477,13 @@
     {
       "name": "rocket-launch",
       "role": "Launch gatekeeper",
-      "purpose": "Ships a ready PR only after review/proof/CI gates and tracker bridge are satisfied.",
+      "purpose": "Records launch-gate readiness only after review/proof/CI gates and tracker bridge evidence are satisfied.",
       "modes": ["launch"],
       "references": ["review-and-proof", "rules"],
       "canDelegate": false,
-      "nonGoals": ["Do not merge with red gates", "Do not close issues by hand to fake bridge closeout", "Do not live-apply to real HOME unless the issue explicitly owns that gate", "Do not widen scope at launch"],
-      "inputPacket": ["PR", "issue", "gates", "proof", "merge policy"],
-      "outputPacket": ["merge result", "tracker closeout", "gate record", "follow-ups"]
+      "nonGoals": ["Do not merge PRs in this contract slice", "Do not close issues by hand to fake bridge closeout", "Do not live-apply to real HOME", "Do not widen scope at launch"],
+      "inputPacket": ["PR", "issue", "gates", "proof", "tracker bridge evidence"],
+      "outputPacket": ["gate record", "tracker bridge evidence", "follow-ups"]
     }
   ],
   "supersededCandidates": [
