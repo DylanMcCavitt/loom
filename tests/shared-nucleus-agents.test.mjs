@@ -42,8 +42,8 @@ const REQUIRED_RULE_FIELDS = [
 const FORBIDDEN_PREFIXES = ["omp-", "codex-", "claude-"];
 
 test("shared nucleus agent contract records the canonical Factorio roster", () => {
-  assert.equal(contract.schemaVersion, 3);
-  assert.equal(contract.generatedForIssue, "LOO-97");
+  assert.equal(contract.schemaVersion, 4);
+  assert.equal(contract.generatedForIssue, "LOO-98");
   assert.equal(contract.status, "contract-only");
   assert.deepEqual(contract.agents.map((agent) => agent.name), EXPECTED_ROSTER);
   assert.equal(new Set(contract.agents.map((agent) => agent.name)).size, EXPECTED_ROSTER.length);
@@ -140,6 +140,86 @@ test("per-agent delegation lists are bounded to the canonical roster", () => {
   assert.ok(!rocketLaunch.outputPacket.includes("merge result"));
   assert.ok(!rocketLaunch.outputPacket.includes("tracker closeout"));
   assert.ok(rocketLaunch.outputPacket.includes("tracker bridge evidence"));
+});
+
+test("repair-pack defines its Vercel-shaped package and repair-only mode", () => {
+  const repairPack = contract.repairPack;
+  assert.equal(repairPack.packageShape.path, ".agents/skills/repair-pack/");
+  for (const file of [
+    "AGENTS.md",
+    "SKILL.md",
+    "references/repair-pack.md",
+    "references/rules.md",
+    "references/coverage-gaps.md",
+  ]) {
+    assert.ok(repairPack.packageShape.requiredFiles.includes(file), `${file} must be required`);
+  }
+  assert.ok(repairPack.packageShape.requiredDirectories.includes("exemplars/"));
+  assert.deepEqual(repairPack.supportedModes, ["repair"]);
+  assert.equal(repairPack.optionalDelegatedModes.length, 1);
+  assert.equal(repairPack.optionalDelegatedModes[0].mode, "prove");
+  assert.equal(repairPack.optionalDelegatedModes[0].agent, "lab");
+  assert.match(repairPack.optionalDelegatedModes[0].condition, /named proof check/u);
+
+  const repairAgent = contract.agents.find((agent) => agent.name === "repair-pack");
+  assert.deepEqual(repairAgent.modes, ["repair"]);
+  assert.deepEqual(repairAgent.preferredChildren, ["lab"]);
+  assert.ok(repairAgent.references.includes("repair-pack"));
+  assert.ok(repairAgent.references.includes("coverage-gaps"));
+  assert.ok(repairAgent.nonGoals.some((goal) => /native agent files or eval harnesses/u.test(goal)));
+  assert.match(markdown, /\.agents\/skills\/repair-pack\//u);
+  assert.match(markdown, /supports only `repair` mode/u);
+});
+
+test("repair-pack finding packets are concrete and closed-scope", () => {
+  const requiredFields = contract.repairPack.findingPacketSchema.requiredFields;
+  for (const field of [
+    "file",
+    "symbol",
+    "scope",
+    "concreteRisk",
+    "minimalExpectedFix",
+    "proofCheck",
+    "ruleOrSourceId",
+    "nonGoals",
+    "allowedFiles",
+  ]) {
+    assert.ok(requiredFields.includes(field), `${field} must be required`);
+  }
+  assert.match(contract.repairPack.findingPacketSchema.allowedFiles, /Closed list/u);
+  assert.match(contract.repairPack.findingPacketSchema.concreteRisk, /Observed failure mode/u);
+  assert.match(markdown, /finding packet/u);
+  for (const token of ["file", "symbol", "scope", "concrete risk", "proof check", "allowed files"]) {
+    assert.match(markdown, new RegExp(token, "u"));
+  }
+});
+
+test("repair-pack rules and delegation forbid broad fixer swarms", () => {
+  assert.ok(contract.repairPack.rules.some((rule) => /exactly one concrete finding/u.test(rule)));
+  assert.ok(contract.repairPack.rules.some((rule) => /fresh compact context/u.test(rule)));
+  assert.ok(contract.repairPack.rules.some((rule) => /Refuse drive-by cleanup/u.test(rule)));
+  assert.ok(contract.repairPack.rules.some((rule) => /Do not spawn broad workflow agents/u.test(rule)));
+  assert.deepEqual(contract.repairPack.delegation.allowedChildren, ["lab"]);
+  assert.deepEqual(contract.repairPack.delegation.allowedChildModes, ["prove"]);
+  assert.equal(contract.repairPack.delegation.maxChildDepth, 1);
+  assert.deepEqual(contract.agentDelegation["repair-pack"].allowedChildren, ["lab"]);
+  assert.equal(contract.agentDelegation["repair-pack"].maxChildDepth, 1);
+  const repairMode = contract.delegationModes.find((entry) => entry.mode === "repair");
+  assert.deepEqual(repairMode.allowedNextAgents, ["repair-pack", "lab"]);
+  assert.ok(repairMode.forbiddenActions.includes("spawn review agents"));
+  assert.match(markdown, /delegate only .*`lab`/u);
+});
+
+test("repair-pack post-fix loop routes proof, bus-first, and implementer consultation", () => {
+  assert.ok(contract.repairPack.postFixLoop.some((step) => /minimal fix inside allowed files/u.test(step)));
+  assert.ok(contract.repairPack.postFixLoop.some((step) => /lab reruns the named proof/u.test(step)));
+  assert.ok(contract.repairPack.postFixLoop.some((step) => /bus-first rechecks only when the diff changed/u.test(step)));
+  assert.ok(contract.repairPack.postFixLoop.some((step) => /coordinator integrates/u.test(step)));
+  assert.match(contract.repairPack.originalImplementerPolicy.avoidByDefault, /fresh context reduces anchoring/u);
+  assert.ok(contract.repairPack.originalImplementerPolicy.consultWhen.some((condition) => /undocumented intent/u.test(condition)));
+  assert.ok(contract.repairPack.originalImplementerPolicy.consultWhen.some((condition) => /allowed files are insufficient/u.test(condition)));
+  assert.match(contract.repairPack.originalImplementerPolicy.consultHow, /one narrow question/u);
+  assert.match(markdown, /The original implementer is avoided by default/u);
 });
 
 test("parallel fanout, roboports loop, and coverage gaps are explicit", () => {

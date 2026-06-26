@@ -1,6 +1,6 @@
 # Shared nucleus agent contract
 
-Issues: LOO-96 base contract; LOO-97 autonomous delegation DAG. Status: contract-only. This document defines the canonical shared agent model; it does not render or activate native OMP, Codex, or Claude agent files.
+Issues: LOO-96 base contract; LOO-97 autonomous delegation DAG; LOO-98 repair-pack finding-fix loop. Status: contract-only. This document defines the canonical shared agent model; it does not render or activate native OMP, Codex, or Claude agent files.
 
 Source pattern: [Teaching agents product design at Vercel](https://vercel.com/blog/teaching-agents-product-design-at-vercel).
 
@@ -75,12 +75,45 @@ Mode boundaries:
 | `implement` | `roboports`, `recycler`, `modules`, `lab`, `biters`, `spitters`, `spidertron`, `bus-first`, `repair-pack`, `belt` | Merge PRs, close issues, live HOME apply, delegate outside issue/worktree scope. |
 | `review` | `biters`, `spitters`, `bus-first`, `radar`, `main-bus`, `science-pack`, `belt` | Edit code, run broad implementation, merge/close issues, claim proof. |
 | `prove` | `lab`, `spidertron`, `radar`, `belt` | Change behavior, add features, mock proof, claim unexercised branches. |
-| `repair` | `repair-pack`, `lab`, `biters`, `bus-first` | Fix adjacent cleanup, accept multiple findings, change acceptance criteria, skip named proof. |
+| `repair` | `repair-pack`, `lab` | Fix adjacent cleanup, accept multiple findings, change acceptance criteria, skip named proof, spawn review agents. |
 | `launch` | `rocket-launch`, `lab`, `radar`, `belt` | Merge PRs, close Linear issues, live HOME apply, native agent rendering, change scope, bypass tracker bridge. |
 
 Per-agent child lists and wave-advance authority live in `agentDelegation` in `docs/harness/shared-nucleus-agents.json`. Review and proof may fan out in parallel across distinct lenses such as correctness, security, user-visible behavior, minimal diff, and workflow drift. Implementation children may run in parallel only when packets name disjoint files or the parent owns all integration edits.
 
 `roboports` coordinates the implementation loop: implement the scoped issue in one branch/worktree; fan out `lab`, `biters`, `spitters`, and `spidertron` for proof and review; run `bus-first` after the first review/proof wave; send one concrete finding at a time to `repair-pack`; rerun named proof; return a review-ready PR packet to the parent. `rocket-launch` records launch-gate evidence while the tracker bridge owns closeout outside this contract slice.
+
+## Repair-pack finding-fix loop
+
+`repair-pack` is the fresh-context fixer for one concrete review or proof finding. It is a Vercel-shaped per-agent package, but this slice defines only the contract; it does not create native agent files, eval harnesses, or live HOME output.
+
+Required future package shape:
+
+```text
+.agents/skills/repair-pack/
+├── AGENTS.md
+├── SKILL.md
+├── references/
+│   ├── repair-pack.md
+│   ├── rules.md
+│   └── coverage-gaps.md
+└── exemplars/
+    └── finding-{stable-id}.md
+```
+
+`repair-pack` supports only `repair` mode. It may delegate only the named `prove` check to `lab`, with max one child level. It may not spawn review agents, start broad workflow delegation, render native agent files, implement eval harnesses, or live-apply to HOME.
+
+Every repair request uses a finding packet with these required fields: file, symbol, scope, concrete risk, minimal expected fix, proof check, rule/source id, non-goals, and allowed files. Missing source/rule id, missing proof, missing allowed files, or a fix outside the allowed scope is a blocker, not permission to widen the work.
+
+Repair rules:
+
+1. Accept exactly one finding per packet.
+2. Start from fresh compact context: issue/PR id, finding packet, relevant excerpts, allowed files, and named proof only.
+3. Apply the minimal expected fix; no drive-by cleanup, style-only edits, broad refactors, or acceptance-criteria changes.
+4. Rerun the named proof through `lab` or the coordinator.
+5. Run `bus-first` again only when the diff changed or the fix risks scope creep.
+6. Return changed files, proof result, residual risk, and blocker reason when blocked.
+
+The original implementer is avoided by default to reduce context drag, anchoring, and bias. Consult them only through the coordinator for one narrow question when intent is unrecoverable from issue/code/proof evidence, the minimal fix would alter an owned API/data contract/user workflow, or the allowed files are insufficient and need scope clarification.
 
 Coverage gaps stop or route work. Missing standards go to `references/coverage-gaps.md`, shape questions route to `blueprint`, `main-bus`, or `science-pack`, and deterministic checks are proposed only when the linter-vs-guidance rule passes.
 
@@ -179,7 +212,7 @@ These candidates may remain as historical adapter-plan context until a cleanup i
 ## Related and deferred work
 
 - LOO-97 is this slice: autonomous delegation DAG and mode-bound delegation policy.
-- LOO-98 defines the `repair-pack` finding-fix loop.
+- LOO-98 is this slice: defines the `repair-pack` finding-fix loop.
 - LOO-99 adds retrieval-vs-application evals with judge and holdout fixtures.
 - LOO-100 retires OMP-prefixed active candidates.
 - LOO-101 renders each shared agent as a Vercel-shaped package for OMP/Codex/Claude adapters.

@@ -1,6 +1,6 @@
 {
-  "schemaVersion": 3,
-  "generatedForIssue": "LOO-97",
+  "schemaVersion": 4,
+  "generatedForIssue": "LOO-98",
   "name": "shared-nucleus-agent-contract",
   "status": "contract-only",
   "sourcePattern": {
@@ -222,9 +222,9 @@
     },
     {
       "mode": "repair",
-      "allowedNextAgents": ["repair-pack", "lab", "biters", "bus-first"],
-      "forbiddenActions": ["fix adjacent cleanup", "accept multiple findings", "change acceptance criteria", "skip the named proof"],
-      "advanceRule": "Advance one concrete finding to one repair packet, then to the named proof/review rerun."
+      "allowedNextAgents": ["repair-pack", "lab"],
+      "forbiddenActions": ["fix adjacent cleanup", "accept multiple findings", "change acceptance criteria", "skip the named proof", "spawn review agents"],
+      "advanceRule": "Advance one concrete finding to one repair packet, then to repair-pack or lab for the named proof only; coordinator-owned bus-first recheck happens after the diff changes, not as repair-pack delegation."
     },
     {
       "mode": "launch",
@@ -267,6 +267,73 @@
     "loopBack": "repair-pack returns to lab and the parent; repeated findings require fresh compact packets.",
     "stopConditions": ["no concrete finding", "coverage gap needs human decision", "red proof remains after repair", "launch gate not assigned"]
   },
+  "repairPack": {
+    "packageShape": {
+      "path": ".agents/skills/repair-pack/",
+      "requiredFiles": [
+        "AGENTS.md",
+        "SKILL.md",
+        "references/repair-pack.md",
+        "references/rules.md",
+        "references/coverage-gaps.md"
+      ],
+      "requiredDirectories": ["references/", "exemplars/"],
+      "exemplars": "exemplars/finding-{stable-id}.md records accepted one-finding fixes, proof reruns, and rejected drive-by cleanup."
+    },
+    "supportedModes": ["repair"],
+    "optionalDelegatedModes": [{ "mode": "prove", "agent": "lab", "condition": "only for the named proof check in the finding packet" }],
+    "findingPacketSchema": {
+      "requiredFields": [
+        "file",
+        "symbol",
+        "scope",
+        "concreteRisk",
+        "minimalExpectedFix",
+        "proofCheck",
+        "ruleOrSourceId",
+        "nonGoals",
+        "allowedFiles"
+      ],
+      "file": "Primary file containing the finding.",
+      "symbol": "Function, object, section, or contract field implicated by the finding.",
+      "scope": "Smallest behavior or document boundary the fix may touch.",
+      "concreteRisk": "Observed failure mode or review risk; no speculative cleanup.",
+      "minimalExpectedFix": "Smallest acceptable correction; not a redesign.",
+      "proofCheck": "Named command, test, or scenario that must be rerun after the fix.",
+      "ruleOrSourceId": "Stable rule id, issue acceptance criterion, review id, or source link that justifies the finding.",
+      "nonGoals": "Explicit exclusions that prevent adjacent fixes.",
+      "allowedFiles": "Closed list of files repair-pack may edit; parent must reissue the packet if the list is wrong."
+    },
+    "rules": [
+      "Accept exactly one concrete finding per packet.",
+      "Start from fresh compact context: issue/PR id, finding packet, relevant excerpts, allowed files, and named proof only.",
+      "Refuse drive-by cleanup, style-only edits, broad refactors, or acceptance-criteria changes.",
+      "Do not spawn broad workflow agents or delegate review back through the full DAG.",
+      "Stop on missing allowed files, missing proof check, missing source/rule id, or a required fix outside packet scope.",
+      "Return changed files, proof result, residual risk, and blocker reason when blocked."
+    ],
+    "delegation": {
+      "allowedChildren": ["lab"],
+      "maxChildDepth": 1,
+      "allowedChildModes": ["prove"],
+      "condition": "lab may run only the named proof check from the finding packet after the fix or to confirm a blocked proof state"
+    },
+    "postFixLoop": [
+      "repair-pack applies the minimal fix inside allowed files",
+      "lab reruns the named proof when delegated or the coordinator reruns it directly",
+      "bus-first rechecks only when the diff changed or the fix risks scope creep",
+      "coordinator integrates the repaired diff, updates the finding state, and decides whether another fresh packet is needed"
+    ],
+    "originalImplementerPolicy": {
+      "avoidByDefault": "Do not consult the original implementer for routine fixes; fresh context reduces anchoring, context drag, and defense of the original design.",
+      "consultWhen": [
+        "the finding depends on undocumented intent that cannot be recovered from issue, code, or proof evidence",
+        "the minimal fix would alter an API, data contract, migration, or user-visible workflow the implementer owns",
+        "the allowed files are insufficient and the coordinator needs scope clarification"
+      ],
+      "consultHow": "Ask one narrow question through the coordinator, then return to the packet; do not invite the implementer to re-own the repair."
+    }
+  },
   "coverageGapPolicy": {
     "defaultAction": "stop or route instead of inventing new standards",
     "routes": [
@@ -287,7 +354,7 @@
     "spitters": { "allowedChildren": ["repair-pack", "belt"], "mayAdvanceNextWave": false },
     "spidertron": { "allowedChildren": ["repair-pack", "belt"], "mayAdvanceNextWave": false },
     "bus-first": { "allowedChildren": ["repair-pack", "belt"], "mayAdvanceNextWave": false },
-    "repair-pack": { "allowedChildren": ["lab", "biters"], "mayAdvanceNextWave": true },
+    "repair-pack": { "allowedChildren": ["lab"], "maxChildDepth": 1, "mayAdvanceNextWave": true },
     "main-bus": { "allowedChildren": ["science-pack", "blueprint", "belt"], "mayAdvanceNextWave": false },
     "science-pack": { "allowedChildren": ["belt"], "mayAdvanceNextWave": false },
     "belt": { "allowedChildren": [], "mayAdvanceNextWave": false },
@@ -412,12 +479,12 @@
       "role": "Narrow finding fixer",
       "purpose": "Fixes exactly one concrete review/proof finding from a fresh compact packet.",
       "modes": ["repair"],
-      "references": ["repair-pack", "review-and-proof"],
+      "references": ["repair-pack", "rules", "coverage-gaps", "review-and-proof"],
       "canDelegate": true,
       "preferredChildren": ["lab"],
-      "nonGoals": ["Do not accept broad work", "Do not fix adjacent cleanup", "Do not live-apply to real HOME", "Do not spawn broad agents"],
-      "inputPacket": ["one finding", "allowed files", "minimal expected fix", "proof command"],
-      "outputPacket": ["changed files", "proof rerun", "remaining risk", "blocked reason"]
+      "nonGoals": ["Do not accept broad work", "Do not fix adjacent cleanup", "Do not live-apply to real HOME", "Do not spawn broad agents", "Do not implement native agent files or eval harnesses"],
+      "inputPacket": ["file", "symbol", "scope", "concrete risk", "minimal expected fix", "proof check", "rule/source id", "non-goals", "allowed files"],
+      "outputPacket": ["changed files", "proof rerun", "bus-first recheck need", "remaining risk", "blocked reason"]
     },
     {
       "name": "main-bus",
