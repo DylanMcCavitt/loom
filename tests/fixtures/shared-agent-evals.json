@@ -161,6 +161,106 @@
     "errorIncludes": "forbidden autonomous action"
   },
   {
+    "id": "unsupported-agent-mode",
+    "group": "request-mode-routing",
+    "holdout": false,
+    "request": { "text": "Implement by routing to proof-only lab", "mode": "implement", "targetAgent": "lab" },
+    "candidate": {
+      "agent": "lab",
+      "mode": "implement",
+      "loadedReferences": ["root AGENTS.md and active issue/PR", "agent-specific SKILL.md entrypoint", "mode-specific references"],
+      "rulesApplied": ["agent modes must match the contract"],
+      "allowedChildren": [],
+      "contextPacket": { "fields": ["issueId", "mode", "scope", "loadedReferences", "proofState", "stopReason"], "bytes": 760 },
+      "proof": { "namedCheck": "node --test tests/shared-agent-evals.test.mjs", "result": "pass", "evidence": "offline fixture harness" },
+      "actions": []
+    },
+    "expect": "fail",
+    "errorIncludes": "does not support mode"
+  },
+  {
+    "id": "merge-pull-request-forbidden-action",
+    "group": "rule-application",
+    "holdout": false,
+    "request": { "text": "Prepare launch evidence without merging the pull request", "mode": "launch", "targetAgent": "rocket-launch" },
+    "candidate": {
+      "agent": "rocket-launch",
+      "mode": "launch",
+      "loadedReferences": ["root AGENTS.md and active issue/PR", "agent-specific SKILL.md entrypoint", "mode-specific references"],
+      "rulesApplied": ["launch mode forbids child merge aliases"],
+      "allowedChildren": ["lab", "radar", "belt"],
+      "contextPacket": { "fields": ["issueId", "mode", "scope", "loadedReferences", "proofState", "stopReason"], "bytes": 990 },
+      "proof": { "namedCheck": "npm run check", "result": "pass", "evidence": "offline fixture harness" },
+      "actions": ["merge pull request"]
+    },
+    "expect": "fail",
+    "errorIncludes": "forbidden autonomous action"
+  },
+  {
+    "id": "repair-proof-mismatch",
+    "group": "repair-pack-finding-packets",
+    "holdout": false,
+    "request": { "text": "Fix one finding and run exactly the named proof", "mode": "repair", "targetAgent": "repair-pack" },
+    "candidate": {
+      "agent": "repair-pack",
+      "mode": "repair",
+      "loadedReferences": ["root AGENTS.md and active issue/PR", "agent-specific SKILL.md entrypoint", "mode-specific references", "coverage gaps before inventing new standards"],
+      "rulesApplied": ["finding packet proofCheck is authoritative"],
+      "allowedChildren": ["lab"],
+      "waves": [
+        { "depth": 1, "children": ["lab"], "writeScopes": [] }
+      ],
+      "findingPacket": {
+        "file": "tests/shared-agent-evals.test.mjs",
+        "symbol": "repair proof",
+        "scope": "test assertion",
+        "concreteRisk": "wrong proof can hide an unverified repair",
+        "minimalExpectedFix": "run proofCheck from the packet",
+        "proofCheck": "node --test tests/shared-agent-evals.test.mjs",
+        "ruleOrSourceId": "LOO-99 acceptance",
+        "nonGoals": ["new renderer"],
+        "allowedFiles": ["tests/shared-agent-evals.test.mjs"]
+      },
+      "contextPacket": { "fields": ["issueId", "findingPacket", "allowedFiles", "proofCheck"], "bytes": 850 },
+      "proof": { "namedCheck": "node --test tests/shared-nucleus-agents.test.mjs", "result": "pass", "evidence": "offline fixture harness" },
+      "actions": []
+    },
+    "expect": "fail",
+    "errorIncludes": "proof check does not match finding packet"
+  },
+  {
+    "id": "repair-child-depth-exceeds-bound",
+    "group": "nested-depth-bounds",
+    "holdout": false,
+    "request": { "text": "Reject repair-pack delegation deeper than lab proof", "mode": "repair", "targetAgent": "repair-pack" },
+    "candidate": {
+      "agent": "repair-pack",
+      "mode": "repair",
+      "loadedReferences": ["root AGENTS.md and active issue/PR", "agent-specific SKILL.md entrypoint", "mode-specific references", "coverage gaps before inventing new standards"],
+      "rulesApplied": ["repair-pack max child depth is one"],
+      "allowedChildren": ["lab"],
+      "waves": [
+        { "depth": 2, "children": ["lab"], "writeScopes": [] }
+      ],
+      "findingPacket": {
+        "file": "tests/shared-agent-evals.test.mjs",
+        "symbol": "repair-pack child depth",
+        "scope": "test assertion",
+        "concreteRisk": "deep repair chains can escape the one-finding packet",
+        "minimalExpectedFix": "reject depth above one",
+        "proofCheck": "node --test tests/shared-agent-evals.test.mjs",
+        "ruleOrSourceId": "LOO-99 acceptance",
+        "nonGoals": ["new renderer"],
+        "allowedFiles": ["tests/shared-agent-evals.test.mjs"]
+      },
+      "contextPacket": { "fields": ["issueId", "findingPacket", "allowedFiles", "proofCheck"], "bytes": 850 },
+      "proof": { "namedCheck": "node --test tests/shared-agent-evals.test.mjs", "result": "pass", "evidence": "offline fixture harness" },
+      "actions": []
+    },
+    "expect": "fail",
+    "errorIncludes": "repair-pack exceeds max child depth"
+  },
+  {
     "id": "parallel-fanout-disjoint-review",
     "group": "parallel-fanout",
     "holdout": false,
@@ -215,7 +315,7 @@
       "rulesApplied": ["repair-pack max child depth is one"],
       "allowedChildren": ["lab"],
       "waves": [
-        { "depth": 2, "children": ["lab"], "writeScopes": [] }
+        { "depth": 1, "children": ["lab"], "writeScopes": [] }
       ],
       "findingPacket": {
         "file": "tests/shared-nucleus-agents.test.mjs",
@@ -386,7 +486,7 @@
       "allowedChildren": ["lab", "biters", "bus-first"],
       "contextPacket": { "fields": ["issueId", "mode", "scope", "loadedReferences", "allowedChildren", "proofState", "stopReason"], "bytes": 1200 },
       "proof": { "namedCheck": "node --test tests/shared-agent-evals.test.mjs", "result": "pass", "evidence": "offline fixture harness" },
-      "actions": ["render native OMP agent files"]
+      "actions": ["delegate outside the issue/worktree scope"]
     },
     "expect": "fail",
     "errorIncludes": "widen beyond acceptance criteria"

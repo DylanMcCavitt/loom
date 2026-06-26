@@ -28,6 +28,7 @@ export const ACCEPTANCE_GROUPS = Object.freeze([
 export const FIXTURES = Object.freeze(JSON.parse(readFileSync(fixturesPath, "utf8")));
 
 const agentNames = new Set(contract.agents.map((agent) => agent.name));
+const agentModes = new Map(contract.agents.map((agent) => [agent.name, new Set(agent.modes)]));
 const supersededNames = new Set(contract.supersededCandidates.map((candidate) => candidate.name));
 const requestModes = new Set(contract.requestModes.map((mode) => mode.mode));
 const forbiddenPrefixes = contract.namingRules.forbiddenPrefixes;
@@ -66,6 +67,9 @@ function checkRouting(fixture) {
     return fail(fixture, "application", `request mode ${request.mode} routed to ${candidate.mode}`);
   }
   if (!agentNames.has(candidate.agent)) return fail(fixture, "application", `unknown agent: ${candidate.agent}`);
+  if (!agentModes.get(candidate.agent)?.has(candidate.mode)) {
+    return fail(fixture, "application", `${candidate.agent} does not support mode ${candidate.mode}`);
+  }
   if (request.targetAgent !== candidate.agent) {
     return fail(fixture, "application", `request routed to ${candidate.agent}, expected ${request.targetAgent}`);
   }
@@ -92,14 +96,14 @@ function checkAllowedChildren(fixture) {
     if (wave.depth > contract.delegationPolicy.maxDepth) {
       return fail(fixture, "application", `nested depth exceeds maxDepth ${contract.delegationPolicy.maxDepth}`);
     }
+    if (candidate.agent === "repair-pack" && wave.depth > contract.repairPack.delegation.maxChildDepth) {
+      return fail(fixture, "application", "repair-pack exceeds max child depth");
+    }
     for (const child of wave.children ?? []) {
       if (!allowed.has(child)) return fail(fixture, "application", `child is not allowed for ${candidate.agent}: ${child}`);
     }
   }
 
-  if (candidate.agent === "repair-pack" && (candidate.waves?.length ?? 0) > contract.repairPack.delegation.maxChildDepth) {
-    return fail(fixture, "application", "repair-pack exceeds max child depth");
-  }
 
   return null;
 }
@@ -130,6 +134,9 @@ function checkFindingPacket(fixture) {
       return fail(fixture, "application", `finding packet missing ${field}`);
     }
   }
+  if (fixture.candidate.proof?.namedCheck && fixture.candidate.proof.namedCheck !== packet.proofCheck) {
+    return fail(fixture, "application", "proof check does not match finding packet");
+  }
   return null;
 }
 
@@ -153,11 +160,13 @@ function checkProof(fixture) {
 function forbiddenActionMatches(action, forbidden) {
   const normalizedForbidden = forbidden.toLowerCase();
   if (action.includes(normalizedForbidden.replace(/s$/u, ""))) return true;
-  if (normalizedForbidden.includes("merge or close issues")) {
-    return action.includes("merge") || action.includes("close issue");
-  }
+  if (/merge|merge or close issues/u.test(normalizedForbidden) && /\bmerge\b/u.test(action) && /\b(pr|prs|pull request|pull requests)\b/u.test(action)) return true;
+  if (normalizedForbidden.includes("close") && /\bclose\b/u.test(action) && /\b(issue|issues)\b/u.test(action)) return true;
   if (normalizedForbidden.includes("live home apply")) {
-    return action.includes("live home apply") || action.includes("apply generated files to live home") || action.includes("apply to live home");
+    return action.includes("live home apply") || (action.includes("apply") && action.includes("live home"));
+  }
+  if (/delegate outside|change scope/u.test(normalizedForbidden)) {
+    return /delegate outside|outside .*scope|widen scope|scope widening|change acceptance criteria|outside acceptance criteria/u.test(action);
   }
   return false;
 }
@@ -168,7 +177,7 @@ function checkForbiddenActions(fixture) {
   const forbiddenActions = [...contract.delegationPolicy.forbiddenAutonomousActions, ...modeForbiddenActions];
   for (const action of actions) {
     const normalized = action.toLowerCase();
-    if (/render native|native omp|native codex|native claude|live activation/u.test(normalized)) {
+    if (/render native|native omp|native codex|native claude|live activation|widen scope|scope widening|outside acceptance criteria|change acceptance criteria|delegate outside the issue|outside the issue\/worktree scope/u.test(normalized)) {
       return fail(fixture, "application", "widen beyond acceptance criteria");
     }
     if (forbiddenActions.some((forbidden) => forbiddenActionMatches(normalized, forbidden))) {
