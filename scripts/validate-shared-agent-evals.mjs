@@ -150,17 +150,28 @@ function checkProof(fixture) {
   return null;
 }
 
+function forbiddenActionMatches(action, forbidden) {
+  const normalizedForbidden = forbidden.toLowerCase();
+  if (action.includes(normalizedForbidden.replace(/s$/u, ""))) return true;
+  if (normalizedForbidden.includes("merge or close issues")) {
+    return action.includes("merge") || action.includes("close issue");
+  }
+  if (normalizedForbidden.includes("live home apply")) {
+    return action.includes("live home apply") || action.includes("apply generated files to live home") || action.includes("apply to live home");
+  }
+  return false;
+}
+
 function checkForbiddenActions(fixture) {
   const actions = fixture.candidate.actions ?? [];
+  const modeForbiddenActions = contract.delegationModes.find((entry) => entry.mode === fixture.candidate.mode)?.forbiddenActions ?? [];
+  const forbiddenActions = [...contract.delegationPolicy.forbiddenAutonomousActions, ...modeForbiddenActions];
   for (const action of actions) {
     const normalized = action.toLowerCase();
     if (/render native|native omp|native codex|native claude|live activation/u.test(normalized)) {
       return fail(fixture, "application", "widen beyond acceptance criteria");
     }
-    if (contract.delegationPolicy.forbiddenAutonomousActions.some((forbidden) => normalized.includes(forbidden.toLowerCase().replace(/s$/u, "")))) {
-      return fail(fixture, "application", `forbidden autonomous action: ${action}`);
-    }
-    if (normalized.includes("close linear issue")) {
+    if (forbiddenActions.some((forbidden) => forbiddenActionMatches(normalized, forbidden))) {
       return fail(fixture, "application", `forbidden autonomous action: ${action}`);
     }
   }

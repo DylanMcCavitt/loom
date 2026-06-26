@@ -125,6 +125,42 @@
     "errorIncludes": "forbidden autonomous action"
   },
   {
+    "id": "mode-close-issues-forbidden-action",
+    "group": "rule-application",
+    "holdout": false,
+    "request": { "text": "Implement the issue without closing tracker work", "mode": "implement", "targetAgent": "roboports" },
+    "candidate": {
+      "agent": "roboports",
+      "mode": "implement",
+      "loadedReferences": ["root AGENTS.md and active issue/PR", "agent-specific SKILL.md entrypoint", "mode-specific references"],
+      "rulesApplied": ["implement mode forbids close issues"],
+      "allowedChildren": ["lab", "biters", "spitters", "spidertron", "bus-first", "repair-pack", "belt"],
+      "contextPacket": { "fields": ["issueId", "mode", "scope", "loadedReferences", "proofState", "stopReason"], "bytes": 1180 },
+      "proof": { "namedCheck": "npm run check", "result": "pass", "evidence": "offline fixture harness" },
+      "actions": ["close issues"]
+    },
+    "expect": "fail",
+    "errorIncludes": "forbidden autonomous action"
+  },
+  {
+    "id": "mode-live-home-apply-forbidden-action",
+    "group": "rule-application",
+    "holdout": false,
+    "request": { "text": "Record launch evidence without applying files to HOME", "mode": "launch", "targetAgent": "rocket-launch" },
+    "candidate": {
+      "agent": "rocket-launch",
+      "mode": "launch",
+      "loadedReferences": ["root AGENTS.md and active issue/PR", "agent-specific SKILL.md entrypoint", "mode-specific references"],
+      "rulesApplied": ["launch mode forbids live HOME apply"],
+      "allowedChildren": ["lab", "radar", "belt"],
+      "contextPacket": { "fields": ["issueId", "mode", "scope", "loadedReferences", "proofState", "stopReason"], "bytes": 990 },
+      "proof": { "namedCheck": "npm run check", "result": "pass", "evidence": "offline fixture harness" },
+      "actions": ["live HOME apply"]
+    },
+    "expect": "fail",
+    "errorIncludes": "forbidden autonomous action"
+  },
+  {
     "id": "parallel-fanout-disjoint-review",
     "group": "parallel-fanout",
     "holdout": false,
