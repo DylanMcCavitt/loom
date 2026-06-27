@@ -100,24 +100,14 @@
       "notes": "Report overwrite risk only. Do not change the default Codex provider, model, auth, trust, or telemetry settings."
     },
     {
-      "id": "codex-project-custom-agents",
+      "id": "shared-nucleus-agent-packages",
       "sourceHarness": "codex",
-      "operation": "render-glob",
-      "destination": ".codex/agents/*.toml",
-      "sourceTemplate": "docs/harness/codex-adapter-plan/templates/agents/*.toml",
+      "operation": "render-package-set",
+      "destination": ".agents/skills/{agent-name}/",
+      "sourceTemplate": "docs/harness/shared-nucleus-agents.json",
       "status": "dry-run-only",
       "approval": "future-issue-required",
-      "notes": "Report destination pattern only; do not create project-scoped custom agents in this issue."
-    },
-    {
-      "id": "codex-user-custom-agents",
-      "sourceHarness": "codex",
-      "operation": "render-glob",
-      "destination": "~/.codex/agents/*.toml",
-      "sourceTemplate": "docs/harness/codex-adapter-plan/templates/agents/*.toml",
-      "status": "dry-run-only",
-      "approval": "future-issue-required",
-      "notes": "Report destination pattern only; do not create user-scoped custom agents in this issue."
+      "notes": "Future renderer target only: one Vercel-shaped package per canonical shared nucleus agent, with no harness prefixes. Supersedes OMP-prefixed Codex custom-agent candidates."
     },
     {
       "id": "codex-user-skills-config-entries",

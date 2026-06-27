@@ -53,10 +53,14 @@ test("Codex adapter plan maps every bundled OMP agent once", () => {
   const expected = source.expectedBundledAgents.toSorted();
   const actual = plan.ompAgentMappings.map(mapping => mapping.ompAgent).toSorted();
   assert.deepEqual(actual, expected);
-  assert.deepEqual(new Set(plan.ompAgentMappings.map(mapping => mapping.recommendation)), new Set(["adapt", "drop", "keep"]));
+  assert.deepEqual(new Set(plan.ompAgentMappings.map(mapping => mapping.recommendation)), new Set(["drop", "keep", "superseded"]));
   for (const mapping of plan.ompAgentMappings) {
     assert.ok(mapping.codexSurface, `${mapping.ompAgent} missing Codex surface`);
     assert.ok(mapping.rationale, `${mapping.ompAgent} missing rationale`);
+  }
+  for (const mapping of plan.ompAgentMappings.filter(mapping => mapping.recommendation === "superseded")) {
+    assert.equal(mapping.candidateTemplate, null, `${mapping.ompAgent} must not have an active renderer template`);
+    assert.doesNotMatch(mapping.codexCandidate ?? "", /^omp-/u);
   }
 });
 
@@ -155,7 +159,9 @@ test("Codex adapter plan marks local-only surfaces and dry-run-only generated ca
     assert.match(localOnly, new RegExp(marker.replace("/", "\\/"), "u"));
   }
   assert.ok(plan.generatedCandidateSurfaces.every(surface => surface.status === "dry-run-only"));
-  assert.ok(plan.generatedCandidateSurfaces.some(surface => surface.surface === "~/.codex/agents/*.toml"));
+  assert.ok(plan.generatedCandidateSurfaces.some(surface => surface.surface === ".agents/skills/{agent-name}/"));
+  assert.ok(!plan.generatedCandidateSurfaces.some(surface => surface.surface === "~/.codex/agents/*.toml"));
+  assert.ok(!plan.generatedCandidateSurfaces.some(surface => surface.surface === ".codex/agents/*.toml"));
   assert.ok(plan.dryRunValidationStrategy.some(step => /temporary directory/u.test(step)));
   assert.ok(plan.dryRunValidationStrategy.some(step => /separate future issue\/PR/u.test(step)));
 });

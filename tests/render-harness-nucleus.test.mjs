@@ -87,9 +87,12 @@ test("dry-run resolves dispositions: track/adapt appliable, reference-only and l
   const { manifest } = runJson(["--home", home]);
 
   const byDestination = new Map(manifest.candidates.map((entry) => [entry.destination, entry]));
-  // Adapt: user-scoped custom agents are appliable.
-  assert.equal(byDestination.get("~/.codex/agents/omp-reviewer.toml").disposition, "adapt");
-  assert.equal(byDestination.get("~/.codex/agents/omp-reviewer.toml").appliable, true);
+  for (const candidate of manifest.candidates) {
+    assert.doesNotMatch(candidate.destination, /(?:^|\/)omp-(?:designer|planner|reviewer|librarian)\.toml$/u);
+    assert.doesNotMatch(candidate.source, /templates\/agents\/omp-(?:designer|planner|reviewer)\.toml$/u);
+  }
+  assert.ok(!byDestination.has("~/.codex/agents/omp-reviewer.toml"));
+  assert.ok(!byDestination.has(".codex/agents/omp-reviewer.toml"));
   // Track: tracked OMP source is appliable.
   assert.equal(byDestination.get("~/.omp/agent/AGENTS.md").disposition, "track");
   assert.equal(byDestination.get("~/.omp/agent/AGENTS.md").appliable, true);
@@ -143,9 +146,6 @@ test("--write applies create-missing-only, records markers, and a second run is 
   assert.deepEqual(
     created.sort(),
     [
-      "~/.codex/agents/omp-designer.toml",
-      "~/.codex/agents/omp-planner.toml",
-      "~/.codex/agents/omp-reviewer.toml",
       "~/.omp/agent/AGENTS.md",
       "~/.omp/agent/RULES.md",
       "~/.omp/agent/config.yml",
@@ -154,7 +154,7 @@ test("--write applies create-missing-only, records markers, and a second run is 
   // Marker manifest is written outside the repo, in the live home tree.
   const markerFile = path.join(home, ".loom-harness", "applied-manifest.json");
   const marker = JSON.parse(readFileSync(markerFile, "utf8"));
-  assert.equal(Object.keys(marker.entries).length, 6);
+  assert.equal(Object.keys(marker.entries).length, 3);
 
   // No applied artifact carries provider/model/auth/telemetry/profile keys or secrets.
   for (const rel of listFiles(home)) {
@@ -197,7 +197,7 @@ test("dry-run verification reports marker ownership after write", () => {
   }
 });
 
-test("--write skips a pre-existing non-marker user file and leaves it byte-for-byte intact", () => {
+test("--write ignores pre-existing superseded OMP-prefixed Codex agent files", () => {
   const home = tempDir("render-home-");
   mkdirSync(path.join(home, ".codex", "agents"), { recursive: true });
   const userFile = path.join(home, ".codex", "agents", "omp-reviewer.toml");
@@ -205,11 +205,9 @@ test("--write skips a pre-existing non-marker user file and leaves it byte-for-b
   writeFileSync(userFile, userContent);
 
   const { manifest } = runJson(["--write", "--home", home]);
-  const reviewer = manifest.actions.find((a) => a.destination === "~/.codex/agents/omp-reviewer.toml");
-  assert.equal(reviewer.action, "skipped");
-  assert.equal(reviewer.reason, "exists");
+  assert.ok(!manifest.actions.some((a) => a.destination === "~/.codex/agents/omp-reviewer.toml"));
   assert.equal(readFileSync(userFile, "utf8"), userContent);
-  // The user file is not adopted as a kit marker.
+  // The superseded user file is not adopted as a kit marker.
   const marker = JSON.parse(readFileSync(path.join(home, ".loom-harness", "applied-manifest.json"), "utf8"));
   assert.ok(!("~/.codex/agents/omp-reviewer.toml" in marker.entries));
 
@@ -236,15 +234,16 @@ test("--write backs up a drifted kit-owned marker before updating it", () => {
   rmSync(home, { recursive: true, force: true });
 });
 
-test("gate runs over rendered output: a forbidden key in a custom-agent template fails the render", () => {
+test("superseded OMP-prefixed custom-agent templates are not active render inputs", () => {
   const home = tempDir("render-home-");
   const td = tempDir("render-templates-");
   cpSync(templatesDir, td, { recursive: true });
   appendFileSync(path.join(td, "agents", "omp-reviewer.toml"), '\nmodel_provider = "openai"\n');
 
-  const result = run(["--home", home, "--template-dir", td]);
-  assert.equal(result.status, 1, "expected non-zero exit on forbidden key in agent template");
-  assert.match(result.stdout + result.stderr, /forbidden key model_provider/u);
+  const { result, manifest } = runJson(["--home", home, "--template-dir", td]);
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(!manifest.candidates.some((entry) => /omp-(?:designer|planner|reviewer|librarian)\.toml/u.test(entry.destination)));
+  assert.ok(!manifest.candidates.some((entry) => /templates\/agents\/omp-(?:designer|planner|reviewer)\.toml/u.test(entry.source)));
 
   rmSync(home, { recursive: true, force: true });
   rmSync(td, { recursive: true, force: true });

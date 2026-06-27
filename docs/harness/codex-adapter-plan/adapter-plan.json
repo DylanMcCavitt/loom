@@ -63,8 +63,8 @@
     ],
     "codexTranslation": [
       "Project-specific workflow policy belongs in repo-local AGENTS.md/.codex/config candidates and .agents/skills where it is useful across harnesses.",
-      "General reusable workflow policy belongs in user-level instruction or skill surfaces such as ~/.agents/skills and optional Codex profile/custom-agent templates.",
-      "Codex custom agents are role adapters, not replacements for the workflow-kit issue lifecycle.",
+      "General reusable workflow policy belongs in user-level instruction or skill surfaces such as ~/.agents/skills; direct OMP bundled-agent role ports are superseded by the shared nucleus per-agent package contract.",
+      "Codex custom agents are optional harness adapters only; the canonical target model is one Vercel-shaped package per shared nucleus agent with canonical names and no harness prefixes.",
       "Future renderers must produce dry-run manifests before writing live ~/.codex or repo config."
     ]
   },
@@ -130,10 +130,7 @@
     {
       "id": "custom-agent",
       "templatePath": "docs/harness/codex-adapter-plan/templates/agents/omp-reviewer.toml",
-      "candidateDestinations": [
-        ".codex/agents/*.toml",
-        "~/.codex/agents/*.toml"
-      ],
+      "candidateDestinations": [],
       "allowedKeys": [
         "name",
         "description",
@@ -156,7 +153,7 @@
         "project_trust",
         "trusted_projects"
       ],
-      "boundary": "Custom agent TOML files may define role instructions and narrow runtime defaults. They must not embed credentials, provider routing, private MCP server config, or live machine paths."
+      "boundary": "Historical OMP-prefixed custom agent TOML files are validation fixtures only. Active renderers must not emit omp-designer, omp-planner, omp-reviewer, omp-librarian, or other harness-prefixed agents; future native agents must be generated from the shared nucleus per-agent package contract using canonical names."
     },
     {
       "id": "skills-config",
@@ -181,11 +178,11 @@
     {
       "ompAgent": "designer",
       "sourceFile": "docs/harness/omp-builtins/agents/designer.md",
-      "recommendation": "adapt",
-      "codexSurface": "custom-agent",
-      "codexCandidate": "omp-designer",
-      "candidateTemplate": "docs/harness/codex-adapter-plan/templates/agents/omp-designer.toml",
-      "rationale": "Preserve the UI/UX review and refinement role as a narrow Codex custom agent with design-focused instructions."
+      "recommendation": "superseded",
+      "codexSurface": "shared-nucleus-package",
+      "codexCandidate": "spidertron",
+      "candidateTemplate": null,
+      "rationale": "Direct OMP designer role ports are superseded. Future UI/UX workflow activation must render the shared spidertron package, using the canonical name without an omp- prefix."
     },
     {
       "ompAgent": "explore",
@@ -199,11 +196,11 @@
     {
       "ompAgent": "librarian",
       "sourceFile": "docs/harness/omp-builtins/agents/librarian.md",
-      "recommendation": "adapt",
-      "codexSurface": "custom-agent",
-      "codexCandidate": "omp-librarian",
+      "recommendation": "superseded",
+      "codexSurface": "shared-nucleus-package",
+      "codexCandidate": "science-pack",
       "candidateTemplate": null,
-      "rationale": "Source-verified library/API research is a distinct reusable role and should be adapted as a custom agent or paired skill with docs/source-reading constraints."
+      "rationale": "Direct OMP librarian role ports are superseded. Future source-verified research activation must render the shared science-pack package, using the canonical name without an omp- prefix."
     },
     {
       "ompAgent": "oracle",
@@ -217,11 +214,11 @@
     {
       "ompAgent": "plan",
       "sourceFile": "docs/harness/omp-builtins/agents/plan.md",
-      "recommendation": "adapt",
-      "codexSurface": "custom-agent",
-      "codexCandidate": "omp-planner",
-      "candidateTemplate": "docs/harness/codex-adapter-plan/templates/agents/omp-planner.toml",
-      "rationale": "Architectural planning is distinct enough for a high-reasoning custom agent, while simple tasks should continue to use native flow."
+      "recommendation": "superseded",
+      "codexSurface": "shared-nucleus-package",
+      "codexCandidate": "main-bus",
+      "candidateTemplate": null,
+      "rationale": "Direct OMP planner role ports are superseded. Future architecture/planning activation must render the relevant shared nucleus packages such as blueprint, ghosts, roboports, and main-bus, using canonical names without an omp- prefix."
     },
     {
       "ompAgent": "quick_task",
@@ -235,11 +232,11 @@
     {
       "ompAgent": "reviewer",
       "sourceFile": "docs/harness/omp-builtins/agents/reviewer.md",
-      "recommendation": "adapt",
-      "codexSurface": "custom-agent",
-      "codexCandidate": "omp-reviewer",
-      "candidateTemplate": "docs/harness/codex-adapter-plan/templates/agents/omp-reviewer.toml",
-      "rationale": "Review discipline, security focus, and concise findings can be preserved as a Codex custom review agent."
+      "recommendation": "superseded",
+      "codexSurface": "shared-nucleus-package",
+      "codexCandidate": "spitters",
+      "candidateTemplate": null,
+      "rationale": "Direct OMP reviewer role ports are superseded. Future review activation must render the relevant shared nucleus packages such as biters, spitters, bus-first, and lab, using canonical names without an omp- prefix."
     },
     {
       "ompAgent": "task",
@@ -387,16 +384,10 @@
       "notes": "User-level profile candidate only after explicit approval; do not change Codex default provider/model."
     },
     {
-      "surface": ".codex/agents/*.toml",
+      "surface": ".agents/skills/{agent-name}/",
       "status": "dry-run-only",
-      "sourceTemplate": "docs/harness/codex-adapter-plan/templates/agents/*.toml",
-      "notes": "Project-scoped custom agents can be generated from adapted OMP roles after review."
-    },
-    {
-      "surface": "~/.codex/agents/*.toml",
-      "status": "dry-run-only",
-      "sourceTemplate": "docs/harness/codex-adapter-plan/templates/agents/*.toml",
-      "notes": "User-scoped custom agents can be generated from adapted OMP roles only after explicit approval; this issue renders templates for validation only."
+      "sourceTemplate": "docs/harness/shared-nucleus-agents.json",
+      "notes": "Future renderer target: one Vercel-shaped package per canonical shared nucleus agent, using canonical names and no harness prefixes. OMP-prefixed Codex custom-agent templates are superseded context only."
     },
     {
       "surface": "~/.codex/config.toml skills.config entries",
@@ -406,23 +397,24 @@
     }
   ],
   "dryRunValidationStrategy": [
-    "Render templates into a temporary directory, never directly into ~/.codex.",
+    "Render active templates into a temporary directory, never directly into ~/.codex; superseded OMP-prefixed custom-agent templates are not active renderer inputs.",
     "Parse every rendered TOML template with Python tomllib or an equivalent TOML parser.",
     "Compare OMP agent mapping rows against docs/harness/omp-builtins/source.json and fail when a bundled agent is unmapped.",
     "Validate that the Codex adapter preserves the workflow-kit repo lifecycle as portable policy rather than copying live OMP runtime files.",
     "Reject rendered files containing absolute private home paths, API key/token-looking text, auth cache names as destinations, provider routing keys, or model default changes in the base template.",
     "Validate that official Codex doc references cover config, profiles, custom agents/subagents, skills, AGENTS.md, and auth/local credential boundaries.",
-    "Print a dry-run manifest of candidate destination paths, required human approvals, and skipped local-only surfaces before any live ~/.codex modification is allowed.",
+    "Print a dry-run manifest showing active candidate destination paths, required human approvals, and skipped local-only surfaces; the manifest must not list OMP-prefixed custom agents as shared agent activation targets.",
+    "Future agent activation must render per-agent Vercel-shaped packages from docs/harness/shared-nucleus-agents.json with canonical names and no harness prefixes.",
     "Require a separate future issue/PR to perform any write into ~/.codex, .codex/agents, or .agents/skills."
   ],
   "humanDecisionResolutions": [
     {
-      "question": "Which adapted OMP agents should become project-scoped .codex/agents versus user-scoped ~/.codex/agents?",
-      "resolution": "Project-specific agents should be project-scoped under .codex/agents; general reusable agents should be user-scoped under ~/.codex/agents."
+      "question": "What replaces adapted OMP agents as Codex activation targets?",
+      "resolution": "Direct OMP-prefixed Codex custom agents are superseded. Future agent activation targets the shared nucleus contract: one Vercel-shaped package per canonical agent name, with no harness prefix."
     },
     {
-      "question": "Should the designer, librarian, planner, and reviewer candidates pin reasoning effort or inherit the parent session?",
-      "resolution": "Pin reasoning effort for adapted candidates so generated adapters remain predictable."
+      "question": "Should designer, librarian, planner, and reviewer OMP role candidates remain active renderer targets?",
+      "resolution": "No. Keep their rationale only as superseded adapter-plan context; active renderers must not emit omp-designer, omp-librarian, omp-planner, or omp-reviewer."
     },
     {
       "question": "Which skill candidates should be repo-local .agents/skills versus personal ~/.agents/skills?",
@@ -455,8 +447,8 @@
     }
   ],
   "humanDecisionsBeforeImplementation": [
-    "Which adapted OMP agents should become project-scoped .codex/agents versus user-scoped ~/.codex/agents?",
-    "Should the designer, librarian, planner, and reviewer candidates pin reasoning effort or inherit the parent session?",
+    "What replaces adapted OMP agents as Codex activation targets?",
+    "Should designer, librarian, planner, and reviewer OMP role candidates remain active renderer targets?",
     "Which skill candidates should be repo-local .agents/skills versus personal ~/.agents/skills?",
     "Should the optional omp-harness profile set sandbox/approval defaults, or should it only document recommended CLI flags?",
     "What review/approval policy is required before merging any generated template into live ~/.codex/config.toml?"

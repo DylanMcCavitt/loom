@@ -209,16 +209,18 @@ unrelated installers:
 ## 2. Mapping the Loom nucleus onto each plugin schema
 
 Loom's nucleus has three parts: **skills** (6 portable command-derived skill
-candidates), **agents** (8 OMP bundled agents, adapted/kept/dropped per #41/#42),
-and **config** (`omp/.omp/agent/` portable base). The mapping respects each
-harness's component model rather than copying frontmatter blindly.
+candidates), **agents** (the canonical shared nucleus model from
+`docs/harness/shared-nucleus-agents.*`, while this LOO-100 cleanup only retires direct
+OMP bundled-agent **Codex custom-agent** targets), and **config**
+(`omp/.omp/agent/` portable base). The mapping respects each harness's component model
+rather than copying frontmatter blindly.
 
 | Loom nucleus piece | Source of truth | Codex plugin surface | Claude plugin surface |
 | --- | --- | --- | --- |
 | Skill candidates `omp-btw`, `omp-guided-goal`, `omp-handoff`, `omp-complaint-to-rule`, `omp-plan`, `omp-tangent` | `docs/harness/omp-builtins/portability-matrix.json`; shared `.agents/skills/<name>` | plugin `skills/<name>/SKILL.md` via `plugin.json#skills` | plugin `skills/<name>/SKILL.md` via `plugin.json#skills` |
-| Adapted agents `omp-designer`, `omp-planner`, `omp-reviewer`, `omp-explorer`, `omp-librarian` | `docs/harness/omp-builtins/source.json`; #41/#42 mappings | **Not a plugin component.** Remain `.codex/agents/*.toml` custom-agent config (codex-adapter-plan); the *plugin* references them only via `interface`/skills, never bundles them | plugin `agents/<name>.md` via `plugin.json#agents` (read-only `tools` allowlist per #42) |
+| Shared nucleus agents such as `spidertron`, `science-pack`, `main-bus`, `biters`, `spitters`, `bus-first`, and `lab` | `docs/harness/shared-nucleus-agents.*`; superseded #41 Codex OMP role-port context | **Not an OMP-prefixed custom-agent target.** Future Codex activation renders per-agent Vercel-shaped packages with canonical names and no harness prefixes; the Codex plugin may reference them via `interface`/skills, never bundle direct `omp-*` custom-agent ports. | Existing #42 Claude plugin agent templates remain Claude-adapter context until LOO-101 replaces them with canonical shared packages. |
 | Dropped agent `oracle`; kept-native `task`, `quick_task`, (Codex) `explore` | source.json | not packaged | not packaged |
-| Library/API research deps (for `omp-librarian`) | #41/#42 | plugin `.mcp.json` via `plugin.json#mcpServers` (optional) | plugin `.mcp.json` via `plugin.json#mcpServers` (optional) |
+| Library/API research deps (for shared `science-pack`) | #41/#42 plus `docs/harness/shared-nucleus-agents.*` | plugin `.mcp.json` via `plugin.json#mcpServers` (optional) | plugin `.mcp.json` via `plugin.json#mcpServers` (optional) |
 | Verified-loop check (§4) | this design | plugin `hooks/hooks.json` `Stop` handler (`type:"command"`) | plugin `hooks/hooks.json` `Stop` handler |
 | Plugin identity + catalog | this design | `.codex-plugin/plugin.json` + `~/.agents/plugins/marketplace.json` (or repo `.agents/plugins/marketplace.json`) | `.claude-plugin/plugin.json` + repo `.claude-plugin/marketplace.json` |
 | Config nucleus `omp/.omp/agent/config.yml` (modelRoles, provider routing, skill toggles) | `omp/.omp/agent/`; resource-manifest | **Not plugin-portable** — provider/model/role config is forbidden in rendered manifests (see §3 gate). Stays OMP source; only neutral `interface` metadata is exposed | **Not plugin-portable** — plugin root `settings.json` is limited to `agent`/`subagentStatusLine`; never carries model/provider/auth |
@@ -238,7 +240,7 @@ loom-nucleus/
 │   └── omp-plan/SKILL.md          # (+ remaining skill candidates)
 ├── agents/                        # consumed by Claude only; Codex ignores
 │   ├── omp-planner.md
-│   └── omp-reviewer.md            # (+ remaining adapted agents)
+│   └── omp-reviewer.md            # current #42 Claude adapter context; LOO-101 replaces with canonical shared agents
 └── hooks/
     └── hooks.json                 # Stop verifier (both harnesses)
 ```

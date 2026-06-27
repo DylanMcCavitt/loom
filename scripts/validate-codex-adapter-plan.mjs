@@ -20,7 +20,7 @@ const REQUIRED_DOC_TOPICS = new Set([
   "agents-md",
   "auth",
 ]);
-const RECOMMENDATIONS = new Set(["keep", "adapt", "drop"]);
+const RECOMMENDATIONS = new Set(["keep", "adapt", "drop", "superseded"]);
 const SECRET_PATTERNS = [
   /\bgh[pousr]_[A-Za-z0-9_]{20,}\b/u,
   /\bgithub_pat_[A-Za-z0-9_]{20,}\b/u,
@@ -158,6 +158,9 @@ function validateAgentMappings(source, plan, errors) {
     if (mapping.recommendation === "adapt" && !mapping.codexCandidate) {
       errors.push(`agent mapping: adapted agent ${mapping.ompAgent} needs a Codex candidate`);
     }
+    if (mapping.recommendation === "superseded" && mapping.candidateTemplate) {
+      errors.push(`agent mapping: superseded agent ${mapping.ompAgent} must not have an active candidate template`);
+    }
     if (mapping.candidateTemplate && !existsSync(mapping.candidateTemplate)) {
       errors.push(`agent mapping: missing template ${mapping.candidateTemplate}`);
     }
@@ -264,8 +267,7 @@ function validateGeneratedSurfaces(plan, errors) {
   for (const surface of [
     ".codex/config.toml",
     "~/.codex/omp-harness.config.toml",
-    ".codex/agents/*.toml",
-    "~/.codex/agents/*.toml",
+    ".agents/skills/{agent-name}/",
     "~/.codex/config.toml skills.config entries",
   ]) {
     if (!surfaces.has(surface)) errors.push(`generated surfaces: missing ${surface}`);

@@ -48,7 +48,7 @@ test("dry-run safety gate reports checked-in plan without mutation", () => {
   assert.match(result.stdout, /\[codex\]/u);
   assert.match(result.stdout, /\[claude\]/u);
   assert.match(result.stdout, /Local-only symlink target guard: passed/u);
-  assert.match(result.stdout, /5 Codex surfaces, 9 Claude surfaces/u);
+  assert.match(result.stdout, /4 Codex surfaces, 9 Claude surfaces/u);
   assert.match(result.stdout, /Tracked source content scan: passed/u);
   assert.match(result.stdout, /\[generated config destinations\]/u);
   assert.match(result.stdout, /codex-runtime-state/u);

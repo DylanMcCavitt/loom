@@ -54,9 +54,9 @@ The reference-only snapshot alternative is rejected in `docs/decisions/0001-omp-
 
 ## Codex Adapter Plan
 
-Issue #41 adds `docs/harness/codex-adapter-plan.md` and structured plan data under `docs/harness/codex-adapter-plan/`. The plan maps OMP bundled agents into Codex custom-agent candidates, native agents, or drop decisions; records future skill candidates from the issue #40 portability matrix; defines TOML template boundaries; and marks live `~/.codex` auth, sessions, caches, plugin cache, generated artifacts, app state, logs, databases, and private memory as local-only.
+Issue #41 adds `docs/harness/codex-adapter-plan.md` and structured plan data under `docs/harness/codex-adapter-plan/`. The plan now keeps direct OMP bundled-agent custom-agent ports as superseded context, records future skill candidates from the issue #40 portability matrix, defines TOML template boundaries, and marks live `~/.codex` auth, sessions, caches, plugin cache, generated artifacts, app state, logs, databases, and private memory as local-only.
 
-The Codex adapter plan is dry-run-only. It includes parseable TOML templates for future base config, optional profile, project/user custom agents under `.codex/agents/` or `~/.codex/agents/`, and `skills.config` entries, but this issue does not write or merge those templates into live `~/.codex`.
+The Codex adapter plan is dry-run-only. It includes active templates for future base config, the optional profile, and `skills.config` entries. Superseded `omp-*` custom-agent templates remain parseable historical fixtures only; future shared agent activation points to per-agent Vercel-shaped packages with canonical names and no harness prefixes.
 
 ## Claude Adapter Plan
 

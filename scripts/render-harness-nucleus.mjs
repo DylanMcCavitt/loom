@@ -352,12 +352,16 @@ function expandDestination(destination, agentName) {
   return destination.includes("*") ? destination.replace("*", agentName) : destination;
 }
 
+function isHarnessPrefixedAgentTemplate(templateRel) {
+  return /^omp-/u.test(path.basename(templateRel, ".toml"));
+}
+
 function buildCandidates(plan, manifest, options) {
   const localOnly = localOnlyPatterns(manifest, plan);
   const candidates = [];
 
   const agentTemplates = (plan.ompAgentMappings ?? [])
-    .filter((mapping) => mapping.candidateTemplate)
+    .filter((mapping) => mapping.candidateTemplate && !isHarnessPrefixedAgentTemplate(mapping.candidateTemplate))
     .map((mapping) => mapping.candidateTemplate);
 
   for (const boundary of plan.templateBoundaries ?? []) {
