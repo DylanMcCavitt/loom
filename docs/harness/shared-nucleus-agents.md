@@ -1,6 +1,6 @@
 # Shared nucleus agent contract
 
-Issues: LOO-96 base contract; LOO-97 autonomous delegation DAG; LOO-98 repair-pack finding-fix loop; LOO-99 offline shared-agent eval harness. Status: contract plus offline eval harness; this document defines the canonical shared agent model and does not render or activate native OMP, Codex, or Claude agent files.
+Issues: LOO-96 base contract; LOO-97 autonomous delegation DAG; LOO-98 repair-pack finding-fix loop; LOO-99 offline shared-agent eval harness; LOO-103 evidence intake and decision log. Status: contract plus offline eval harness; this document defines the canonical shared agent model and does not render or activate native OMP, Codex, or Claude agent files.
 
 Source pattern: [Teaching agents product design at Vercel](https://vercel.com/blog/teaching-agents-product-design-at-vercel).
 
@@ -183,12 +183,44 @@ Use agent guidance when the decision needs workflow/codebase context, the rule w
 
 ## Evidence-intake and decision log
 
-Guidance changes follow the Vercel-style collector -> judge -> human review loop:
+Guidance changes follow the Vercel-style collector -> judge -> human review loop. This is a documentation and offline-contract workflow only; it does not collect from live Slack, Figma, GitHub, HOME, session history, or private runtime state.
 
-1. Collector gathers messages, links, files, and nearby context. It does not score candidates or propose rules.
-2. Judge validates sources, separates facts from inferences/open questions, groups candidates, and keeps them pending.
-3. Human review chooses the narrowest destination: rule, reference, exemplar, lint rule, eval, coverage gap, or no change.
-4. Accepted changes record scope, rationale, evidence, exceptions, approver, and checks.
+Collector workflow:
+
+1. Gather messages, links, files, and nearby context: the active issue or PR scope, referenced agent/skill/rule/exemplar/eval/lint/coverage-gap surface, and adjacent shipped guidance needed to understand the excerpt.
+2. Preserve source handles, excerpts, timestamps or revisions when available, and unresolved context gaps.
+3. Do not score, rank, group, accept, reject, choose destinations, propose rules, or write accepted guidance.
+
+Judge workflow:
+
+1. Validate that cited sources are reachable, relevant to the scoped agent/workflow, and not private live-system state.
+2. Separate facts, inferences, and open questions so human reviewers can see what is verified versus assumed.
+3. Group related candidates by agent, workflow, rule surface, destination surface, and evidence theme.
+4. Keep every candidate pending. The judge does not accept, reject, score, apply changes, or turn candidates into rules.
+
+Human review choices are exactly: rule, reference, exemplar, lint rule, eval, coverage gap, or no change.
+
+Decision-log entries record:
+
+```markdown
+Scope:
+Rationale:
+Evidence:
+Exceptions:
+Approver:
+Target file:
+Checks:
+```
+
+Accepted changes land in the narrowest relevant destination:
+
+- rule -> agent-specific `references/rules.md` when the guidance is stable and enforceable;
+- reference -> agent-specific `references/*.md` when source-grounded context is the durable artifact;
+- exemplar -> agent-specific `exemplars/*.md` when a concrete worked example best preserves the decision;
+- lint rule -> deterministic lint/check surface only when the linter-vs-guidance rule passes;
+- eval -> offline eval fixture when behavior should be regression-tested;
+- coverage gap -> `references/coverage-gaps.md` when evidence is missing or the standard remains unresolved;
+- no change -> decision log only, with no guidance, lint, eval, exemplar, or reference file changes.
 
 ## Packet contract
 
@@ -218,4 +250,4 @@ These candidates may remain as historical adapter-plan context until a cleanup i
 - LOO-101 renders each shared agent as a Vercel-shaped package for OMP/Codex/Claude adapters.
 - LOO-102 activates the shared starter roster only after package rendering and evals pass.
 - Future linter/check issue: encode mechanical rules that pass the linter-vs-guidance test.
-- Future evidence-intake issue: add collector -> judge -> human decision-log workflow.
+- LOO-103 adds the shared evidence-intake collector -> judge -> human decision-log workflow.

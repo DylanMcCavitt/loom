@@ -19,7 +19,7 @@ test("shared agent eval command passes for checked-in fixtures", () => {
   assert.match(result.stdout, /Shared agent evals passed: \d+ fixtures across \d+ acceptance groups/u);
 });
 
-test("fixtures cover every LOO-99 acceptance group", () => {
+test("fixtures cover every shared-agent acceptance group", () => {
   for (const group of ACCEPTANCE_GROUPS) {
     assert.ok(FIXTURES.some((fixture) => fixture.group === group), `${group} is missing a fixture`);
   }
@@ -58,6 +58,23 @@ test("holdout expected edits are not copied into guidance", () => {
       `${fixture.id} copies the expected edit into guidance`,
     );
   }
+});
+
+test("evidence intake eval rejects missing packets, judge automation, and mismatched destinations", () => {
+  const fixture = FIXTURES.find((candidate) => candidate.id === "evidence-intake-decision-log");
+
+  const missingPacket = structuredClone(fixture);
+  delete missingPacket.candidate.evidenceIntake;
+  assert.match(checkFixture(missingPacket).message, /evidence intake packet missing/u);
+
+  const judgeAutomation = structuredClone(fixture);
+  judgeAutomation.candidate.evidenceIntake.judge.actions = ["apply changes"];
+  assert.match(checkFixture(judgeAutomation).message, /judge performed forbidden action/u);
+
+  const wrongDestination = structuredClone(fixture);
+  wrongDestination.candidate.evidenceIntake.humanReview.choice = "rule";
+  wrongDestination.candidate.evidenceIntake.humanReview.destination = "coverageGap";
+  assert.match(checkFixture(wrongDestination).message, /human review destination mismatch/u);
 });
 
 test("eval groups align with the checked-in shared nucleus contract", () => {

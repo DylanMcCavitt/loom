@@ -1,6 +1,6 @@
 {
-  "schemaVersion": 4,
-  "generatedForIssue": "LOO-99",
+  "schemaVersion": 5,
+  "generatedForIssue": "LOO-103",
   "name": "shared-nucleus-agent-contract",
   "status": "contract-only",
   "sourcePattern": {
@@ -164,16 +164,56 @@
   },
   "evidenceIntake": {
     "collector": "gathers messages, links, files, and nearby context without scoring or proposing rules",
+    "collectorWorkflow": {
+      "inputs": ["messages", "links", "files", "nearby context"],
+      "nearbyContext": [
+        "active issue or PR scope",
+        "referenced agent, skill, rule, exemplar, eval, lint, or coverage-gap surface",
+        "adjacent shipped guidance needed to understand the excerpt"
+      ],
+      "forbiddenActions": ["score candidates", "rank candidates", "propose rules", "choose destinations", "write accepted guidance"],
+      "output": "raw evidence packet with source handles, excerpts, timestamps or revisions when available, and unresolved context gaps"
+    },
     "judge": "validates sources, separates facts/inferences/open questions, groups candidates, and keeps each candidate pending",
+    "judgeWorkflow": {
+      "validatesSources": true,
+      "separates": ["facts", "inferences", "open questions"],
+      "groupsCandidatesBy": ["agent", "workflow", "rule surface", "destination surface", "evidence theme"],
+      "candidateStatus": "pending",
+      "forbiddenActions": ["accept candidates", "reject candidates", "score candidates", "apply changes", "turn candidates into rules"]
+    },
     "humanReview": "chooses rule, reference, exemplar, lint rule, eval, coverage gap, or no change",
+    "humanReviewChoices": ["rule", "reference", "exemplar", "lint rule", "eval", "coverage gap", "no change"],
+    "decisionLogFormat": {
+      "requiredFields": ["scope", "rationale", "evidence", "exceptions", "approver", "targetFile", "checks"],
+      "fields": {
+        "scope": "agent, workflow, mode, rule, or destination surface the decision covers",
+        "rationale": "why the human reviewer accepted, rejected, or deferred the candidate",
+        "evidence": "source links, file paths, excerpts, and fact/inference/open-question summary used for the decision",
+        "exceptions": "known cases where the decision should not apply, or none",
+        "approver": "human reviewer who made the choice",
+        "targetFile": "narrowest relevant destination file, or none for no-change decisions",
+        "checks": "targeted checks or review evidence required before merge"
+      }
+    },
     "acceptedChangeRequirements": [
       "stable evidence",
       "explicit scope",
+      "rationale",
       "exceptions",
       "approver",
       "target file chosen by narrowest relevant destination",
       "checks pass before merge"
-    ]
+    ],
+    "destinationPolicy": {
+      "rule": "agent-specific references/rules.md when a stable, enforceable guidance rule is accepted",
+      "reference": "agent-specific references/*.md when contextual guidance or source-grounded background is accepted",
+      "exemplar": "agent-specific exemplars/*.md when a concrete worked example best preserves the decision",
+      "lintRule": "deterministic check or lint surface only when the linter-vs-guidance rule passes",
+      "eval": "offline eval fixture when the decision should be regression-tested as behavior",
+      "coverageGap": "references/coverage-gaps.md when evidence is missing or a standard remains unresolved",
+      "noChange": "decision log only; no guidance, lint, eval, exemplar, or reference file changes"
+    }
   },
   "delegationPolicy": {
     "maxDepth": 3,

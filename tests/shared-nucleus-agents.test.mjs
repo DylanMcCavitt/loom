@@ -42,8 +42,8 @@ const REQUIRED_RULE_FIELDS = [
 const FORBIDDEN_PREFIXES = ["omp-", "codex-", "claude-"];
 
 test("shared nucleus agent contract records the canonical Factorio roster", () => {
-  assert.equal(contract.schemaVersion, 4);
-  assert.equal(contract.generatedForIssue, "LOO-99");
+  assert.equal(contract.schemaVersion, 5);
+  assert.equal(contract.generatedForIssue, "LOO-103");
   assert.equal(contract.status, "contract-only");
   assert.deepEqual(contract.agents.map((agent) => agent.name), EXPECTED_ROSTER);
   assert.equal(new Set(contract.agents.map((agent) => agent.name)).size, EXPECTED_ROSTER.length);
@@ -267,10 +267,38 @@ test("stable rules and automation policy separate deterministic checks from judg
 
 test("evidence intake separates collector, judge, and human review", () => {
   assert.match(contract.evidenceIntake.collector, /without scoring or proposing rules/u);
+  assert.deepEqual(contract.evidenceIntake.collectorWorkflow.inputs, ["messages", "links", "files", "nearby context"]);
+  assert.ok(contract.evidenceIntake.collectorWorkflow.forbiddenActions.includes("score candidates"));
+  assert.ok(contract.evidenceIntake.collectorWorkflow.forbiddenActions.includes("propose rules"));
   assert.match(contract.evidenceIntake.judge, /separates facts\/inferences\/open questions/u);
+  assert.equal(contract.evidenceIntake.judgeWorkflow.validatesSources, true);
+  assert.deepEqual(contract.evidenceIntake.judgeWorkflow.separates, ["facts", "inferences", "open questions"]);
+  assert.equal(contract.evidenceIntake.judgeWorkflow.candidateStatus, "pending");
+  assert.ok(contract.evidenceIntake.judgeWorkflow.forbiddenActions.includes("turn candidates into rules"));
   assert.match(contract.evidenceIntake.humanReview, /rule, reference, exemplar, lint rule, eval, coverage gap, or no change/u);
-  for (const requirement of ["stable evidence", "explicit scope", "exceptions", "approver"]) {
+  assert.deepEqual(contract.evidenceIntake.humanReviewChoices, [
+    "rule",
+    "reference",
+    "exemplar",
+    "lint rule",
+    "eval",
+    "coverage gap",
+    "no change",
+  ]);
+  for (const requirement of ["stable evidence", "explicit scope", "rationale", "exceptions", "approver"]) {
     assert.ok(contract.evidenceIntake.acceptedChangeRequirements.includes(requirement), `${requirement} must be required`);
+  }
+  assert.deepEqual(contract.evidenceIntake.decisionLogFormat.requiredFields, [
+    "scope",
+    "rationale",
+    "evidence",
+    "exceptions",
+    "approver",
+    "targetFile",
+    "checks",
+  ]);
+  for (const destination of ["rule", "reference", "exemplar", "lintRule", "eval", "coverageGap", "noChange"]) {
+    assert.ok(contract.evidenceIntake.destinationPolicy[destination], `${destination} must have a destination policy`);
   }
 });
 

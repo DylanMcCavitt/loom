@@ -490,5 +490,45 @@
     },
     "expect": "fail",
     "errorIncludes": "widen beyond acceptance criteria"
+  },
+  {
+    "id": "evidence-intake-decision-log",
+    "group": "evidence-intake-decision-log",
+    "holdout": false,
+    "request": { "text": "Add shared evidence intake and decision-log contract without live collection", "mode": "shape", "targetAgent": "blueprint" },
+    "candidate": {
+      "agent": "blueprint",
+      "mode": "shape",
+      "loadedReferences": ["root AGENTS.md and active issue/PR", "agent-specific SKILL.md entrypoint", "mode-specific references"],
+      "rulesApplied": ["collector gathers only", "judge keeps candidates pending", "human chooses narrow destination"],
+      "allowedChildren": ["main-bus", "science-pack", "ghosts", "belt"],
+      "contextPacket": { "fields": ["issueId", "mode", "scope", "loadedReferences", "evidenceIntake", "decisionLog"], "bytes": 1400 },
+      "evidenceIntake": {
+        "collector": {
+          "inputs": ["messages", "links", "files", "nearby context"],
+          "actions": ["gather evidence", "preserve source handles"]
+        },
+        "judge": {
+          "separates": ["facts", "inferences", "open questions"],
+          "candidateStatus": "pending"
+        },
+        "humanReview": {
+          "choice": "coverage gap",
+          "destination": "coverageGap"
+        },
+        "decisionLog": {
+          "scope": "shared evidence intake workflow",
+          "rationale": "source evidence is incomplete",
+          "evidence": ["docs/harness/shared-nucleus-agents.md"],
+          "exceptions": "none",
+          "approver": "human reviewer",
+          "targetFile": "references/coverage-gaps.md",
+          "checks": ["node --test tests/shared-agent-evals.test.mjs"]
+        }
+      },
+      "proof": { "namedCheck": "node --test tests/shared-agent-evals.test.mjs", "result": "pass", "evidence": "offline fixture harness" },
+      "actions": []
+    },
+    "expect": "pass"
   }
 ]

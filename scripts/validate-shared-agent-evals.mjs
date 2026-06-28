@@ -23,6 +23,7 @@ export const ACCEPTANCE_GROUPS = Object.freeze([
   "proof-quality",
   "cross-harness-portability",
   "scope-boundary",
+  "evidence-intake-decision-log",
 ]);
 
 export const FIXTURES = Object.freeze(JSON.parse(readFileSync(fixturesPath, "utf8")));
@@ -187,6 +188,76 @@ function checkForbiddenActions(fixture) {
   return null;
 }
 
+function checkEvidenceIntake(fixture) {
+  const packet = fixture.candidate.evidenceIntake;
+  const requiresEvidenceIntake =
+    fixture.group === "evidence-intake-decision-log" ||
+    /evidence intake|decision-log|decision log/u.test(fixture.request?.text?.toLowerCase() ?? "");
+  if (!packet) {
+    return requiresEvidenceIntake ? fail(fixture, "application", "evidence intake packet missing") : null;
+  }
+
+  const contractIntake = contract.evidenceIntake;
+  for (const input of contractIntake.collectorWorkflow.inputs) {
+    if (!(packet.collector?.inputs ?? []).includes(input)) {
+      return fail(fixture, "application", `collector missing input: ${input}`);
+    }
+  }
+  if (
+    (packet.collector?.actions ?? []).some((action) =>
+      contractIntake.collectorWorkflow.forbiddenActions.some((forbidden) =>
+        forbiddenActionMatches(action.toLowerCase(), forbidden),
+      ),
+    )
+  ) {
+    return fail(fixture, "application", "collector scored or proposed guidance");
+  }
+  for (const part of contractIntake.judgeWorkflow.separates) {
+    if (!(packet.judge?.separates ?? []).includes(part)) {
+      return fail(fixture, "application", `judge missing ${part}`);
+    }
+  }
+  if (packet.judge?.candidateStatus !== contractIntake.judgeWorkflow.candidateStatus) {
+    return fail(fixture, "application", "judge did not keep candidates pending");
+  }
+  if (
+    (packet.judge?.actions ?? []).some((action) =>
+      contractIntake.judgeWorkflow.forbiddenActions.some((forbidden) =>
+        forbiddenActionMatches(action.toLowerCase(), forbidden),
+      ),
+    )
+  ) {
+    return fail(fixture, "application", "judge performed forbidden action");
+  }
+
+  const destinationByChoice = {
+    rule: "rule",
+    reference: "reference",
+    exemplar: "exemplar",
+    "lint rule": "lintRule",
+    eval: "eval",
+    "coverage gap": "coverageGap",
+    "no change": "noChange",
+  };
+  const choice = packet.humanReview?.choice;
+  if (!contractIntake.humanReviewChoices.includes(choice)) {
+    return fail(fixture, "application", "unknown human review choice");
+  }
+  const expectedDestination = destinationByChoice[choice];
+  if (packet.humanReview?.destination !== expectedDestination) {
+    return fail(fixture, "application", "human review destination mismatch");
+  }
+  for (const field of contractIntake.decisionLogFormat.requiredFields) {
+    if (!Object.hasOwn(packet.decisionLog ?? {}, field)) {
+      return fail(fixture, "application", `decision log missing ${field}`);
+    }
+  }
+  if (!Object.hasOwn(contractIntake.destinationPolicy, expectedDestination)) {
+    return fail(fixture, "application", "unknown destination policy");
+  }
+  return null;
+}
+
 function checkHoldout(fixture) {
   if (!fixture.holdout) return null;
   if (!fixture.guidanceExcerpt || !fixture.expectedEdit) {
@@ -217,6 +288,7 @@ export function checkFixture(fixture) {
     checkContextPacket,
     checkProof,
     checkForbiddenActions,
+    checkEvidenceIntake,
     checkHoldout,
   ].map((check) => check(fixture)).find(Boolean) ?? null;
 
