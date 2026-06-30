@@ -1,6 +1,6 @@
 # Shared nucleus agent contract
 
-Issues: LOO-96 base contract; LOO-97 autonomous delegation DAG; LOO-98 repair-pack finding-fix loop; LOO-99 offline shared-agent eval harness; LOO-101 canonical package rendering; LOO-103 evidence intake and decision log. Status: contract plus offline eval harness plus canonical plugin package templates; this document defines the canonical shared agent model and does not render or activate native OMP, Codex, or Claude agent files.
+Issues: LOO-96 base contract; LOO-97 autonomous delegation DAG; LOO-98 repair-pack finding-fix loop; LOO-99 offline shared-agent eval harness; LOO-101 canonical package rendering; LOO-103 evidence intake and decision log; LOO-104 deterministic shared-package checks. Status: contract plus offline eval harness plus canonical plugin package templates plus deterministic package checks; this document defines the canonical shared agent model and does not render or activate native OMP, Codex, or Claude agent files.
 
 Source pattern: [Teaching agents product design at Vercel](https://vercel.com/blog/teaching-agents-product-design-at-vercel).
 
@@ -248,6 +248,6 @@ These candidates remain only as historical adapter-plan context. LOO-101 removes
 - LOO-99 adds retrieval-vs-application evals with judge and holdout fixtures.
 - LOO-100 retires OMP-prefixed active candidates.
 - LOO-101 renders each shared agent as a Vercel-shaped package for OMP/Codex/Claude adapters.
-- LOO-102 activates the shared starter roster only after package rendering and evals pass.
-- Future linter/check issue: encode mechanical rules that pass the linter-vs-guidance test.
+- LOO-102 activates the shared starter roster only after package rendering, evals, deterministic checks, and governance pass.
 - LOO-103 adds the shared evidence-intake collector -> judge -> human decision-log workflow.
+- LOO-104 encodes mechanical package checks at `scripts/validate-shared-agent-packages.mjs`; judgment-heavy guidance stays in references, evals, or coverage gaps.

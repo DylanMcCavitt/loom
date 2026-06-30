@@ -618,7 +618,7 @@
   "activation": {
     "nativeAgentRendering": "future issue",
     "evalHarness": "implemented by LOO-99 offline fixture harness at scripts/validate-shared-agent-evals.mjs and tests/fixtures/shared-agent-evals.json",
-    "lintRules": "future issue when rules are mechanical",
+    "lintRules": "implemented by LOO-104 deterministic package checks at scripts/validate-shared-agent-packages.mjs",
     "evidenceIntakeAutomation": "future issue",
     "liveHomeApply": "forbidden in this contract slice"
   }
