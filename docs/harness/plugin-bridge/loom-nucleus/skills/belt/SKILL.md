@@ -12,7 +12,7 @@ Use when moves durable context between agents/threads with concise state, proof,
 - Role: Handoff carrier.
 - Canonical name: `belt`; never render this package with `omp-`, `codex-`, or `claude-` prefixes.
 - Primary modes: `shape`, `review`.
-- Load `AGENTS.md` first, then the narrowest relevant file under `references/`.
+- After this entrypoint, load `AGENTS.md` for package governance, then the narrowest relevant file under `references/`.
 - Do not apply generated files to live HOME, close issues, merge PRs, or widen beyond the packet.
 
 ## Request Modes

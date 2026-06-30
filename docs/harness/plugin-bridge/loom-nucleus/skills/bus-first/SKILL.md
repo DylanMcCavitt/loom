@@ -12,7 +12,7 @@ Use when applies reuse-before-build doctrine and flags needless abstraction or s
 - Role: Minimal-diff tightener.
 - Canonical name: `bus-first`; never render this package with `omp-`, `codex-`, or `claude-` prefixes.
 - Primary modes: `review`.
-- Load `AGENTS.md` first, then the narrowest relevant file under `references/`.
+- After this entrypoint, load `AGENTS.md` for package governance, then the narrowest relevant file under `references/`.
 - Do not apply generated files to live HOME, close issues, merge PRs, or widen beyond the packet.
 
 ## Request Modes
