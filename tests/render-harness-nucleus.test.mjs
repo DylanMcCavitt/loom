@@ -536,6 +536,29 @@ test("applyCandidates does not claim divergent OMP repo-mirror symlinks", () => 
   rmSync(home, { recursive: true, force: true });
 });
 
+test("applyCandidates does not follow a claimed symlink after retargeting", () => {
+  const home = tempDir("apply-home-");
+  const dest = "~/.omp/agent/AGENTS.md";
+  const source = new URL("../omp/.omp/agent/AGENTS.md", import.meta.url).pathname;
+  const live = path.join(home, ".omp", "agent", "AGENTS.md");
+  const other = path.join(home, "other.md");
+  mkdirSync(path.dirname(live), { recursive: true });
+  symlinkSync(source, live);
+  writeFileSync(other, "USER TARGET\n");
+  const marker = emptyMarker();
+  const candidate = applyCandidate(dest, readFileSync(source, "utf8"), { source: "omp/.omp/agent/AGENTS.md" });
+  applyCandidates([candidate], home, marker, { approveOmpRepoOwned: true });
+  rmSync(live, { force: true });
+  symlinkSync(other, live);
+
+  const result = applyCandidates([candidate], home, marker, { approveOmpRepoOwned: true });
+  assert.equal(result.actions[0].action, "skipped");
+  assert.equal(result.actions[0].reason, "not-repo-mirror-symlink");
+  assert.equal(readFileSync(other, "utf8"), "USER TARGET\n", "retargeted symlink target must stay intact");
+
+  rmSync(home, { recursive: true, force: true });
+});
+
 test("applyCandidates backs up and replaces existing OMP files only with explicit approval", () => {
   const home = tempDir("apply-home-");
   const dest = "~/.omp/agent/config.yml";

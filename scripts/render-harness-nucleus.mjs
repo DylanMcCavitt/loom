@@ -871,6 +871,18 @@ export function applyCandidates(candidates, homeRoot, marker, options = {}) {
       actions.push({ destination: candidate.destination, action: "skipped", reason: "exists", livePath });
       continue;
     }
+    if (lstatSync(livePath).isSymbolicLink()) {
+      if (!repoMirrorSymlink(candidate, livePath)) {
+        actions.push({ destination: candidate.destination, action: "skipped", reason: "not-repo-mirror-symlink", livePath });
+        continue;
+      }
+      if (sha256(readFileSync(livePath)) !== wantHash) {
+        actions.push({ destination: candidate.destination, action: "skipped", reason: "repo-mirror-content-mismatch", livePath });
+        continue;
+      }
+      actions.push({ destination: candidate.destination, action: "already-applied", livePath });
+      continue;
+    }
     if (sha256(readFileSync(livePath)) === wantHash) {
       actions.push({ destination: candidate.destination, action: "already-applied", livePath });
       continue;
