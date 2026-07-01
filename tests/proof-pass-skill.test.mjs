@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 
-const skillPath = new URL("../.agents/skills/proof-pass/SKILL.md", import.meta.url);
-const evalsPath = new URL("../.agents/skills/proof-pass/evals/evals.json", import.meta.url);
+const skillPath = new URL("../nucleus/skills/proof-pass/SKILL.md", import.meta.url);
+const evalsPath = new URL("../nucleus/skills/proof-pass/evals/evals.json", import.meta.url);
 const skill = readFileSync(skillPath, "utf8");
 
 test("proof-pass frontmatter and trigger are concrete", () => {

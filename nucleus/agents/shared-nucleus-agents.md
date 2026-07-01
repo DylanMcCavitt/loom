@@ -13,7 +13,7 @@ Loom has a multi-agent nucleus, so the adapted target is **one Vercel-shaped ski
 Each canonical agent package has this shape:
 
 ```text
-.agents/skills/{agent-name}/
+nucleus/skills/{agent-name}/
 ├── AGENTS.md
 ├── SKILL.md
 ├── references/
@@ -78,7 +78,7 @@ Mode boundaries:
 | `repair` | `repair-pack`, `lab` | Fix adjacent cleanup, accept multiple findings, change acceptance criteria, skip named proof, spawn review agents. |
 | `launch` | `rocket-launch`, `lab`, `radar`, `belt` | Merge PRs, close Linear issues, live HOME apply, native agent rendering, change scope, bypass tracker bridge. |
 
-Per-agent child lists and wave-advance authority live in `agentDelegation` in `docs/harness/shared-nucleus-agents.json`. Review and proof may fan out in parallel across distinct lenses such as correctness, security, user-visible behavior, minimal diff, and workflow drift. Implementation children may run in parallel only when packets name disjoint files or the parent owns all integration edits.
+Per-agent child lists and wave-advance authority live in `agentDelegation` in `nucleus/agents/shared-nucleus-agents.json`. Review and proof may fan out in parallel across distinct lenses such as correctness, security, user-visible behavior, minimal diff, and workflow drift. Implementation children may run in parallel only when packets name disjoint files or the parent owns all integration edits.
 
 `roboports` coordinates the implementation loop: implement the scoped issue in one branch/worktree; fan out `lab`, `biters`, `spitters`, and `spidertron` for proof and review; run `bus-first` after the first review/proof wave; send one concrete finding at a time to `repair-pack`; rerun named proof; return a review-ready PR packet to the parent. `rocket-launch` records launch-gate evidence while the tracker bridge owns closeout outside this contract slice.
 
@@ -89,7 +89,7 @@ Per-agent child lists and wave-advance authority live in `agentDelegation` in `d
 Required future package shape:
 
 ```text
-.agents/skills/repair-pack/
+nucleus/skills/repair-pack/
 ├── AGENTS.md
 ├── SKILL.md
 ├── references/
@@ -229,14 +229,14 @@ LOO-102 activates the starter roster only through the plugin-bridge scratch-HOME
 1. `node scripts/render-plugin-bridge.mjs --home <scratch> --write --json` renders approved create-missing candidates under `~/.agents/plugins/loom-nucleus/` and the personal marketplace catalog, then records marker metadata in `~/.loom-harness/applied-manifest.json`.
 2. A second `--write` against the same scratch HOME must be a clean no-op: every appliable candidate reports `already-applied`, no new files are created, and the marker manifest is unchanged.
 3. `adapters/plugin-bridge/loom-nucleus/hooks/verify-loom-install.mjs` verifies the installed copy without writing: missing components, marker hash drift, malformed manifests, forbidden provider/auth/profile keys, and non-portable absolute paths produce structured non-zero reports.
-4. Proof covers the shared roster package shape once at the source surface and once through each native plugin consumer: OMP-compatible Vercel-shaped packages under `.agents/skills/{agent-name}/`, Codex via `.codex-plugin/plugin.json#skills`, and Claude via `.claude-plugin/plugin.json#skills`.
+4. Proof covers the shared roster package shape once at the source surface and once through each native plugin consumer: OMP-compatible Vercel-shaped packages under `nucleus/skills/{agent-name}/`, Codex via `.codex-plugin/plugin.json#skills`, and Claude via `.claude-plugin/plugin.json#skills`.
 5. Existing OMP, Codex, and Claude auth, sessions, histories, caches, DBs, browser state, local settings, plugin caches, and runtime files remain local-only. The renderer only reads tracked source, the resource manifest, and the scratch HOME marker/files it owns.
 
 Live-HOME promotion gate: **dry-run -> review -> explicit apply**. A dry-run manifest and deterministic checks must pass before review; the human reviewer must explicitly approve the apply target before any non-scratch HOME write. The evidence/decision-log owner is the LOO-103 collector -> judge -> human review loop. Required deterministic checks before apply are `scripts/validate-shared-agent-packages.mjs`, `scripts/validate-shared-agent-evals.mjs`, `scripts/render-plugin-bridge.mjs --json`, and the targeted plugin-bridge scratch apply/verifier proof.
 
 ## Packet contract
 
-Every agent receives a bounded input packet and returns a bounded output packet. The machine-readable packet fields for each agent live in `docs/harness/shared-nucleus-agents.json`. Common invariants:
+Every agent receives a bounded input packet and returns a bounded output packet. The machine-readable packet fields for each agent live in `nucleus/agents/shared-nucleus-agents.json`. Common invariants:
 
 - report mode, target surface, loaded references, rule IDs, proof run, and unresolved coverage gaps;
 - no live HOME apply;
@@ -251,7 +251,7 @@ Every agent receives a bounded input packet and returns a bounded output packet.
 - `omp-reviewer` (Codex) — direct OMP reviewer role port; future review work is split across `biters`, `spitters`, `bus-first`, `lab`, and stable rule citations.
 - `omp-librarian` (Codex) — potential OMP research role port; future research belongs to shared `science-pack` and source-grounded references.
 
-These candidates remain only as historical adapter-plan context. LOO-101 removes them from the active plugin renderer path in favor of shared-agent packages, and LOO-105 makes `.agents/skills/{agent-name}/` the canonical authoring source for those packages. They are not the desired shared nucleus agent model.
+These candidates remain only as historical adapter-plan context. LOO-101 removes them from the active plugin renderer path in favor of shared-agent packages, and LOO-105 makes `nucleus/skills/{agent-name}/` the canonical authoring source for those packages. They are not the desired shared nucleus agent model.
 
 ## Related and deferred work
 
@@ -263,4 +263,4 @@ These candidates remain only as historical adapter-plan context. LOO-101 removes
 - LOO-102 activates the shared starter roster only after package rendering, evals, deterministic checks, and governance pass.
 - LOO-103 adds the shared evidence-intake collector -> judge -> human decision-log workflow.
 - LOO-104 encodes mechanical package checks at `scripts/validate-shared-agent-packages.mjs`; judgment-heavy guidance stays in references, evals, or coverage gaps.
-- LOO-105 moves shared-agent package authorship to `.agents/skills/{agent-name}/`; plugin shared-agent package candidates are derived from `.agents/skills/{agent-name}/` at render/validation time; the former committed byte-copy distribution tree is intentionally absent.
+- LOO-105 moves shared-agent package authorship to `nucleus/skills/{agent-name}/`; plugin shared-agent package candidates are derived from `nucleus/skills/{agent-name}/` at render/validation time; the former committed byte-copy distribution tree is intentionally absent.

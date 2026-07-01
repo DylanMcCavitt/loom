@@ -7,10 +7,10 @@ import { expandedPlanTemplates } from "./render-plugin-bridge.mjs";
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
 const DEFAULTS = Object.freeze({
-  contract: "docs/harness/shared-nucleus-agents.json",
+  contract: "nucleus/agents/shared-nucleus-agents.json",
   plan: "adapters/plugin-bridge/plan.json",
   bridgeDir: "adapters/plugin-bridge",
-  skillsDir: ".agents/skills",
+  skillsDir: "nucleus/skills",
 });
 
 export const DETERMINISTIC_RULES = Object.freeze([
@@ -176,9 +176,9 @@ export function validateSharedAgentPackages(options = {}) {
     .sort((left, right) => compareText(left.template, right.template));
   const derivedSharedTemplatesByAgent = new Map();
   for (const template of derivedSharedTemplates) {
-    const match = template.template.match(/^\.agents\/skills\/([^/]+)\/(.+)$/u);
+    const match = template.template.match(/^nucleus\/skills\/([^/]+)\/(.+)$/u);
     if (!match) {
-      failures.push(`${template.id}: derived shared-agent package template must source from .agents/skills`);
+      failures.push(`${template.id}: derived shared-agent package template must source from nucleus/skills`);
       continue;
     }
     const [, agentName, relativeFile] = match;
@@ -189,20 +189,20 @@ export function validateSharedAgentPackages(options = {}) {
 
   const actualCanonicalPackageNames = sortedDirectoryNames(canonicalSkillsRoot).filter((name) => expectedAgentNames.includes(name)).sort();
   if (JSON.stringify(actualCanonicalPackageNames) !== JSON.stringify(expectedAgentNames)) {
-    failures.push(`canonical .agents/skills directory missing shared packages: expected ${expectedAgentNames.join(", ")}, got ${actualCanonicalPackageNames.join(", ")}`);
+    failures.push(`canonical nucleus/skills directory missing shared packages: expected ${expectedAgentNames.join(", ")}, got ${actualCanonicalPackageNames.join(", ")}`);
   }
 
   for (const agent of plan.agents ?? []) {
-    if (expectedAgentNames.includes(agent.name) && agent.packageRoot !== `.agents/skills/${agent.name}`) {
-      failures.push(`${agent.name}: plan packageRoot must be .agents/skills/${agent.name}`);
+    if (expectedAgentNames.includes(agent.name) && agent.packageRoot !== `nucleus/skills/${agent.name}`) {
+      failures.push(`${agent.name}: plan packageRoot must be nucleus/skills/${agent.name}`);
     }
   }
 
   for (const template of plan.templates ?? []) {
     if (template.kind === "shared-agent-package") {
       failures.push(`${template.id}: shared-agent package templates are derived from plan.agents; remove the hand-maintained entry`);
-      if (!template.template?.startsWith(".agents/skills/")) {
-        failures.push(`${template.id}: shared-agent package template must source from .agents/skills`);
+      if (!template.template?.startsWith("nucleus/skills/")) {
+        failures.push(`${template.id}: shared-agent package template must source from nucleus/skills`);
       }
     }
   }
@@ -235,14 +235,14 @@ export function validateSharedAgentPackages(options = {}) {
     const derivedTemplates = (derivedSharedTemplatesByAgent.get(name) ?? []).sort((left, right) => compareText(left.relativeFile, right.relativeFile));
     const derivedFiles = derivedTemplates.map((template) => template.relativeFile);
     if (JSON.stringify(derivedFiles) !== JSON.stringify(canonicalFiles)) {
-      failures.push(`${name}: derived plugin package candidate file list must match canonical .agents/skills source`);
+      failures.push(`${name}: derived plugin package candidate file list must match canonical nucleus/skills source`);
     }
     const derivedByFile = new Map(derivedTemplates.map((template) => [template.relativeFile, template]));
     for (const relativeFile of canonicalFiles) {
       const filePath = path.join(packageDir, relativeFile);
       const derivedTemplate = derivedByFile.get(relativeFile);
       if (!derivedTemplate) continue;
-      const expectedTemplatePath = `.agents/skills/${name}/${relativeFile}`;
+      const expectedTemplatePath = `nucleus/skills/${name}/${relativeFile}`;
       const expectedDestination = `~/.agents/plugins/loom-nucleus/skills/${name}/${relativeFile}`;
       if (derivedTemplate.template !== expectedTemplatePath) {
         failures.push(`${name}: derived plugin package template for ${relativeFile} must be ${expectedTemplatePath}`);
@@ -255,7 +255,7 @@ export function validateSharedAgentPackages(options = {}) {
       }
       const derivedPath = repoPath(derivedTemplate.template);
       if (existsSync(derivedPath) && readFileSync(filePath, "utf8") !== readFileSync(derivedPath, "utf8")) {
-        failures.push(`${name}: derived plugin package ${relativeFile} must match canonical .agents/skills source`);
+        failures.push(`${name}: derived plugin package ${relativeFile} must match canonical nucleus/skills source`);
       }
     }
 

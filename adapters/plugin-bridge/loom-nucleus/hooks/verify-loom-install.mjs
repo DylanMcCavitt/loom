@@ -7,7 +7,7 @@
 //   2. The marketplace catalog parses and carries a well-formed loom-nucleus entry (name + source).
 //   3. The loaded skill package names match the expected sets recorded from
 //      distributions/snapshots/omp-builtins/portability-matrix.json (6 skill candidates) and
-//      docs/harness/shared-nucleus-agents.json (canonical shared-agent packages),
+//      nucleus/agents/shared-nucleus-agents.json (canonical shared-agent packages),
 //      so a dropped/duplicated/renamed component is caught.
 //   4. The ~/.loom-harness/applied-manifest.json marker hashes match the installed files this plugin
 //      owns (no drift, no partial write).

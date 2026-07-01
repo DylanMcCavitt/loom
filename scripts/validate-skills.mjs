@@ -3,11 +3,15 @@ import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "n
 import { homedir } from "node:os";
 import path from "node:path";
 
+const DEFAULT_SKILLS_DIR = "nucleus/skills";
+const DEFAULT_COMPAT_SKILLS_DIR = ".agents/skills";
 const USAGE = `Usage: node scripts/validate-skills.mjs [--skills-dir <dir>] [--global-skills-dir <dir>] [--reserved-name <name>]`;
 
 function readArgs(argv) {
   const options = {
-    skillsDir: ".agents/skills",
+    skillsDir: DEFAULT_SKILLS_DIR,
+    compatSkillsDir: DEFAULT_COMPAT_SKILLS_DIR,
+    checkCompat: true,
     globalSkillsDirs: [],
     reservedNames: new Set(),
   };
@@ -24,6 +28,7 @@ function readArgs(argv) {
     }
     if (arg === "--skills-dir") {
       options.skillsDir = next;
+      options.checkCompat = false;
     } else if (arg === "--global-skills-dir") {
       options.globalSkillsDirs.push(next);
     } else if (arg === "--reserved-name") {
@@ -186,6 +191,39 @@ function collectGlobalSkillNames(globalSkillsDirs, skillsRoot) {
   return names;
 }
 
+function collectRelativeFiles(root, current = root, files = []) {
+  for (const entry of listEntries(current)) {
+    if (entry.name === ".system") continue;
+    const filePath = path.join(current, entry.name);
+    if (entry.isDirectory()) {
+      collectRelativeFiles(root, filePath, files);
+    } else if (entry.isFile()) {
+      files.push(path.relative(root, filePath).split(path.sep).join("/"));
+    }
+  }
+  return files.sort();
+}
+
+function validateCompatSurface(skillsRoot, compatRoot, errors) {
+  if (!existsSync(compatRoot) || !statSync(compatRoot).isDirectory()) {
+    errors.push(`${path.relative(process.cwd(), compatRoot)}: expected rendered compatibility surface`);
+    return;
+  }
+  const canonicalFiles = collectRelativeFiles(skillsRoot);
+  const compatFiles = collectRelativeFiles(compatRoot);
+  if (JSON.stringify(canonicalFiles) !== JSON.stringify(compatFiles)) {
+    errors.push(`${path.relative(process.cwd(), compatRoot)}: rendered compatibility surface must contain exactly the files in ${path.relative(process.cwd(), skillsRoot)}`);
+    return;
+  }
+  for (const relativeFile of canonicalFiles) {
+    const canonical = readFileSync(path.join(skillsRoot, relativeFile));
+    const compat = readFileSync(path.join(compatRoot, relativeFile));
+    if (!canonical.equals(compat)) {
+      errors.push(`${path.join(path.relative(process.cwd(), compatRoot), relativeFile)}: rendered compatibility file differs from ${path.join(path.relative(process.cwd(), skillsRoot), relativeFile)}`);
+    }
+  }
+}
+
 function validateSkills(options) {
   const skillsRoot = path.resolve(options.skillsDir);
   const errors = [];
@@ -207,7 +245,7 @@ function validateSkills(options) {
     if (entry.name.startsWith(".")) continue;
     const skillDir = path.join(skillsRoot, entry.name);
     if (!entry.isDirectory()) {
-      errors.push(`${path.relative(process.cwd(), skillDir)}: only skill directories are allowed directly under .agents/skills`);
+      errors.push(`${path.relative(process.cwd(), skillDir)}: only skill directories are allowed directly under nucleus/skills`);
       continue;
     }
 
@@ -221,7 +259,7 @@ function validateSkills(options) {
     for (const filePath of collectFiles(skillDir)) {
       scanSecrets(path.relative(process.cwd(), filePath), readFileSync(filePath, "utf8"), errors);
       if (filePath.endsWith(`${path.sep}SKILL.md`) && path.dirname(filePath) !== skillDir) {
-        errors.push(`${path.relative(process.cwd(), filePath)}: SKILL.md must be exactly one level under .agents/skills/<name>/`);
+        errors.push(`${path.relative(process.cwd(), filePath)}: SKILL.md must be exactly one level under nucleus/skills/<name>/`);
       }
     }
 
@@ -252,6 +290,8 @@ function validateSkills(options) {
       }
     }
   }
+
+  if (options.checkCompat) validateCompatSurface(skillsRoot, path.resolve(options.compatSkillsDir), errors);
 
   return { checked, errors };
 }

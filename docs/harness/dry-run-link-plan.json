@@ -43,7 +43,7 @@
       "sourceResource": "codex-agents-skills",
       "mode": "candidate-symlink",
       "livePath": "~/.agents/skills/",
-      "proposedTarget": "repo:.agents/skills/",
+      "proposedTarget": "repo:nucleus/skills/",
       "disposition": "adapt",
       "notes": "Shared skill roots require explicit approval before any live link operation."
     },
@@ -103,8 +103,8 @@
       "id": "shared-nucleus-agent-packages",
       "sourceHarness": "codex",
       "operation": "render-package-set",
-      "destination": ".agents/skills/{agent-name}/",
-      "sourceTemplate": "docs/harness/shared-nucleus-agents.json",
+      "destination": "nucleus/skills/{agent-name}/",
+      "sourceTemplate": "nucleus/agents/shared-nucleus-agents.json",
       "status": "dry-run-only",
       "approval": "future-issue-required",
       "notes": "Future renderer target only: one Vercel-shaped package per canonical shared nucleus agent, with no harness prefixes. Supersedes OMP-prefixed Codex custom-agent candidates."

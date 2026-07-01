@@ -1,0 +1,35 @@
+{
+  "skill_name": "map-seed",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Before we commit to it, prototype the sync state machine so we can feel out the edge cases.",
+      "expected_output": "A throwaway logic-run prototype that drives the sync state machine through hard cases by hand, retros what worked versus what didn't, restarts fresh with the learnings if the first run was doomed, and folds the verdict into the spec rather than shipping the prototype.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "We're stuck with this legacy billing API we can't change, but mock up an approach anyway so we can de-risk the design before building for real.",
+      "expected_output": "A constrained throwaway run that names the fixed legacy API as terrain to plan around, stubs/mocks it behind a pure interface, learns whether the design holds, retros and rerolls as needed, and feeds findings into blueprint without shipping the prototype to production.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "give me a few radically diff layouts for the dashbord so i can flip thru them and pick one",
+      "expected_output": "Despite the typos, activates the UI-run branch: several structurally different variants on a single route switchable from a floating bar, with the winner's rationale captured and the throwaway switcher/variants deleted afterward.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "The design is settled. Write the final PRD/spec for offline mode now.",
+      "expected_output": "Does NOT activate map-seed; routes to blueprint, since the request is to write the committed spec rather than to prototype or de-risk a design with a throwaway run.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Explain how an in-memory reducer pattern works in React.",
+      "expected_output": "Does NOT activate; this is a conceptual explanation request, not a request to build a throwaway prototype or de-risk a design under constraints.",
+      "files": []
+    }
+  ]
+}

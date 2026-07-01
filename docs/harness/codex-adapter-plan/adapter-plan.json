@@ -58,7 +58,7 @@
       "Keep a project layer for repo-local instructions, repo config, issue-tracker guidance, triage labels, domain guidance, scope ledger, handoffs, and project skills.",
       "Use an idempotent apply/check model where a marker manifest defines what applied means and existing files are not overwritten.",
       "Preserve the full workflow trace from grilled plan to PRD, issues, triage, one issue/worktree/PR implementation, verification evidence, and handoff when blocked.",
-      "Require project skills to live one directory below .agents/skills with SKILL.md frontmatter and concrete Use when triggers.",
+      "Require project skills to live one directory below nucleus/skills with SKILL.md frontmatter and concrete Use when triggers.",
       "Treat GitHub issue/PR templates and workflow labels as repo workflow surfaces when the repo uses GitHub."
     ],
     "codexTranslation": [
@@ -384,9 +384,9 @@
       "notes": "User-level profile candidate only after explicit approval; do not change Codex default provider/model."
     },
     {
-      "surface": ".agents/skills/{agent-name}/",
+      "surface": "nucleus/skills/{agent-name}/",
       "status": "dry-run-only",
-      "sourceTemplate": "docs/harness/shared-nucleus-agents.json",
+      "sourceTemplate": "nucleus/agents/shared-nucleus-agents.json",
       "notes": "Future renderer target: one Vercel-shaped package per canonical shared nucleus agent, using canonical names and no harness prefixes. OMP-prefixed Codex custom-agent templates are superseded context only."
     },
     {
@@ -404,7 +404,7 @@
     "Reject rendered files containing absolute private home paths, API key/token-looking text, auth cache names as destinations, provider routing keys, or model default changes in the base template.",
     "Validate that official Codex doc references cover config, profiles, custom agents/subagents, skills, AGENTS.md, and auth/local credential boundaries.",
     "Print a dry-run manifest showing active candidate destination paths, required human approvals, and skipped local-only surfaces; the manifest must not list OMP-prefixed custom agents as shared agent activation targets.",
-    "Future agent activation must render per-agent Vercel-shaped packages from docs/harness/shared-nucleus-agents.json with canonical names and no harness prefixes.",
+    "Future agent activation must render per-agent Vercel-shaped packages from nucleus/agents/shared-nucleus-agents.json with canonical names and no harness prefixes.",
     "Require a separate future issue/PR to perform any write into ~/.codex, .codex/agents, or .agents/skills."
   ],
   "humanDecisionResolutions": [
@@ -417,8 +417,8 @@
       "resolution": "No. Keep their rationale only as superseded adapter-plan context; active renderers must not emit omp-designer, omp-librarian, omp-planner, or omp-reviewer."
     },
     {
-      "question": "Which skill candidates should be repo-local .agents/skills versus personal ~/.agents/skills?",
-      "resolution": "Use the OMP workflow-kit split: repo workflow and domain skills go in .agents/skills; general reusable workflow skills go in ~/.agents/skills; inspect the active OMP skill roots before final placement."
+      "question": "Which skill candidates should be repo-local nucleus/skills versus personal ~/.agents/skills?",
+      "resolution": "Use the OMP workflow-kit split: repo workflow and domain skills go in nucleus/skills; general reusable workflow skills go in ~/.agents/skills; inspect the active OMP skill roots before final placement."
     },
     {
       "question": "Should the optional omp-harness profile set sandbox/approval defaults, or should it only document recommended CLI flags?",
@@ -449,7 +449,7 @@
   "humanDecisionsBeforeImplementation": [
     "What replaces adapted OMP agents as Codex activation targets?",
     "Should designer, librarian, planner, and reviewer OMP role candidates remain active renderer targets?",
-    "Which skill candidates should be repo-local .agents/skills versus personal ~/.agents/skills?",
+    "Which skill candidates should be repo-local nucleus/skills versus personal ~/.agents/skills?",
     "Should the optional omp-harness profile set sandbox/approval defaults, or should it only document recommended CLI flags?",
     "What review/approval policy is required before merging any generated template into live ~/.codex/config.toml?"
   ]

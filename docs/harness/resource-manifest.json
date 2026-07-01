@@ -91,12 +91,12 @@
         "~/.codex/agents/",
         "~/.codex/skills/",
         "~/.agents/skills/",
-        "repo:.agents/skills/"
+        "repo:nucleus/skills/"
       ],
       "discoverySource": "Codex and shared skill roots by directory name; individual skill deduplication is deferred.",
-      "intendedRepoTarget": ".agents/skills/ and docs/harness/codex-adapter-plan.md",
+      "intendedRepoTarget": "nucleus/skills/ canonical source, .agents/skills/ rendered compatibility surface, and docs/harness/codex-adapter-plan.md",
       "disposition": "adapt",
-      "migrationNotes": "Adapt only explicit project skills and reusable agent guidance. Do not vendor plugin-provided skills or global caches as part of this manifest."
+      "migrationNotes": "Adapt only explicit project skills and reusable agent guidance. Keep .agents/skills as the rendered compatibility surface; do not vendor plugin-provided skills or global caches as part of this manifest."
     },
     {
       "id": "codex-runtime-state",
@@ -172,10 +172,11 @@
         "~/.agents/skills/",
         "~/.codex/skills/",
         "~/.claude/skills/",
+        "repo:nucleus/skills/",
         "repo:.agents/skills/",
         "~/.omp/agent/workflow-kit/"
       ],
-      "discoverySource": "Known overlapping global, harness-specific, and repo-local skill roots; this issue records categories only.",
+      "discoverySource": "Known overlapping global, harness-specific, canonical repo, and rendered compatibility skill roots; this issue records categories only.",
       "intendedRepoTarget": "docs/harness/skill-root-audit.md (future issue #43)",
       "disposition": "reference-only",
       "migrationNotes": "Do not deduplicate in issue #38. Future audit should compare names, triggers, and ownership without copying package/plugin caches."
@@ -191,7 +192,7 @@
       "discoverySource": "Codex-native personal marketplace root (~/.agents/plugins/) per plugin-bridge design sections 1.1/2.1; render-plugin-bridge writes the catalog and the co-located loom-nucleus plugin source here create-missing-only via the strict-manual render -> gate -> apply executor.",
       "intendedRepoTarget": "adapters/plugin-bridge/ (authored templates) and distributions/loom-nucleus/ (rendered committed output)",
       "disposition": "adapt",
-      "migrationNotes": "Personal cross-harness marketplace catalog plus loom-nucleus plugin source (dual .codex-plugin/ + .claude-plugin/ manifests over a shared skills/hooks root with canonical shared-agent packages derived from .agents/skills/{agent-name}/ at render time). Written only through the gated, marker-tracked, create-missing-only executor. The plugin cache subtrees (~/.codex/plugins/cache/, ~/.claude/plugins/cache/, ~/.claude/plugins/data/) stay local-only and are never write targets."
+      "migrationNotes": "Personal cross-harness marketplace catalog plus loom-nucleus plugin source (dual .codex-plugin/ + .claude-plugin/ manifests over a shared skills/hooks root with canonical shared-agent packages derived from nucleus/skills/{agent-name}/ at render time). Written only through the gated, marker-tracked, create-missing-only executor. The plugin cache subtrees (~/.codex/plugins/cache/, ~/.claude/plugins/cache/, ~/.claude/plugins/data/) stay local-only and are never write targets."
     },
     {
       "id": "claude-plugin-marketplace",

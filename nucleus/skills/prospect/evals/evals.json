@@ -1,0 +1,35 @@
+{
+  "skill_name": "prospect",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Kick off a new idea: offline mode for the editor. Get it captured as planning work.",
+      "expected_output": "Reads the repo envelope, briefly frames the idea's intent and unknowns, creates the Linear home (initiative or project per the envelope) plus an idea/brief document via save_initiative/save_project and save_document, returns the created ids/links, and hands off to research or blueprint. Does not implement and does not create issues.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "lets start a new thing, offline editor idk yet, not sure what it even needs",
+      "expected_output": "Still activates on the vague, typo-laden new-idea prompt: frames the rough shape, lands a Linear home with an idea/brief that records the open unknowns, and routes to research because feasibility/scope are unclear. Avoids relitigating or full speccing.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "kick of a brand new initiaive for collaborative cursors",
+      "expected_output": "Activates despite the misspellings, reads the envelope for the target team and initiative-vs-project choice, creates the Linear home plus a brief document, and returns the links. No issues are created and no implementation begins.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "split this plan into issues",
+      "expected_output": "Does NOT activate prospect; recognizes that decomposing a plan into tracked issues is the ghosts skill's job and routes there instead of creating a Linear home.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "write the PRD for offline mode now",
+      "expected_output": "Does NOT treat this as new-idea intake; speccing a PRD from known context belongs to blueprint, so it routes to blueprint rather than landing a fresh Linear home.",
+      "files": []
+    }
+  ]
+}

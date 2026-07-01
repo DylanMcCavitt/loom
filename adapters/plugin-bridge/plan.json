@@ -11,8 +11,8 @@
     "docs/harness/codex-adapter-plan/adapter-plan.json",
     "docs/harness/claude-adapter-plan.md",
     "docs/harness/resource-manifest.json",
-    "docs/harness/shared-nucleus-agents.md",
-    "docs/harness/shared-nucleus-agents.json"
+    "nucleus/agents/shared-nucleus-agents.md",
+    "nucleus/agents/shared-nucleus-agents.json"
   ],
   "officialDocs": [
     {
@@ -48,7 +48,7 @@
   ],
   "decisions": {
     "dualManifest": "YES. One component root (loom-nucleus/) carries sibling .codex-plugin/plugin.json and .claude-plugin/plugin.json over shared skills/ and hooks/. Canonical shared agents render as Vercel-shaped skill packages consumed by both Codex and Claude; legacy Claude agents/*.md role ports are superseded.",
-    "writeBoth": "Write BOTH the marketplace catalog AND the loom-nucleus plugin distribution copy to a live home path through the strict-manual gate; canonical shared-agent packages are authored under repo .agents/skills/{agent-name}/ and rendered to ~/.agents/plugins/loom-nucleus/skills/{agent-name}/.",
+    "writeBoth": "Write BOTH the marketplace catalog AND the loom-nucleus plugin distribution copy to a live home path through the strict-manual gate; canonical shared-agent packages are authored under repo nucleus/skills/{agent-name}/ and rendered to ~/.agents/plugins/loom-nucleus/skills/{agent-name}/.",
     "marketplaceRoot": "~/.agents/plugins (marketplace.json lives here; Codex auto-discovers it and reports the marketplace ROOT as $HOME)",
     "pluginSourceRoot": "~/.agents/plugins/loom-nucleus",
     "sourcePathReconciliation": "VERIFIED LIVE (LOO-15, codex-cli 0.142.0): Codex auto-discovers ~/.agents/plugins/marketplace.json with marketplace ROOT = $HOME and resolves source.path relative to that root, so source.path is './.agents/plugins/loom-nucleus' (./-prefixed, inside the $HOME root), NOT './loom-nucleus'. Install with `codex plugin add loom-nucleus@loom-nucleus-plugins` (the verb is `add`, not `install`); no `marketplace add` is needed (auto-discovered). policy.installation=AVAILABLE, authentication=ON_INSTALL, category=Productivity all parse and install+enable cleanly.",
@@ -63,7 +63,7 @@
       "~/.codex/auth.json",
       "~/.claude/settings.local.json"
     ],
-    "canonicalSharedAgentPackages": "LOO-105 makes .agents/skills/{agent-name}/ the canonical repo-local Vercel-shaped shared-agent package source: AGENTS.md, SKILL.md, references/*, and exemplars/* per agent. The plugin bridge derives shared-agent package candidates directly from that source at render/validation time; committed byte-copy plugin package output is intentionally absent."
+    "canonicalSharedAgentPackages": "LOO-105 makes nucleus/skills/{agent-name}/ the canonical repo-local Vercel-shaped shared-agent package source: AGENTS.md, SKILL.md, references/*, and exemplars/* per agent. The plugin bridge derives shared-agent package candidates directly from that source at render/validation time; committed byte-copy plugin package output is intentionally absent."
   },
   "componentRoot": "loom-nucleus",
   "templates": [
@@ -236,7 +236,7 @@
         "coverage gaps"
       ],
       "packaged": true,
-      "packageRoot": ".agents/skills/blueprint",
+      "packageRoot": "nucleus/skills/blueprint",
       "consumedBy": "both"
     },
     {
@@ -272,7 +272,7 @@
         "blockers"
       ],
       "packaged": true,
-      "packageRoot": ".agents/skills/ghosts",
+      "packageRoot": "nucleus/skills/ghosts",
       "consumedBy": "both"
     },
     {
@@ -308,7 +308,7 @@
         "needed info"
       ],
       "packaged": true,
-      "packageRoot": ".agents/skills/inserter",
+      "packageRoot": "nucleus/skills/inserter",
       "consumedBy": "both"
     },
     {
@@ -353,7 +353,7 @@
         "residual risks"
       ],
       "packaged": true,
-      "packageRoot": ".agents/skills/roboports",
+      "packageRoot": "nucleus/skills/roboports",
       "consumedBy": "both"
     },
     {
@@ -389,7 +389,7 @@
         "blockers"
       ],
       "packaged": true,
-      "packageRoot": ".agents/skills/radar",
+      "packageRoot": "nucleus/skills/radar",
       "consumedBy": "both"
     },
     {
@@ -423,7 +423,7 @@
         "untested branches"
       ],
       "packaged": true,
-      "packageRoot": ".agents/skills/lab",
+      "packageRoot": "nucleus/skills/lab",
       "consumedBy": "both"
     },
     {
@@ -458,7 +458,7 @@
         "smallest fix"
       ],
       "packaged": true,
-      "packageRoot": ".agents/skills/biters",
+      "packageRoot": "nucleus/skills/biters",
       "consumedBy": "both"
     },
     {
@@ -493,7 +493,7 @@
         "mitigation"
       ],
       "packaged": true,
-      "packageRoot": ".agents/skills/spitters",
+      "packageRoot": "nucleus/skills/spitters",
       "consumedBy": "both"
     },
     {
@@ -529,7 +529,7 @@
         "gaps"
       ],
       "packaged": true,
-      "packageRoot": ".agents/skills/spidertron",
+      "packageRoot": "nucleus/skills/spidertron",
       "consumedBy": "both"
     },
     {
@@ -564,7 +564,7 @@
         "no-cut statement"
       ],
       "packaged": true,
-      "packageRoot": ".agents/skills/bus-first",
+      "packageRoot": "nucleus/skills/bus-first",
       "consumedBy": "both"
     },
     {
@@ -610,7 +610,7 @@
         "blocked reason"
       ],
       "packaged": true,
-      "packageRoot": ".agents/skills/repair-pack",
+      "packageRoot": "nucleus/skills/repair-pack",
       "consumedBy": "both"
     },
     {
@@ -646,7 +646,7 @@
         "risks"
       ],
       "packaged": true,
-      "packageRoot": ".agents/skills/main-bus",
+      "packageRoot": "nucleus/skills/main-bus",
       "consumedBy": "both"
     },
     {
@@ -682,7 +682,7 @@
         "open questions"
       ],
       "packaged": true,
-      "packageRoot": ".agents/skills/science-pack",
+      "packageRoot": "nucleus/skills/science-pack",
       "consumedBy": "both"
     },
     {
@@ -719,7 +719,7 @@
         "resume command/context"
       ],
       "packaged": true,
-      "packageRoot": ".agents/skills/belt",
+      "packageRoot": "nucleus/skills/belt",
       "consumedBy": "both"
     },
     {
@@ -754,7 +754,7 @@
         "risks"
       ],
       "packaged": true,
-      "packageRoot": ".agents/skills/recycler",
+      "packageRoot": "nucleus/skills/recycler",
       "consumedBy": "both"
     },
     {
@@ -790,7 +790,7 @@
         "stop reason"
       ],
       "packaged": true,
-      "packageRoot": ".agents/skills/modules",
+      "packageRoot": "nucleus/skills/modules",
       "consumedBy": "both"
     },
     {
@@ -825,7 +825,7 @@
         "follow-ups"
       ],
       "packaged": true,
-      "packageRoot": ".agents/skills/rocket-launch",
+      "packageRoot": "nucleus/skills/rocket-launch",
       "consumedBy": "both"
     }
   ],

@@ -11,7 +11,7 @@ import {
 } from "../scripts/validate-shared-agent-packages.mjs";
 
 const script = new URL("../scripts/validate-shared-agent-packages.mjs", import.meta.url).pathname;
-const contract = JSON.parse(readFileSync(new URL("../docs/harness/shared-nucleus-agents.json", import.meta.url), "utf8"));
+const contract = JSON.parse(readFileSync(new URL("../nucleus/agents/shared-nucleus-agents.json", import.meta.url), "utf8"));
 
 test("shared agent package validator passes for checked-in canonical packages and derived plugin candidates", () => {
   const result = spawnSync(process.execPath, [script], { encoding: "utf8" });
@@ -39,7 +39,7 @@ test("shared agent package validator fails when canonical packages are missing",
   try {
     const result = validateSharedAgentPackages({ skillsDir: dir });
     assert.ok(
-      result.failures.some((failure) => failure.includes("canonical .agents/skills directory missing shared packages")),
+      result.failures.some((failure) => failure.includes("canonical nucleus/skills directory missing shared packages")),
       result.failures.join("\n"),
     );
   } finally {
@@ -57,7 +57,7 @@ test("shared agent package validator fails when plan agents bypass canonical sou
 
     const result = validateSharedAgentPackages({ plan: planPath });
     assert.ok(
-      result.failures.some((failure) => failure.includes(`plan packageRoot must be .agents/skills/${plan.agents[0].name}`)),
+      result.failures.some((failure) => failure.includes(`plan packageRoot must be nucleus/skills/${plan.agents[0].name}`)),
       result.failures.join("\n"),
     );
   } finally {
@@ -69,12 +69,12 @@ test("shared agent package validator fails when a derived candidate diverges fro
   const dir = mkdtempSync(path.join(tmpdir(), "shared-agent-derived-"));
   try {
     const skillsDir = path.join(dir, "skills");
-    cpSync(new URL("../.agents/skills", import.meta.url), skillsDir, { recursive: true });
+    cpSync(new URL("../nucleus/skills", import.meta.url), skillsDir, { recursive: true });
     writeFileSync(path.join(skillsDir, "blueprint", "SKILL.md"), "---\nname: blueprint\n---\n\n# Drifted\n");
 
     const result = validateSharedAgentPackages({ skillsDir });
     assert.ok(
-      result.failures.some((failure) => failure.includes("blueprint: derived plugin package SKILL.md must match canonical .agents/skills source")),
+      result.failures.some((failure) => failure.includes("blueprint: derived plugin package SKILL.md must match canonical nucleus/skills source")),
       result.failures.join("\n"),
     );
   } finally {

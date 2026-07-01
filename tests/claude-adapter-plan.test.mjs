@@ -75,7 +75,7 @@ test("Claude adapter plan maps issue 40 skill-class commands to future Claude sk
   for (const mapping of plan.skillCandidateMappings) {
     assert.equal(mapping.claudeSurface, "skill");
     assert.match(mapping.futureSkillName, /^omp-/u);
-    assert.match(mapping.sharedWorkflowSource, /^\.agents\/skills\//u);
+    assert.match(mapping.sharedWorkflowSource, /^nucleus\/skills\//u);
     assert.match(mapping.adapterMode, /review/u);
     if (mapping.generatedClaudeAdapter) {
       assert.notEqual(mapping.generatedClaudeAdapter, mapping.sharedWorkflowSource);
@@ -160,7 +160,7 @@ test("Claude local-only surfaces and generated candidates stay dry-run only", ()
 
 test("Claude adapter plan documents duplicate skill risk without dedupe action", () => {
   const risks = JSON.stringify(plan.duplicateSkillRootRisks);
-  for (const marker of ["~/.claude/skills", "~/.codex/skills", "~/.agents/skills", "repo:.agents/skills"]) {
+  for (const marker of ["~/.claude/skills", "~/.codex/skills", "~/.agents/skills", "repo:nucleus/skills"]) {
     assert.match(risks, new RegExp(marker.replace("/", "\\/"), "u"));
   }
   assert.match(risks, /document-only/u);

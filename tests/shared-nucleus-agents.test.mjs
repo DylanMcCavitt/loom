@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-const contract = JSON.parse(readFileSync(new URL("../docs/harness/shared-nucleus-agents.json", import.meta.url), "utf8"));
-const markdown = readFileSync(new URL("../docs/harness/shared-nucleus-agents.md", import.meta.url), "utf8");
+const contract = JSON.parse(readFileSync(new URL("../nucleus/agents/shared-nucleus-agents.json", import.meta.url), "utf8"));
+const markdown = readFileSync(new URL("../nucleus/agents/shared-nucleus-agents.md", import.meta.url), "utf8");
 
 const EXPECTED_ROSTER = [
   "blueprint",
@@ -52,7 +52,7 @@ test("shared nucleus agent contract records the canonical Factorio roster", () =
 test("contract adapts the Vercel article into per-agent skill packages", () => {
   assert.equal(contract.sourcePattern.url, "https://vercel.com/blog/teaching-agents-product-design-at-vercel");
   assert.match(contract.repositoryStructure.mappingDecision, /per canonical nucleus agent/u);
-  assert.equal(contract.repositoryStructure.perAgentSkillPackage.pathTemplate, ".agents/skills/{agent-name}/");
+  assert.equal(contract.repositoryStructure.perAgentSkillPackage.pathTemplate, "nucleus/skills/{agent-name}/");
   for (const file of ["AGENTS.md", "SKILL.md", "references/coverage-gaps.md"]) {
     assert.ok(contract.repositoryStructure.perAgentSkillPackage.requiredFiles.includes(file), `${file} must be required`);
   }
@@ -144,7 +144,7 @@ test("per-agent delegation lists are bounded to the canonical roster", () => {
 
 test("repair-pack defines its Vercel-shaped package and repair-only mode", () => {
   const repairPack = contract.repairPack;
-  assert.equal(repairPack.packageShape.path, ".agents/skills/repair-pack/");
+  assert.equal(repairPack.packageShape.path, "nucleus/skills/repair-pack/");
   for (const file of [
     "AGENTS.md",
     "SKILL.md",
@@ -167,7 +167,7 @@ test("repair-pack defines its Vercel-shaped package and repair-only mode", () =>
   assert.ok(repairAgent.references.includes("repair-pack"));
   assert.ok(repairAgent.references.includes("coverage-gaps"));
   assert.ok(repairAgent.nonGoals.some((goal) => /native agent files or eval harnesses/u.test(goal)));
-  assert.match(markdown, /\.agents\/skills\/repair-pack\//u);
+  assert.match(markdown, /nucleus\/skills\/repair-pack\//u);
   assert.match(markdown, /supports only `repair` mode/u);
 });
 

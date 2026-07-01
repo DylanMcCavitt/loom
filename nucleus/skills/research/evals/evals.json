@@ -1,0 +1,30 @@
+{
+  "skill_name": "research",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Spike whether we can do offline sync with CRDTs before we commit to it.",
+      "expected_output": "Runs a time-boxed investigation starting from the cheapest science pack (read the code / small local experiment), records findings as a Linear document on the idea's project, and states the decision each finding unblocks. Does not start implementing."
+    },
+    {
+      "id": 2,
+      "prompt": "Research how other editors handle conflict resolution.",
+      "expected_output": "Treats this as prior-art (higher-tier) research, time-boxes it, captures findings in a Linear document, and ties each finding to the decision it informs, then hands the decisions to blueprint."
+    },
+    {
+      "id": 3,
+      "prompt": "quick spike: can we evn do offline sync, timebox it pls",
+      "expected_output": "The typo-filled trigger still activates research. It runs a cheapest-pack-first, time-boxed spike and reports findings against the decision they unblock."
+    },
+    {
+      "id": 4,
+      "prompt": "Implement the sync layer.",
+      "expected_output": "Does NOT activate research; this is implementation work that routes to roboports."
+    },
+    {
+      "id": 5,
+      "prompt": "What's the capital of France?",
+      "expected_output": "Does NOT activate research; there is no build-blocking unknown to resolve before construction."
+    }
+  ]
+}

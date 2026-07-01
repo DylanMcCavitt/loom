@@ -339,6 +339,7 @@ function isBulkClaudeSkillRootLink(link) {
   return live === "~/.claude/skills"
     || live === ".claude/skills"
     || target === ".agents/skills"
+    || target === "nucleus/skills"
     || target === "~/.agents/skills";
 }
 
@@ -495,11 +496,11 @@ function trackedPathErrors() {
   const result = spawnSync("git", ["ls-files", "-z"], { encoding: "utf8" });
   if (result.status !== 0) return [`git tracked path check failed: ${result.stderr || result.stdout}`];
   for (const trackedPath of result.stdout.split("\0").filter(Boolean)) {
-    // Skill content lives under .agents/skills/; skill names such as "computer-use"
+    // Skill content lives under nucleus/skills/ and rendered .agents/skills/; skill names such as "computer-use"
     // or "browser" legitimately match runtime-state path tokens. Skill files are
     // secret-scanned by validate-skills and the tracked-source content scan, so they
     // are exempt from this runtime-state path-name check.
-    if (trackedPath.startsWith(".agents/skills/")) continue;
+    if (trackedPath.startsWith("nucleus/skills/") || trackedPath.startsWith(".agents/skills/")) continue;
     const reason = dangerousPathReason(trackedPath);
     if (reason) errors.push(`tracked repo path is dangerous ${reason}: ${trackedPath}`);
   }

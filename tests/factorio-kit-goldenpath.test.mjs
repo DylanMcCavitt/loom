@@ -3,11 +3,11 @@ import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 import { createWorld } from "./fixtures/mock-linear-github.mjs";
 
-const skillsRoot = new URL("../.agents/skills/", import.meta.url);
+const skillsRoot = new URL("../nucleus/skills/", import.meta.url);
 const MVP = ["prospect", "blueprint", "ghosts", "roboports", "radar", "proof-pass", "rocket-launch", "assembler", "bus-first"];
 const KIT = [...MVP, "map-seed", "biters", "research", "main-bus", "inserter", "modules", "quality", "space-age"];
 const manifest = readFileSync(new URL("../docs/skills/factorio-kit.md", import.meta.url), "utf8");
-const assemblerSkill = readFileSync(new URL("../.agents/skills/assembler/SKILL.md", import.meta.url), "utf8");
+const assemblerSkill = readFileSync(new URL("../nucleus/skills/assembler/SKILL.md", import.meta.url), "utf8");
 const adr0003 = readFileSync(new URL("../docs/decisions/0003-factorio-workflow-kit.md", import.meta.url), "utf8");
 
 // ---- Golden path: idea -> spec -> ghosts -> roboports -> rocket-launch ----

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-const skill = readFileSync(new URL("../.agents/skills/map-seed/SKILL.md", import.meta.url), "utf8");
+const skill = readFileSync(new URL("../nucleus/skills/map-seed/SKILL.md", import.meta.url), "utf8");
 
 test("map-seed name matches its directory", () => {
   assert.match(skill, /^name: map-seed$/mu);

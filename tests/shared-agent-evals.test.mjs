@@ -11,7 +11,7 @@ import {
 } from "../scripts/validate-shared-agent-evals.mjs";
 
 const script = new URL("../scripts/validate-shared-agent-evals.mjs", import.meta.url).pathname;
-const contract = JSON.parse(readFileSync(new URL("../docs/harness/shared-nucleus-agents.json", import.meta.url), "utf8"));
+const contract = JSON.parse(readFileSync(new URL("../nucleus/agents/shared-nucleus-agents.json", import.meta.url), "utf8"));
 
 test("shared agent eval command passes for checked-in fixtures", () => {
   const result = spawnSync(process.execPath, [script], { encoding: "utf8" });

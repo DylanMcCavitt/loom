@@ -53,7 +53,7 @@
       "rulesApplied": ["one finding only"],
       "allowedChildren": ["lab"],
       "findingPacket": {
-        "file": "docs/harness/shared-nucleus-agents.json",
+        "file": "nucleus/agents/shared-nucleus-agents.json",
         "symbol": "repairPack",
         "scope": "findingPacketSchema",
         "concreteRisk": "missing proof would allow unverified repairs",
@@ -61,7 +61,7 @@
         "proofCheck": "node --test tests/shared-nucleus-agents.test.mjs",
         "ruleOrSourceId": "LOO-98 acceptance",
         "nonGoals": ["broad cleanup"],
-        "allowedFiles": ["docs/harness/shared-nucleus-agents.json"]
+        "allowedFiles": ["nucleus/agents/shared-nucleus-agents.json"]
       },
       "contextPacket": { "fields": ["issueId", "findingPacket", "allowedFiles", "proofCheck"], "bytes": 900 },
       "proof": { "namedCheck": "node --test tests/shared-nucleus-agents.test.mjs", "result": "pass", "evidence": "offline fixture harness" },
@@ -272,7 +272,7 @@
       "rulesApplied": ["parallel fanout uses distinct lenses and disjoint write scopes"],
       "allowedChildren": ["lab", "biters", "spitters", "spidertron", "bus-first", "repair-pack", "belt"],
       "waves": [
-        { "depth": 1, "children": ["lab", "biters", "spitters"], "writeScopes": ["tests/shared-agent-evals.test.mjs", "scripts/validate-shared-agent-evals.mjs", "docs/harness/shared-nucleus-agents.json"] }
+        { "depth": 1, "children": ["lab", "biters", "spitters"], "writeScopes": ["tests/shared-agent-evals.test.mjs", "scripts/validate-shared-agent-evals.mjs", "nucleus/agents/shared-nucleus-agents.json"] }
       ],
       "contextPacket": { "fields": ["issueId", "mode", "scope", "loadedReferences", "allowedChildren", "proofState", "stopReason"], "bytes": 1300 },
       "proof": { "namedCheck": "node --test tests/shared-agent-evals.test.mjs", "result": "pass", "evidence": "offline fixture harness" },
@@ -388,13 +388,13 @@
       "rulesApplied": ["finding packet requires source and proof"],
       "allowedChildren": ["lab"],
       "findingPacket": {
-        "file": "docs/harness/shared-nucleus-agents.json",
+        "file": "nucleus/agents/shared-nucleus-agents.json",
         "symbol": "repairPack",
         "scope": "packet schema",
         "concreteRisk": "source-less finding invites scope creep",
         "minimalExpectedFix": "add rule id",
         "nonGoals": ["renderer"],
-        "allowedFiles": ["docs/harness/shared-nucleus-agents.json"]
+        "allowedFiles": ["nucleus/agents/shared-nucleus-agents.json"]
       },
       "contextPacket": { "fields": ["issueId", "findingPacket", "allowedFiles"], "bytes": 700 },
       "proof": { "namedCheck": "node --test tests/shared-agent-evals.test.mjs", "result": "pass", "evidence": "offline fixture harness" },
@@ -519,7 +519,7 @@
         "decisionLog": {
           "scope": "shared evidence intake workflow",
           "rationale": "source evidence is incomplete",
-          "evidence": ["docs/harness/shared-nucleus-agents.md"],
+          "evidence": ["nucleus/agents/shared-nucleus-agents.md"],
           "exceptions": "none",
           "approver": "human reviewer",
           "targetFile": "references/coverage-gaps.md",
