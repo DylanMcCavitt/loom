@@ -848,6 +848,10 @@ export function applyCandidates(candidates, homeRoot, marker, options = {}) {
           continue;
         }
         if (repoMirrorSymlink(candidate, livePath)) {
+          if (sha256(readFileSync(livePath)) !== wantHash) {
+            actions.push({ destination: candidate.destination, action: "skipped", reason: "repo-mirror-content-mismatch", livePath });
+            continue;
+          }
           recordMarker(marker, candidate, wantHash);
           actions.push({ destination: candidate.destination, action: "claimed-repo-mirror-symlink", livePath });
           continue;

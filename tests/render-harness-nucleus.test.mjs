@@ -517,6 +517,25 @@ test("applyCandidates requires explicit approval before claiming OMP repo-mirror
   rmSync(home, { recursive: true, force: true });
 });
 
+test("applyCandidates does not claim divergent OMP repo-mirror symlinks", () => {
+  const home = tempDir("apply-home-");
+  const dest = "~/.omp/agent/AGENTS.md";
+  const source = new URL("../omp/.omp/agent/AGENTS.md", import.meta.url).pathname;
+  const live = path.join(home, ".omp", "agent", "AGENTS.md");
+  mkdirSync(path.dirname(live), { recursive: true });
+  symlinkSync(source, live);
+  const marker = emptyMarker();
+  const candidate = applyCandidate(dest, "DIFFERENT\n", { source: "omp/.omp/agent/AGENTS.md" });
+
+  const result = applyCandidates([candidate], home, marker, { approveOmpRepoOwned: true });
+  assert.equal(result.actions[0].action, "skipped");
+  assert.equal(result.actions[0].reason, "repo-mirror-content-mismatch");
+  assert.equal(marker.entries[dest], undefined);
+  assert.equal(readFileSync(live, "utf8"), readFileSync(source, "utf8"));
+
+  rmSync(home, { recursive: true, force: true });
+});
+
 test("applyCandidates backs up and replaces existing OMP files only with explicit approval", () => {
   const home = tempDir("apply-home-");
   const dest = "~/.omp/agent/config.yml";
