@@ -23,6 +23,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  readlinkSync,
   readdirSync,
   rmSync,
   writeFileSync,
@@ -549,6 +550,22 @@ export function renderAndGate(candidates, localOnly) {
 
 // --- live inspection (read-only) -------------------------------------------------------------
 
+function repoMirrorSymlink(candidate, livePath) {
+  if (candidate.harness !== "omp" || !candidate.source) return false;
+  let stat;
+  try {
+    stat = lstatSync(livePath);
+  } catch {
+    return false;
+  }
+  if (!stat.isSymbolicLink()) return false;
+  const linkTarget = readlinkSync(livePath);
+  const resolvedTarget = path.resolve(path.dirname(livePath), linkTarget);
+  if (resolvedTarget === repoPath(candidate.source)) return true;
+  const siblingRepoRelative = path.relative(path.dirname(REPO_ROOT), resolvedTarget).split(path.sep).slice(1).join("/");
+  return siblingRepoRelative === candidate.source;
+}
+
 function liveInspect(candidate, homeRoot, marker) {
   let livePath;
   try {
@@ -565,6 +582,14 @@ function liveInspect(candidate, homeRoot, marker) {
   }
   const marked = Boolean(marker.entries[candidate.destination]);
   if (!marked) {
+    if (repoMirrorSymlink(candidate, livePath)) {
+      return {
+        livePath,
+        status: "repo-mirror-symlink",
+        overwriteRisk: "would not claim or replace without explicit OMP apply gate",
+        ownership: "repo-mirror",
+      };
+    }
     return { livePath, status: "user-file", overwriteRisk: "would not overwrite (existing non-marker file skipped)", ownership: "user-file" };
   }
   const current = sha256(readFileSync(livePath));
@@ -611,6 +636,41 @@ export function backupTimestamp() {
 
 // --- reporting -------------------------------------------------------------------------------
 
+function ownershipBucket(entry) {
+  if (entry.ownership === "marker-owned") return "marker-owned";
+  if (entry.ownership === "repo-mirror") return "repo-mirror-symlink";
+  if (entry.ownership === "user-file") return "existing-user-file";
+  if (entry.liveStatus === "absent") return "missing";
+  return entry.liveStatus;
+}
+
+function nextOwner(entry) {
+  if (entry.ownership === "marker-owned") return "marker-manifest";
+  if (entry.ownership === "repo-mirror" || entry.ownership === "user-file") return "explicit-omp-apply-gate";
+  if (entry.liveStatus === "absent" && entry.appliable) return "render-harness-nucleus";
+  return "none";
+}
+
+function ompOwnershipMatrix(reported, localOnly) {
+  const rows = reported
+    .filter((entry) => entry.harness === "omp")
+    .map((entry) => ({
+      destination: entry.destination,
+      observedLiveState: entry.liveStatus,
+      bucket: ownershipBucket(entry),
+      nextOwner: nextOwner(entry),
+    }));
+  for (const destination of localOnly.filter((pattern) => pattern.startsWith("~/.omp/agent/"))) {
+    rows.push({
+      destination,
+      observedLiveState: "skipped-local-only",
+      bucket: destination.includes("config.local") || destination.includes("*.local") ? "local-only-config" : "local-only-runtime",
+      nextOwner: "operator-local",
+    });
+  }
+  return rows;
+}
+
 function buildManifest(candidates, localOnly, homeRoot, marker, mode) {
   const reported = [];
   for (const candidate of candidates) {
@@ -629,11 +689,13 @@ function buildManifest(candidates, localOnly, homeRoot, marker, mode) {
       requiredApproval: candidate.appliable ? "strict-manual" : "n/a (reported only)",
     });
   }
+  const ownershipMatrix = ompOwnershipMatrix(reported, localOnly);
   return {
     mode,
     approvalPolicy: "strict-manual",
     renderedFiles: candidates.length,
     candidates: reported,
+    ownershipMatrix,
     skippedLocalOnly: localOnly,
     counts: {
       rendered: candidates.length,
@@ -672,6 +734,14 @@ function printTextManifest(manifest, findings) {
     lines.push(`  operation: ${entry.operation}`);
     lines.push(`  liveStatus: ${entry.liveStatus}`);
     lines.push(`  ownership: ${entry.ownership}`);
+  }
+  lines.push("");
+  lines.push("[OMP ownership matrix] (destination -> observed live state / bucket / next owner)");
+  for (const entry of manifest.ownershipMatrix) {
+    lines.push(`- ${entry.destination}`);
+    lines.push(`  observedLiveState: ${entry.observedLiveState}`);
+    lines.push(`  bucket: ${entry.bucket}`);
+    lines.push(`  nextOwner: ${entry.nextOwner}`);
   }
   lines.push("");
   lines.push("[skipped local-only surfaces] (never rendered as write targets)");

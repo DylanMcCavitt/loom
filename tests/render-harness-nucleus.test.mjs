@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { appendFileSync, cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { appendFileSync, cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -103,10 +103,43 @@ test("dry-run resolves dispositions: track/adapt appliable, reference-only and l
   // Local-only surfaces are reported as skipped and never become candidate destinations.
   assert.ok(manifest.skippedLocalOnly.includes("~/.codex/auth.json"));
   assert.ok(manifest.skippedLocalOnly.includes("~/.codex/sessions/"));
+  assert.ok(manifest.skippedLocalOnly.includes("~/.omp/agent/config.local.yml"));
+  assert.ok(manifest.skippedLocalOnly.includes("~/.omp/agent/sessions/"));
+  const matrixByDestination = new Map(manifest.ownershipMatrix.map((entry) => [entry.destination, entry]));
+  assert.equal(matrixByDestination.get("~/.omp/agent/config.local.yml").bucket, "local-only-config");
+  assert.equal(matrixByDestination.get("~/.omp/agent/sessions/").bucket, "local-only-runtime");
   for (const entry of manifest.candidates) {
     assert.notEqual(entry.disposition, "local-only");
   }
   rmSync(home, { recursive: true, force: true });
+});
+
+test("dry-run reports OMP repo-mirror symlinks separately from marker ownership", () => {
+  const home = tempDir("render-home-");
+  try {
+    const agentDir = path.join(home, ".omp", "agent");
+    mkdirSync(agentDir, { recursive: true });
+    const source = new URL("../omp/.omp/agent/AGENTS.md", import.meta.url).pathname;
+    symlinkSync(source, path.join(agentDir, "AGENTS.md"));
+
+    const { result, manifest } = runJson(["--home", home]);
+    assert.equal(result.status, 0, result.stderr);
+
+    const candidate = manifest.candidates.find((entry) => entry.destination === "~/.omp/agent/AGENTS.md");
+    assert.equal(candidate.liveStatus, "repo-mirror-symlink");
+    assert.equal(candidate.ownership, "repo-mirror");
+    assert.match(candidate.overwriteRisk, /explicit OMP apply gate/u);
+
+    const matrixRow = manifest.ownershipMatrix.find((entry) => entry.destination === "~/.omp/agent/AGENTS.md");
+    assert.deepEqual(matrixRow, {
+      destination: "~/.omp/agent/AGENTS.md",
+      observedLiveState: "repo-mirror-symlink",
+      bucket: "repo-mirror-symlink",
+      nextOwner: "explicit-omp-apply-gate",
+    });
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
 });
 
 test("gate runs over rendered output: a forbidden provider key in a template fails the render", () => {
