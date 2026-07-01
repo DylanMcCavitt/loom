@@ -14,6 +14,7 @@ import {
 import { createHash } from "node:crypto";
 import { homedir, tmpdir } from "node:os";
 import path from "node:path";
+import { parseFrontmatter } from "./lib/frontmatter.mjs";
 
 const USAGE = "Usage: node scripts/refresh-omp-builtins-snapshot.mjs [--write] [--snapshot-dir <path>]";
 const DEFAULT_SNAPSHOT_DIR = "distributions/snapshots/omp-builtins";
@@ -113,22 +114,18 @@ function readPackageSource(packageRoot) {
   };
 }
 
-function parseFrontmatter(content) {
-  const match = content.match(/^---\n([\s\S]*?)\n---\n/);
-  if (!match) return { keys: [] };
-  const keys = [];
-  const values = {};
-  for (const line of match[1].split("\n")) {
-    const keyMatch = line.match(/^([A-Za-z][A-Za-z0-9_-]*):\s*(.*)$/);
-    if (!keyMatch) continue;
-    const key = keyMatch[1];
-    keys.push(key);
-    if (key === "name" || key === "description") {
-      values[key] = keyMatch[2].replace(/^["']|["']$/g, "");
-    }
-  }
-  return { keys, values };
+function agentFrontmatter(content) {
+  const parsed = parseFrontmatter(content);
+  if (!parsed) return { keys: [] };
+  return {
+    keys: parsed.keys,
+    values: {
+      name: parsed.values.name,
+      description: parsed.values.description,
+    },
+  };
 }
+
 
 function exportBundledAgents() {
   const targetDir = mkdtempSync(path.join(tmpdir(), "omp-agents-snapshot-"));
@@ -144,7 +141,7 @@ function agentSnapshotFromDir(targetDir) {
     .map(file => {
       const filePath = path.join(targetDir, file);
       const content = readText(filePath);
-      const frontmatter = parseFrontmatter(content);
+      const frontmatter = agentFrontmatter(content);
       return {
         name: path.basename(file, ".md"),
         file: `agents/${file}`,

@@ -33,15 +33,15 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseToml } from "./vendor/smol-toml/index.js";
 import { codexTemplatesDir } from "./lib/layout.mjs";
+import { parseFrontmatter } from "./lib/frontmatter.mjs";
 import {
   asArray,
-  containsPrivateHomePath,
   dangerousPathReason,
   globPatternToRegex,
   isPatternPath,
   normalizePathText,
   pathMatchesLocalOnly,
-  secretError,
+  scanHarnessSafety,
 } from "./lib/harness-safety.mjs";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -291,13 +291,10 @@ export function keyMatchesForbidden(key, forbidden) {
   return key === forbidden || key.startsWith(`${forbidden}.`) || key.endsWith(`.${forbidden}`);
 }
 
-// YAML frontmatter block of a Markdown document (the text between the leading `---` line and the
-// next `---`). Returns null when the document has no frontmatter, so frontmatter-less Markdown is
-// left unscanned and behaves exactly as before.
 export function markdownFrontmatter(content) {
-  const match = /^---\r?\n([\s\S]*?)\r?\n---\s*(?:\r?\n|$)/u.exec(content);
-  return match ? match[1] : null;
+  return parseFrontmatter(content)?.frontmatter ?? null;
 }
+
 
 function forbiddenKeyFindings(label, keys, candidate) {
   const findings = [];
@@ -509,10 +506,7 @@ export function gateRenderedOutput(candidates, localOnly, tempRoot) {
   const tomlFiles = [];
   for (const candidate of candidates) {
     const label = candidate.renderedRelPath;
-    const secret = secretError(label, candidate.content);
-    if (secret) findings.push(secret);
-    const privatePath = containsPrivateHomePath(label, candidate.content);
-    if (privatePath) findings.push(privatePath);
+    findings.push(...scanHarnessSafety(label, candidate.content));
     const dangerous = dangerousPathReason(candidate.destination);
     if (dangerous) {
       findings.push(`${label}: candidate destination ${candidate.destination} is dangerous (${dangerous})`);

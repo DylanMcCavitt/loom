@@ -3,8 +3,10 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { parse as parseToml } from "./vendor/smol-toml/index.js";
 import { codexTemplatesDir } from "./lib/layout.mjs";
+import { scanHarnessSafety } from "./lib/harness-safety.mjs";
 
 const PLAN_PATH = process.env.CODEX_ADAPTER_PLAN_PATH ?? "docs/harness/codex-adapter-plan/adapter-plan.json";
 const SOURCE_PATH = "distributions/snapshots/omp-builtins/source.json";
@@ -22,14 +24,6 @@ const REQUIRED_DOC_TOPICS = new Set([
   "auth",
 ]);
 const RECOMMENDATIONS = new Set(["keep", "adapt", "drop", "superseded"]);
-const SECRET_PATTERNS = [
-  /\bgh[pousr]_[A-Za-z0-9_]{20,}\b/u,
-  /\bgithub_pat_[A-Za-z0-9_]{20,}\b/u,
-  /\bsk-[A-Za-z0-9_-]{20,}\b/u,
-  /\bAKIA[0-9A-Z]{16}\b/u,
-  /\b(?:api[_-]?key|token|secret|password)\b\s*[:=]\s*["']?[A-Za-z0-9_./+=-]{16,}["']?/iu,
-];
-
 function readJson(filePath) {
   return JSON.parse(readFileSync(filePath, "utf8"));
 }
@@ -93,18 +87,12 @@ function templatesForBoundary(boundary, templateFiles) {
 function validateNoSecretsOrPrivatePaths(files, errors) {
   for (const filePath of files) {
     const relative = path.relative(process.cwd(), filePath).split(path.sep).join("/");
-    const text = readFileSync(filePath, "utf8");
-    if (/\/Users\/[^/\s"]+/u.test(text)) {
-      errors.push(`${relative}: contains an absolute private home path`);
-    }
-    for (const pattern of SECRET_PATTERNS) {
-      if (pattern.test(text)) {
-        errors.push(`${relative}: contains API-key/token-looking text`);
-        break;
-      }
+    for (const finding of scanHarnessSafety(relative, readFileSync(filePath, "utf8"))) {
+      errors.push(finding.replace(/API-key\/token\/secret-looking text/u, "API-key/token-looking text"));
     }
   }
 }
+
 
 function parseTomlFiles(files, errors) {
   for (const file of files) {
@@ -312,8 +300,8 @@ function validateWorkflowNucleus(plan, errors) {
   }
 }
 
-function validateMarkdown(plan, errors) {
-  const md = readFileSync(PLAN_MD_PATH, "utf8");
+function validateMarkdown(plan, errors, planMdPath = PLAN_MD_PATH) {
+  const md = readFileSync(planMdPath, "utf8");
   const digest = createHash("sha256").update(md).digest("hex").slice(0, 12);
   for (const agent of plan.ompAgentMappings ?? []) {
     if (!md.includes(`\`${agent.ompAgent}\``)) errors.push(`markdown: missing OMP agent ${agent.ompAgent}`);
@@ -333,13 +321,18 @@ function validateMarkdown(plan, errors) {
   return digest;
 }
 
-try {
+export function validateCodexAdapterPlan(options = {}) {
   const errors = [];
-  const plan = readJson(PLAN_PATH);
-  const source = readJson(SOURCE_PATH);
-  const portability = readJson(PORTABILITY_PATH);
-  const templateFiles = walkFiles(TEMPLATE_DIR, file => file.endsWith(".toml"));
-  const checkedFiles = [PLAN_PATH, PLAN_MD_PATH, ...templateFiles].map(file => path.resolve(file));
+  const planPath = options.planPath ?? PLAN_PATH;
+  const planMdPath = options.planMdPath ?? PLAN_MD_PATH;
+  const sourcePath = options.sourcePath ?? SOURCE_PATH;
+  const portabilityPath = options.portabilityPath ?? PORTABILITY_PATH;
+  const templateDir = options.templateDir ?? TEMPLATE_DIR;
+  const plan = readJson(planPath);
+  const source = readJson(sourcePath);
+  const portability = readJson(portabilityPath);
+  const templateFiles = walkFiles(templateDir, file => file.endsWith(".toml"));
+  const checkedFiles = [planPath, planMdPath, ...templateFiles].map(file => path.resolve(file));
 
   if (plan.schemaVersion !== 1) errors.push("adapter plan schemaVersion must be 1");
   if (plan.generatedForIssue !== 41) errors.push("adapter plan generatedForIssue must be 41");
@@ -353,7 +346,7 @@ try {
   validateWorkflowNucleus(plan, errors);
   validateNoSecretsOrPrivatePaths(checkedFiles, errors);
   dryRunRenderTemplates(templateFiles, errors);
-  const markdownDigest = validateMarkdown(plan, errors);
+  const markdownDigest = validateMarkdown(plan, errors, planMdPath);
 
   if (!Array.isArray(plan.dryRunValidationStrategy) || plan.dryRunValidationStrategy.length < 6) {
     errors.push("adapter plan must list a dry-run validation strategy");
@@ -368,15 +361,29 @@ try {
     errors.push("adapter plan must recommend strict-manual live config approval");
   }
 
-  if (errors.length > 0) {
+  return { errors, plan, templateFiles, markdownDigest };
+}
+
+function main() {
+  const result = validateCodexAdapterPlan();
+  if (result.errors.length > 0) {
     console.error("Codex adapter plan validation failed:");
-    for (const error of errors) console.error(`- ${error}`);
+    for (const error of result.errors) console.error(`- ${error}`);
     process.exit(1);
   }
   console.log(
-    `Codex adapter plan validation passed: ${plan.ompAgentMappings.length} OMP agent mappings, ${plan.skillCandidateMappings.length} skill mappings, ${templateFiles.length} TOML templates, docs digest ${markdownDigest}`,
+    `Codex adapter plan validation passed: ${result.plan.ompAgentMappings.length} OMP agent mappings, ${result.plan.skillCandidateMappings.length} skill mappings, ${result.templateFiles.length} TOML templates, docs digest ${result.markdownDigest}`,
   );
-} catch (error) {
-  console.error(error.message);
-  process.exit(2);
+}
+
+const invokedDirectly = process.argv[1]
+  && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
+
+if (invokedDirectly) {
+  try {
+    main();
+  } catch (error) {
+    console.error(error.message);
+    process.exit(2);
+  }
 }

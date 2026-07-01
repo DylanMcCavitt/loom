@@ -3,7 +3,10 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { claudeTemplatesDir } from "./lib/layout.mjs";
+import { parseFrontmatter as parseMarkdownFrontmatter } from "./lib/frontmatter.mjs";
+import { scanHarnessSafety } from "./lib/harness-safety.mjs";
 
 const PLAN_PATH = process.env.CLAUDE_ADAPTER_PLAN_PATH ?? "docs/harness/claude-adapter-plan/adapter-plan.json";
 const SOURCE_PATH = "distributions/snapshots/omp-builtins/source.json";
@@ -14,14 +17,6 @@ const TEMPLATE_DIR = process.env.CLAUDE_ADAPTER_PLAN_TEMPLATE_DIR ?? DEFAULT_TEM
 
 const RECOMMENDATIONS = new Set(["keep", "adapt", "drop"]);
 const READ_ONLY_AGENT_FORBIDDEN_TOOLS = new Set(["Edit", "Write", "Bash"]);
-const SECRET_PATTERNS = [
-  /\bgh[pousr]_[A-Za-z0-9_]{20,}\b/u,
-  /\bgithub_pat_[A-Za-z0-9_]{20,}\b/u,
-  /\bsk-[A-Za-z0-9_-]{20,}\b/u,
-  /\bAKIA[0-9A-Z]{16}\b/u,
-  /\b(?:api[_-]?key|token|secret|password)\b\s*[:=]\s*["']?[A-Za-z0-9_./+=-]{16,}["']?/iu,
-];
-
 function readJson(filePath) {
   return JSON.parse(readFileSync(filePath, "utf8"));
 }
@@ -43,35 +38,19 @@ function walkFiles(root, predicate = () => true) {
   return result.sort();
 }
 
-function parseFrontmatter(filePath, errors) {
+function readTemplateFrontmatter(filePath, errors) {
   const text = readFileSync(filePath, "utf8");
-  const match = text.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/u);
-  if (!match) {
+  const parsed = parseMarkdownFrontmatter(text);
+  if (!parsed) {
     errors.push(`${relative(filePath)}: missing YAML frontmatter`);
     return { data: {}, body: text };
   }
-  const data = {};
-  for (const rawLine of match[1].split("\n")) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith("#")) continue;
-    const keyValue = line.match(/^([A-Za-z0-9_-]+):\s*(.*)$/u);
-    if (!keyValue) {
-      errors.push(`${relative(filePath)}: unsupported frontmatter line ${line}`);
-      continue;
-    }
-    const [, key, rawValue] = keyValue;
-    if (rawValue.startsWith("[") && rawValue.endsWith("]")) {
-      data[key] = rawValue
-        .slice(1, -1)
-        .split(",")
-        .map(value => value.trim())
-        .filter(Boolean);
-    } else {
-      data[key] = rawValue.replace(/^["']|["']$/gu, "");
-    }
+  for (const invalid of parsed.invalidLines) {
+    errors.push(`${relative(filePath)}: unsupported frontmatter line ${invalid.text.trim()}`);
   }
-  return { data, body: match[2] };
+  return { data: parsed.values, body: parsed.body };
 }
+
 
 function collectJsonKeys(value, prefix = "", keys = new Set()) {
   if (Array.isArray(value)) {
@@ -100,18 +79,12 @@ function resolveTemplatePath(templatePath) {
 
 function validateNoSecretsOrPrivatePaths(files, errors) {
   for (const filePath of files) {
-    const text = readFileSync(filePath, "utf8");
-    if (/\/Users\/[^/\s"]+/u.test(text)) {
-      errors.push(`${relative(filePath)}: contains an absolute private home path`);
-    }
-    for (const pattern of SECRET_PATTERNS) {
-      if (pattern.test(text)) {
-        errors.push(`${relative(filePath)}: contains API-key/token-looking text`);
-        break;
-      }
+    for (const finding of scanHarnessSafety(relative(filePath), readFileSync(filePath, "utf8"))) {
+      errors.push(finding.replace(/API-key\/token\/secret-looking text/u, "API-key/token-looking text"));
     }
   }
 }
+
 
 function dryRunRenderTemplates(templateFiles, errors) {
   const tempRoot = mkdtempSync(path.join(tmpdir(), "claude-adapter-plan-"));
@@ -128,8 +101,8 @@ function dryRunRenderTemplates(templateFiles, errors) {
     for (const file of rendered) {
       const text = readFileSync(file, "utf8");
       if (file.endsWith(".json")) JSON.parse(text);
-      if (file.endsWith(".md") && file.endsWith(`${path.sep}SKILL.md`)) parseFrontmatter(file, errors);
-      if (file.endsWith(".md") && file.includes(`${path.sep}agents${path.sep}`)) parseFrontmatter(file, errors);
+      if (file.endsWith(".md") && file.endsWith(`${path.sep}SKILL.md`)) readTemplateFrontmatter(file, errors);
+      if (file.endsWith(".md") && file.includes(`${path.sep}agents${path.sep}`)) readTemplateFrontmatter(file, errors);
       if (file.endsWith(`${path.sep}CLAUDE.md.template.md`) && !text.includes("@AGENTS.md")) {
         errors.push(`${file}: instruction template must import @AGENTS.md`);
       }
@@ -279,7 +252,7 @@ function validateTemplateBoundaries(plan, templateFiles, errors) {
   const agentFiles = templateFiles.filter(file => file.includes(`${path.sep}agents${path.sep}`) && file.endsWith(".md"));
   const parsedAgentNames = new Set();
   for (const file of agentFiles) {
-    const { data, body } = parseFrontmatter(file, errors);
+    const { data, body } = readTemplateFrontmatter(file, errors);
     for (const required of ["name", "description", "tools"]) {
       if (!data[required]) errors.push(`${relative(file)}: missing agent frontmatter ${required}`);
     }
@@ -310,7 +283,7 @@ function validateTemplateBoundaries(plan, templateFiles, errors) {
 
   const skillFiles = templateFiles.filter(file => file.endsWith(`${path.sep}SKILL.md`));
   for (const file of skillFiles) {
-    const { data, body } = parseFrontmatter(file, errors);
+    const { data, body } = readTemplateFrontmatter(file, errors);
     for (const required of ["name", "description"]) {
       if (!data[required]) errors.push(`${relative(file)}: missing skill frontmatter ${required}`);
     }
@@ -431,8 +404,8 @@ function validateDuplicateRisks(plan, errors) {
   }
 }
 
-function validateMarkdown(plan, errors) {
-  const md = readFileSync(PLAN_MD_PATH, "utf8");
+function validateMarkdown(plan, errors, planMdPath = PLAN_MD_PATH) {
+  const md = readFileSync(planMdPath, "utf8");
   const digest = createHash("sha256").update(md).digest("hex").slice(0, 12);
   for (const agent of plan.ompAgentMappings ?? []) {
     if (!md.includes(`\`${agent.ompAgent}\``)) errors.push(`markdown: missing OMP agent ${agent.ompAgent}`);
@@ -456,13 +429,18 @@ function validateMarkdown(plan, errors) {
   return digest;
 }
 
-try {
+export function validateClaudeAdapterPlan(options = {}) {
   const errors = [];
-  const plan = readJson(PLAN_PATH);
-  const source = readJson(SOURCE_PATH);
-  const portability = readJson(PORTABILITY_PATH);
-  const templateFiles = walkFiles(TEMPLATE_DIR, file => file.endsWith(".md") || file.endsWith(".json"));
-  const checkedFiles = [PLAN_PATH, PLAN_MD_PATH, ...templateFiles].map(file => path.resolve(file));
+  const planPath = options.planPath ?? PLAN_PATH;
+  const planMdPath = options.planMdPath ?? PLAN_MD_PATH;
+  const sourcePath = options.sourcePath ?? SOURCE_PATH;
+  const portabilityPath = options.portabilityPath ?? PORTABILITY_PATH;
+  const templateDir = options.templateDir ?? TEMPLATE_DIR;
+  const plan = readJson(planPath);
+  const source = readJson(sourcePath);
+  const portability = readJson(portabilityPath);
+  const templateFiles = walkFiles(templateDir, file => file.endsWith(".md") || file.endsWith(".json"));
+  const checkedFiles = [planPath, planMdPath, ...templateFiles].map(file => path.resolve(file));
 
   if (plan.schemaVersion !== 1) errors.push("adapter plan schemaVersion must be 1");
   if (plan.generatedForIssue !== 42) errors.push("adapter plan generatedForIssue must be 42");
@@ -478,7 +456,7 @@ try {
   validateDuplicateRisks(plan, errors);
   validateNoSecretsOrPrivatePaths(checkedFiles, errors);
   dryRunRenderTemplates(templateFiles, errors);
-  const markdownDigest = validateMarkdown(plan, errors);
+  const markdownDigest = validateMarkdown(plan, errors, planMdPath);
 
   if (!Array.isArray(plan.dryRunValidationStrategy) || plan.dryRunValidationStrategy.length < 8) {
     errors.push("adapter plan must list a dry-run validation strategy");
@@ -493,16 +471,30 @@ try {
     errors.push("adapter plan must recommend strict-manual live Claude apply policy");
   }
 
-  if (errors.length > 0) {
+  return { errors, plan, templateFiles, markdownDigest };
+}
+
+function main() {
+  const result = validateClaudeAdapterPlan();
+  if (result.errors.length > 0) {
     console.error("Claude adapter plan validation failed:");
-    for (const error of errors) console.error(`- ${error}`);
+    for (const error of result.errors) console.error(`- ${error}`);
     process.exit(1);
   }
   console.log(
-    `Claude adapter plan validation passed: ${plan.ompAgentMappings.length} OMP agent mappings, ${plan.skillCandidateMappings.length} skill mappings, ${templateFiles.length} templates, docs digest ${markdownDigest}`,
+    `Claude adapter plan validation passed: ${result.plan.ompAgentMappings.length} OMP agent mappings, ${result.plan.skillCandidateMappings.length} skill mappings, ${result.templateFiles.length} templates, docs digest ${result.markdownDigest}`,
   );
-  console.log(`Dry-run candidate surfaces: ${plan.generatedCandidateSurfaces.map(surface => surface.surface).join(", ")}`);
-} catch (error) {
-  console.error(error.message);
-  process.exit(2);
+  console.log(`Dry-run candidate surfaces: ${result.plan.generatedCandidateSurfaces.map(surface => surface.surface).join(", ")}`);
+}
+
+const invokedDirectly = process.argv[1]
+  && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
+
+if (invokedDirectly) {
+  try {
+    main();
+  } catch (error) {
+    console.error(error.message);
+    process.exit(2);
+  }
 }

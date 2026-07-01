@@ -2,6 +2,9 @@
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { parseFrontmatter as parseMarkdownFrontmatter } from "./lib/frontmatter.mjs";
+import { scanHarnessSafety } from "./lib/harness-safety.mjs";
 
 const DEFAULT_SKILLS_DIR = "nucleus/skills";
 const DEFAULT_COMPAT_SKILLS_DIR = ".agents/skills";
@@ -52,74 +55,28 @@ function listEntries(dir) {
     .sort((left, right) => left.name.localeCompare(right.name));
 }
 
-function parseFrontmatter(filePath, content, errors) {
-  if (!content.startsWith("---\n")) {
-    errors.push(`${filePath}: missing frontmatter block`);
+function readFrontmatterData(filePath, content, errors) {
+  const parsed = parseMarkdownFrontmatter(content);
+  if (!parsed) {
+    errors.push(`${filePath}: ${content.startsWith("---") ? "frontmatter block is not closed" : "missing frontmatter block"}`);
     return null;
   }
-
-  const end = content.indexOf("\n---", 4);
-  if (end === -1) {
-    errors.push(`${filePath}: frontmatter block is not closed`);
-    return null;
+  for (const invalid of parsed.invalidLines) {
+    errors.push(`${filePath}:${invalid.line}: frontmatter line must be key: value`);
   }
-
-  const frontmatter = content.slice(4, end).split("\n");
-  const data = new Map();
-  for (let i = 0; i < frontmatter.length; i += 1) {
-    const line = frontmatter[i];
-    if (!line.trim() || line.trim().startsWith("#")) continue;
-    const separator = line.indexOf(":");
-    if (separator === -1) {
-      errors.push(`${filePath}:${i + 2}: frontmatter line must be key: value`);
-      continue;
-    }
-    const key = line.slice(0, separator).trim();
-    let value = line.slice(separator + 1).trim();
-    if (/^[|>][+-]?$/u.test(value) || value === "") {
-      // YAML block scalar (>-, >, |, |-) or empty: gather more-indented continuation lines.
-      const baseIndent = line.length - line.trimStart().length;
-      const parts = [];
-      let j = i + 1;
-      for (; j < frontmatter.length; j += 1) {
-        const cont = frontmatter[j];
-        if (!cont.trim()) { parts.push(""); continue; }
-        if (cont.length - cont.trimStart().length <= baseIndent) break;
-        parts.push(cont.trim());
-      }
-      if (parts.length) {
-        value = parts.join(" ").replace(/\s+/gu, " ").trim();
-        i = j - 1;
-      }
-    } else if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
-      value = value.slice(1, -1);
-    }
-    data.set(key, value);
-  }
-
-  return data;
+  return new Map(Object.entries(parsed.values));
 }
+
 
 function containsConcreteUseWhen(description) {
   return /\bUse when\b\s+\S+/u.test(description);
 }
 
-const SECRET_PATTERNS = [
-  /\bgh[pousr]_[A-Za-z0-9_]{20,}\b/u,
-  /\bgithub_pat_[A-Za-z0-9_]{20,}\b/u,
-  /\bsk-[A-Za-z0-9_-]{20,}\b/u,
-  /\bAKIA[0-9A-Z]{16}\b/u,
-  /\b(?:api[_-]?key|token|secret|password)\b\s*[:=]\s*["']?[A-Za-z0-9_./+=-]{16,}["']?/iu,
-];
-
 function scanSecrets(filePath, content, errors) {
-  for (const pattern of SECRET_PATTERNS) {
-    if (pattern.test(content)) {
-      errors.push(`${filePath}: contains API-key/token-looking text`);
-      return;
-    }
-  }
+  const findings = scanHarnessSafety(filePath, content, { privateHome: false });
+  for (const finding of findings) errors.push(finding.replace(/API-key\/token\/secret-looking text/u, "API-key/token-looking text"));
 }
+
 
 function collectFiles(dir) {
   const files = [];
@@ -183,7 +140,7 @@ function collectGlobalSkillNames(globalSkillsDirs, skillsRoot) {
       if (!existsSync(skillPath)) continue;
       const content = readFileSync(skillPath, "utf8");
       const parseErrors = [];
-      const frontmatter = parseFrontmatter(skillPath, content, parseErrors);
+      const frontmatter = readFrontmatterData(skillPath, content, parseErrors);
       const name = frontmatter?.get("name")?.trim();
       names.add(name || entry.name);
     }
@@ -224,7 +181,7 @@ function validateCompatSurface(skillsRoot, compatRoot, errors) {
   }
 }
 
-function validateSkills(options) {
+export function validateSkills(options) {
   const skillsRoot = path.resolve(options.skillsDir);
   const errors = [];
   const seenNames = new Map();
@@ -265,7 +222,7 @@ function validateSkills(options) {
 
     const relSkillPath = path.relative(process.cwd(), skillPath);
     const content = readFileSync(skillPath, "utf8");
-    const frontmatter = parseFrontmatter(relSkillPath, content, errors);
+    const frontmatter = readFrontmatterData(relSkillPath, content, errors);
     if (!frontmatter) continue;
 
     const name = frontmatter.get("name")?.trim();
@@ -296,7 +253,7 @@ function validateSkills(options) {
   return { checked, errors };
 }
 
-try {
+function main() {
   const options = readArgs(process.argv.slice(2));
   const result = validateSkills(options);
   if (result.errors.length) {
@@ -305,8 +262,17 @@ try {
     process.exit(1);
   }
   console.log(`Skill validation passed: ${result.checked} skill${result.checked === 1 ? "" : "s"} checked in ${options.skillsDir}`);
-} catch (error) {
-  console.error(error.message);
-  console.error(USAGE);
-  process.exit(2);
+}
+
+const invokedDirectly = process.argv[1]
+  && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
+
+if (invokedDirectly) {
+  try {
+    main();
+  } catch (error) {
+    console.error(error.message);
+    console.error(USAGE);
+    process.exit(2);
+  }
 }

@@ -6,7 +6,8 @@ import { spawnSync } from "node:child_process";
 import {
   PRIVATE_HOME_PATH_PATTERN,
   SECRET_PATTERNS,
-  DANGEROUS_PATH_RULES,
+  MANIFEST_DISPOSITIONS as DISPOSITIONS,
+  MANIFEST_SOURCE_HARNESSES as SOURCE_HARNESSES,
   textOf,
   asArray,
   isNonEmptyString,
@@ -16,7 +17,8 @@ import {
   pathMatchesLocalOnly,
   secretError,
   dangerousPathReason,
-  containsPrivateHomePath,
+  scanHarnessSafety,
+  validateHarnessManifest as validateManifestResourceManifest,
 } from "./lib/harness-safety.mjs";
 
 const USAGE = [
@@ -34,19 +36,7 @@ const DEFAULT_MANIFEST = "docs/harness/resource-manifest.json";
 const DEFAULT_PLAN = "docs/harness/dry-run-link-plan.json";
 const DEFAULT_CODEX_PLAN = "docs/harness/codex-adapter-plan/adapter-plan.json";
 const DEFAULT_CLAUDE_PLAN = "docs/harness/claude-adapter-plan/adapter-plan.json";
-const DISPOSITIONS = new Set(["track", "adapt", "reference-only", "local-only"]);
-const SOURCE_HARNESSES = new Set(["omp", "codex", "claude", "cross-harness"]);
 const LINK_MODES = new Set(["candidate-symlink", "report-only"]);
-const REQUIRED_RESOURCE_FIELDS = [
-  "id",
-  "sourceHarness",
-  "resourceCategory",
-  "currentLivePath",
-  "discoverySource",
-  "intendedRepoTarget",
-  "disposition",
-  "migrationNotes",
-];
 const REQUIRED_LINK_FIELDS = [
   "id",
   "sourceHarness",
@@ -79,6 +69,7 @@ const SOURCE_SCAN_PATTERN_DEFINITIONS = new Set([
   "scripts/validate-harness-manifest.mjs",
   "scripts/validate-omp-builtins-snapshot.mjs",
   "scripts/validate-skills.mjs",
+  "scripts/lib/harness-safety.mjs",
 ]);
 
 function readArgs(argv) {
@@ -186,90 +177,9 @@ function inspectOverwriteRisk(destination, checkLive) {
 }
 
 function validateManifest(manifest) {
-  const errors = [];
-  const warnings = [];
-  const resources = Array.isArray(manifest.resources) ? manifest.resources : [];
-  const byId = new Map();
-  const localOnlyPatterns = [];
-  const livePathOwners = new Map();
-
-  if (manifest.schemaVersion !== 1) errors.push("manifest: schemaVersion must be 1");
-  if (!Array.isArray(manifest.allowedDispositions)) {
-    errors.push("manifest: allowedDispositions must be an array");
-  } else {
-    for (const disposition of manifest.allowedDispositions) {
-      if (!DISPOSITIONS.has(disposition)) errors.push(`manifest: unknown allowed disposition ${disposition}`);
-    }
-    for (const disposition of DISPOSITIONS) {
-      if (!manifest.allowedDispositions.includes(disposition)) {
-        errors.push(`manifest: allowedDispositions missing ${disposition}`);
-      }
-    }
-  }
-  if (!Array.isArray(manifest.resources)) errors.push("manifest: resources must be an array");
-
-  const secret = secretError("manifest", manifest);
-  if (secret) errors.push(secret);
-  const privatePath = containsPrivateHomePath("manifest", manifest);
-  if (privatePath) errors.push(privatePath);
-
-  for (const [index, resource] of resources.entries()) {
-    const label = resource?.id || `resources[${index}]`;
-    if (!resource || typeof resource !== "object" || Array.isArray(resource)) {
-      errors.push(`${label}: must be an object`);
-      continue;
-    }
-    for (const field of REQUIRED_RESOURCE_FIELDS) {
-      if (!(field in resource)) errors.push(`${label}: missing required field ${field}`);
-    }
-    if (!isNonEmptyString(resource.id)) {
-      errors.push(`${label}: id must be a non-empty string`);
-    } else if (byId.has(resource.id)) {
-      errors.push(`${label}: duplicate resource id`);
-    } else {
-      byId.set(resource.id, resource);
-    }
-    if (!SOURCE_HARNESSES.has(resource.sourceHarness)) {
-      errors.push(`${label}: sourceHarness must be one of ${[...SOURCE_HARNESSES].join(", ")}`);
-    }
-    if (!DISPOSITIONS.has(resource.disposition)) {
-      errors.push(`${label}: disposition must be one of ${[...DISPOSITIONS].join(", ")}`);
-    }
-    if (!isNonEmptyString(resource.resourceCategory)) {
-      errors.push(`${label}: resourceCategory must be a non-empty string`);
-    }
-    if (!isNonEmptyString(resource.discoverySource) && asArray(resource.currentLivePath).length === 0) {
-      errors.push(`${label}: must provide currentLivePath or discoverySource`);
-    }
-    if (!isNonEmptyString(resource.intendedRepoTarget)) {
-      errors.push(`${label}: intendedRepoTarget must be a non-empty string`);
-    }
-    if (!isNonEmptyString(resource.migrationNotes)) {
-      errors.push(`${label}: migrationNotes must be a non-empty string`);
-    }
-    if (resource.disposition === "local-only" && resource.intendedRepoTarget !== "none") {
-      errors.push(`${label}: local-only resources must use intendedRepoTarget \"none\"`);
-    }
-    for (const livePath of asArray(resource.currentLivePath)) {
-      if (!isNonEmptyString(livePath)) {
-        errors.push(`${label}: currentLivePath entries must be non-empty strings`);
-        continue;
-      }
-      if (resource.disposition === "local-only") localOnlyPatterns.push(livePath);
-      const owner = livePathOwners.get(livePath);
-      if (owner && owner !== label) {
-        warnings.push(`duplicate live path ${livePath} appears in ${owner} and ${label}`);
-      } else {
-        livePathOwners.set(livePath, label);
-      }
-      if (livePath.startsWith("repo:") && !isPatternPath(livePath) && !existsSync(resolveDisplayPath(livePath))) {
-        errors.push(`${label}: repo currentLivePath does not exist: ${livePath}`);
-      }
-    }
-  }
-
-  return { errors, warnings, resources, byId, localOnlyPatterns };
+  return validateManifestResourceManifest(manifest);
 }
+
 
 function validateCodexPlan(codexPlan) {
   const errors = [];
@@ -277,10 +187,7 @@ function validateCodexPlan(codexPlan) {
   const generatedSurfaces = [];
 
   if (codexPlan.schemaVersion !== 1) errors.push("codex plan: schemaVersion must be 1");
-  const secret = secretError("codex plan", codexPlan);
-  if (secret) errors.push(secret);
-  const privatePath = containsPrivateHomePath("codex plan", codexPlan);
-  if (privatePath) errors.push(privatePath);
+  errors.push(...scanHarnessSafety("codex plan", codexPlan));
 
   for (const surface of codexPlan.localOnlyCodexSurfaces ?? []) {
     if (isNonEmptyString(surface.pathPattern)) localOnlyPatterns.push(surface.pathPattern);
@@ -300,10 +207,7 @@ function validateClaudePlan(claudePlan) {
   const generatedSurfaces = [];
 
   if (claudePlan.schemaVersion !== 1) errors.push("claude plan: schemaVersion must be 1");
-  const secret = secretError("claude plan", claudePlan);
-  if (secret) errors.push(secret);
-  const privatePath = containsPrivateHomePath("claude plan", claudePlan);
-  if (privatePath) errors.push(privatePath);
+  errors.push(...scanHarnessSafety("claude plan", claudePlan));
 
   for (const surface of claudePlan.localOnlyClaudeSurfaces ?? []) {
     if (isNonEmptyString(surface.pathPattern)) localOnlyPatterns.push(surface.pathPattern);
@@ -357,10 +261,7 @@ function validatePlan(plan, manifestInfo, codexInfo, claudeInfo, options) {
   if (!Array.isArray(plan.candidateLinks)) errors.push("plan: candidateLinks must be an array");
   if (!Array.isArray(plan.generatedConfigDestinations)) errors.push("plan: generatedConfigDestinations must be an array");
 
-  const secret = secretError("plan", plan);
-  if (secret) errors.push(secret);
-  const privatePath = containsPrivateHomePath("plan", plan);
-  if (privatePath) errors.push(privatePath);
+  errors.push(...scanHarnessSafety("plan", plan));
 
   for (const [index, link] of (plan.candidateLinks ?? []).entries()) {
     const label = link?.id || `candidateLinks[${index}]`;

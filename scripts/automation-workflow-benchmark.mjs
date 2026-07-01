@@ -3,19 +3,13 @@ import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { routeIntent } from "../adapters/omp/source/extensions/workflow-routing.js";
 import { recipeCount } from "../adapters/omp/source/extensions/workflow-recipes.js";
+import { parseFrontmatter } from "./lib/frontmatter.mjs";
 
 const ROOT = path.resolve(new URL("..", import.meta.url).pathname);
 const ROUTING_FIXTURES = JSON.parse(readFileSync(path.join(ROOT, "tests/fixtures/automation-routing.json"), "utf8"));
 // Single source of truth: the repo nucleus/skills directory is the canonical skill home for all
 // harnesses. The former "do not vendor these global skills into the repo" penalty is
 // obsolete under consolidation; duplicate overlap now means a name that appears twice.
-
-function parseSkillName(content) {
-  const match = content.match(/^---\n([\s\S]*?)\n---/u);
-  if (!match) return null;
-  const name = match[1].split("\n").find((line) => line.startsWith("name:"));
-  return name ? name.slice("name:".length).trim().replace(/^['"]|['"]$/gu, "") : null;
-}
 
 function localSkillNames() {
   const skillsDir = path.join(ROOT, "nucleus/skills");
@@ -24,7 +18,7 @@ function localSkillNames() {
       .filter((entry) => entry.isDirectory())
       .map((entry) => {
         const skillPath = path.join(skillsDir, entry.name, "SKILL.md");
-        return parseSkillName(readFileSync(skillPath, "utf8")) || entry.name;
+        return parseFrontmatter(readFileSync(skillPath, "utf8"))?.values.name || entry.name;
       })
       .sort((left, right) => left.localeCompare(right));
   } catch {

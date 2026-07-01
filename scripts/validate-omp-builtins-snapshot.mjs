@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
+import { scanHarnessSafety } from "./lib/harness-safety.mjs";
 
 const USAGE = "Usage: node scripts/validate-omp-builtins-snapshot.mjs [--snapshot-dir <path>] [--check-live]";
 const DEFAULT_SNAPSHOT_DIR = "distributions/snapshots/omp-builtins";
@@ -19,13 +20,6 @@ const MATRIX_PORTABILITY_CLASSES = new Set([
   "adapter-required",
   "omp-only",
 ]);
-const SECRET_PATTERNS = [
-  /\bgh[pousr]_[A-Za-z0-9_]{20,}\b/u,
-  /\bgithub_pat_[A-Za-z0-9_]{20,}\b/u,
-  /\bsk-[A-Za-z0-9_-]{20,}\b/u,
-  /\bAKIA[0-9A-Z]{16}\b/u,
-  /\b(?:api[_-]?key|token|secret|password)\b\s*[:=]\s*["']?[A-Za-z0-9_./+=-]{16,}["']?/iu,
-];
 
 function readArgs(argv) {
   const options = { snapshotDir: DEFAULT_SNAPSHOT_DIR, checkLive: false };
@@ -89,14 +83,8 @@ function validateNoPrivateOrSecretText(snapshotDir, errors) {
   for (const filePath of walkFiles(snapshotDir)) {
     const relative = path.relative(snapshotDir, filePath).split(path.sep).join("/");
     const text = readFileSync(filePath, "utf8");
-    if (/\/Users\/[^/\s"]+/u.test(text)) {
-      errors.push(`${relative}: contains an absolute private home path`);
-    }
-    for (const pattern of SECRET_PATTERNS) {
-      if (pattern.test(text)) {
-        errors.push(`${relative}: contains API-key/token-looking text`);
-        break;
-      }
+    for (const finding of scanHarnessSafety(relative, text)) {
+      errors.push(finding.replace(/API-key\/token\/secret-looking text/u, "API-key/token-looking text"));
     }
     if (/\.(db|sqlite|sqlite3|bin|blob|log)$/iu.test(relative)) {
       errors.push(`${relative}: runtime/blob/log/database file copied into snapshot`);
