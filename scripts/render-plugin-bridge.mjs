@@ -20,7 +20,7 @@
 //                        checks pass clean, then applies create-missing-only against the live HOME and
 //                        records the ~/.loom-harness/applied-manifest.json marker. Idempotent.
 
-import { existsSync, lstatSync, readFileSync, realpathSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -130,9 +130,9 @@ export function isAllowedPluginDestination(destination) {
   );
 }
 
-// Finding 3: validate a raw template path BEFORE reading it. Rejects absolute paths and `..`
-// segments (path.join would normalize `..` away and let a template escape the bridge dir), then
-// realpaths the result and requires it to stay under the real bridge dir (no symlink escape).
+// Finding 3: validate a raw template path BEFORE reading it. Plugin-owned templates must stay
+// under the bridge dir; shared-agent package templates are the exception and must come from the
+// repo-local canonical `.agents/skills/` source tree.
 function resolveTemplatePath(bridgeDir, templateRel) {
   if (typeof templateRel !== "string" || templateRel.length === 0) {
     throw new Error(`invalid template path: ${JSON.stringify(templateRel)}`);
@@ -143,24 +143,78 @@ function resolveTemplatePath(bridgeDir, templateRel) {
   if (templateRel.split(/[\\/]+/u).includes("..")) {
     throw new Error(`template path must not contain '..': ${templateRel}`);
   }
-  const baseReal = realpathSync(bridgeDir);
-  const real = realpathSync(path.resolve(bridgeDir, templateRel));
+
+  const normalized = normalizePathText(templateRel);
+  const sourceRoot = normalized.startsWith(".agents/skills/")
+    ? path.join(REPO_ROOT, ".agents", "skills")
+    : bridgeDir;
+  const baseReal = realpathSync(sourceRoot);
+  const sourcePath = normalized.startsWith(".agents/skills/")
+    ? path.resolve(REPO_ROOT, normalized)
+    : path.resolve(bridgeDir, normalized);
+  const real = realpathSync(sourcePath);
   if (real !== baseReal && !real.startsWith(baseReal + path.sep)) {
-    throw new Error(`template path escapes the bridge dir: ${templateRel}`);
+    const boundary = normalized.startsWith(".agents/skills/") ? ".agents/skills" : "the bridge dir";
+    throw new Error(`template path escapes ${boundary}: ${templateRel}`);
   }
   return real;
 }
+
+function renderedRelPathFor(template) {
+  if (template.kind === "shared-agent-package" && template.destination?.startsWith(`${PLUGIN_BRIDGE_ROOT}/`)) {
+    return path.join("plugin-bridge", template.destination.slice(`${PLUGIN_BRIDGE_ROOT}/`.length));
+  }
+  return path.join("plugin-bridge", template.template);
+}
+
+function listPackageFiles(root, current = root, files = []) {
+  for (const entry of readdirSync(current, { withFileTypes: true })) {
+    const filePath = path.join(current, entry.name);
+    const stat = lstatSync(filePath);
+    if (stat.isSymbolicLink()) throw new Error(`package source must not contain symlinks: ${path.relative(REPO_ROOT, filePath)}`);
+    if (entry.isDirectory()) {
+      listPackageFiles(root, filePath, files);
+    } else if (entry.isFile()) {
+      files.push(path.relative(root, filePath).split(path.sep).join("/"));
+    }
+  }
+  return files.sort();
+}
+
+function expandedPlanTemplates(plan) {
+  const templates = [...(plan.templates ?? [])];
+  const seen = new Set(templates.map((template) => template.template));
+  for (const agent of plan.agents ?? []) {
+    if (!agent.packaged || !agent.packageRoot?.startsWith(".agents/skills/")) continue;
+    const packageRoot = repoPath(agent.packageRoot);
+    for (const file of listPackageFiles(packageRoot)) {
+      const template = `${agent.packageRoot}/${file}`;
+      if (seen.has(template)) continue;
+      seen.add(template);
+      templates.push({
+        id: `shared-agent-${agent.name}-${file.replace(/[^a-z0-9]+/giu, "-").replace(/^-|-$/gu, "").toLowerCase()}`,
+        kind: "shared-agent-package",
+        consumedBy: agent.consumedBy ?? "both",
+        template,
+        destination: `~/.agents/plugins/loom-nucleus/skills/${agent.name}/${file}`,
+        dispositionHarness: "codex",
+        notes: "Canonical shared-agent package file sourced from repo .agents/skills and rendered into plugin distribution output.",
+      });
+    }
+  }
+  return templates;
+}
+
 
 export function buildPluginCandidates(plan, manifest, options) {
   const bridgeDir = repoPath(options.bridgeDir ?? DEFAULTS.bridgeDir);
   const localOnly = localOnlyPatterns(manifest);
   const candidates = [];
 
-  for (const template of plan.templates ?? []) {
+  for (const template of expandedPlanTemplates(plan)) {
     // Finding 3: validate the raw template path before the read.
     const realSource = resolveTemplatePath(bridgeDir, template.template);
     const content = readFileSync(realSource, "utf8");
-    const lexicalSource = path.join(bridgeDir, template.template);
     const disposition = resolveDisposition(template.destination, template.dispositionHarness, manifest, localOnly);
     // Finding 1: appliable requires a tracked/adapted disposition, a home-anchored destination, AND a
     // destination inside the plugin-bridge write allowlist. Anything else is reported, never written.
@@ -175,9 +229,9 @@ export function buildPluginCandidates(plan, manifest, options) {
       consumedBy: template.consumedBy,
       boundaryId: null,
       forbiddenKeys: template.forbiddenKeys ?? [],
-      source: path.relative(REPO_ROOT, lexicalSource),
+      source: path.relative(REPO_ROOT, realSource),
       content,
-      renderedRelPath: path.join("plugin-bridge", template.template),
+      renderedRelPath: renderedRelPathFor(template),
       destination: template.destination,
       disposition,
       operation: "create-file",

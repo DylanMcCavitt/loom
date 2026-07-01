@@ -1,0 +1,30 @@
+{
+  "skill_name": "modules",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "This endpoint is slow, speed it up.",
+      "expected_output": "Finds the bottleneck first (profiling / diagnose), records a measured baseline, applies the smallest effective change, and re-measures to report the delta — without trading correctness or a guard for speed."
+    },
+    {
+      "id": 2,
+      "prompt": "Reduce the build time.",
+      "expected_output": "Measures the current build time as a baseline, targets the proven bottleneck, and stops when further effort yields diminishing returns; reports before/after numbers."
+    },
+    {
+      "id": 3,
+      "prompt": "make this endpiont fastr, its laggy",
+      "expected_output": "The typo-filled trigger still activates modules. It locates the real bottleneck, measures, and applies the smallest effective change."
+    },
+    {
+      "id": 4,
+      "prompt": "Explain the big-O of quicksort.",
+      "expected_output": "Does NOT activate modules; this is a conceptual explanation, not an optimization of a measured bottleneck."
+    },
+    {
+      "id": 5,
+      "prompt": "Refactor this module for readability.",
+      "expected_output": "Does NOT activate modules; a readability refactor with no performance goal routes to quality."
+    }
+  ]
+}

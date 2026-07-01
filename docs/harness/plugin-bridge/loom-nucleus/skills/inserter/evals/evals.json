@@ -1,0 +1,35 @@
+{
+  "skill_name": "inserter",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Triage the new bugs and tell me what's ready.",
+      "expected_output": "Activates inserter: reads the repo envelope's label/state map, classifies each issue as exactly one category (bug) and one state, and for bugs attempts reproduction before promoting — reporting confirmed repro with code path, failed repro, or needs-info. Resolves canonical roles through the envelope map (no hardcoded label/state strings) and applies them via save_issue/save_comment. Surfaces what is ready-for-agent (with an agent brief) and ready-for-human. Does not implement; hands fully-specified work to roboports.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "What should we pick up next?",
+      "expected_output": "Activates inserter: presents the triage buckets (unlabeled, needs-triage, needs-info with reporter activity) and surfaces ready-for-agent / ready-for-human issues from the envelope's state map, oldest first, so the maintainer can choose. Sorts and prioritizes only; routes a chosen ready issue to roboports and never starts implementing.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "triag teh incoming issuse and mark whats redy",
+      "expected_output": "Despite the typos, activates inserter: classifies each incoming issue into exactly one category and one state via the envelope's label/state map, reproduces bugs before promoting them, writes an agent brief when moving an issue to ready-for-agent, and routes ready work to roboports. Never hardcodes label/state strings and never implements.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Split this plan into issues.",
+      "expected_output": "Does NOT activate inserter. This is decomposing a plan into new tracked work, which routes to the ghosts skill. Inserter only sorts and routes issues that already exist; it does not stamp new ones.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Implement ABC-12.",
+      "expected_output": "Does NOT activate inserter. Executing a single existing issue end-to-end routes to the roboports skill. Inserter classifies, prioritizes, and routes but never implements.",
+      "files": []
+    }
+  ]
+}

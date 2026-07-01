@@ -1,6 +1,6 @@
 # Shared nucleus agent contract
 
-Issues: LOO-96 base contract; LOO-97 autonomous delegation DAG; LOO-98 repair-pack finding-fix loop; LOO-99 offline shared-agent eval harness; LOO-101 canonical package rendering; LOO-102 scratch-HOME shared roster activation; LOO-103 evidence intake and decision log; LOO-104 deterministic shared-package checks. Status: contract plus offline eval harness plus canonical plugin package templates plus deterministic package checks plus scratch-HOME activation proof; this document defines the canonical shared agent model and does not authorize native OMP/Codex/Claude role-agent files or real-HOME apply without HITL review.
+Issues: LOO-96 base contract; LOO-97 autonomous delegation DAG; LOO-98 repair-pack finding-fix loop; LOO-99 offline shared-agent eval harness; LOO-101 canonical package rendering; LOO-102 scratch-HOME shared roster activation; LOO-103 evidence intake and decision log; LOO-104 deterministic shared-package checks; LOO-105 canonical repo-local package source. Status: contract plus offline eval harness plus repo-local canonical packages plus rendered plugin distribution plus deterministic package checks plus scratch-HOME activation proof; this document defines the canonical shared agent model and does not authorize native OMP/Codex/Claude role-agent files or real-HOME apply without HITL review.
 
 Source pattern: [Teaching agents product design at Vercel](https://vercel.com/blog/teaching-agents-product-design-at-vercel).
 
@@ -10,7 +10,7 @@ Vercel describes one repo-local `product-design` skill with `AGENTS.md`, `SKILL.
 
 Loom has a multi-agent nucleus, so the adapted target is **one Vercel-shaped skill package per canonical nucleus agent**, not one giant shared super-skill and not flat `omp-*` role ports.
 
-Each future agent package should have this shape:
+Each canonical agent package has this shape:
 
 ```text
 .agents/skills/{agent-name}/
@@ -251,7 +251,7 @@ Every agent receives a bounded input packet and returns a bounded output packet.
 - `omp-reviewer` (Codex) — direct OMP reviewer role port; future review work is split across `biters`, `spitters`, `bus-first`, `lab`, and stable rule citations.
 - `omp-librarian` (Codex) — potential OMP research role port; future research belongs to shared `science-pack` and source-grounded references.
 
-These candidates remain only as historical adapter-plan context. LOO-101 removes them from the active plugin renderer path in favor of canonical shared-agent packages. They are not the desired shared nucleus agent model.
+These candidates remain only as historical adapter-plan context. LOO-101 removes them from the active plugin renderer path in favor of shared-agent packages, and LOO-105 makes `.agents/skills/{agent-name}/` the canonical authoring source for those packages. They are not the desired shared nucleus agent model.
 
 ## Related and deferred work
 
@@ -263,3 +263,4 @@ These candidates remain only as historical adapter-plan context. LOO-101 removes
 - LOO-102 activates the shared starter roster only after package rendering, evals, deterministic checks, and governance pass.
 - LOO-103 adds the shared evidence-intake collector -> judge -> human decision-log workflow.
 - LOO-104 encodes mechanical package checks at `scripts/validate-shared-agent-packages.mjs`; judgment-heavy guidance stays in references, evals, or coverage gaps.
+- LOO-105 moves shared-agent package authorship to `.agents/skills/{agent-name}/`; `docs/harness/plugin-bridge/loom-nucleus/skills/{agent-name}/` is rendered plugin distribution/test output and must match the canonical source.

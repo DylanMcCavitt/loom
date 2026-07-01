@@ -3,14 +3,16 @@
 Issue LOO-2 designed the cross-harness plugin bridge: how Loom installs its
 skills/agents/config nucleus into the **Codex** and **Claude** plugin/marketplace
 surfaces through portable plugin manifests. LOO-102 activates that design for
-scratch-HOME proof only, reusing the shipped render-to-write executor
+scratch-HOME proof only, and LOO-105 makes `.agents/skills/{agent-name}/` the
+canonical repo-local package source rendered into the plugin distribution tree.
+The bridge reuses the shipped render-to-write executor
 (`scripts/render-harness-nucleus.mjs`) and its strict-manual safety gate for every
 write.
 
-LOO-102 adds executable scratch-HOME activation proof. It still writes nothing to
-the operator's real `~/.codex`, `~/.claude`, `~/.agents`, or repo config without
-explicit HITL approval, and it does not install, enable, or publish any plugin.
-It builds directly on the adapter plans already in this repo:
+LOO-102/LOO-105 write nothing to the operator's real `~/.codex`, `~/.claude`,
+`~/.agents`, or repo config without explicit HITL approval, and they do not
+install, enable, or publish any plugin.
+This bridge builds directly on the adapter plans already in this repo:
 
 - `docs/harness/codex-adapter-plan.md` (issue #41) — Codex agent/skill/config mapping and TOML template boundaries.
 - `docs/harness/claude-adapter-plan.md` (issue #42) — Claude agent/skill/settings mapping and Markdown/JSON template boundaries.
@@ -314,7 +316,8 @@ and skipped.
 LOO-102 turns the follow-on design into the scratch-HOME activation path:
 
 - `scripts/render-plugin-bridge.mjs` is the plugin-bridge candidate source. It imports the shared render/gate/apply primitives from `scripts/render-harness-nucleus.mjs`, so JSON/TOML/YAML/Markdown gating, marker ownership, backup-on-drift, and create-missing-only semantics stay on one bus.
-- The plugin-bridge plan/templates under `docs/harness/plugin-bridge/` render the dual `.codex-plugin/plugin.json` and `.claude-plugin/plugin.json` wrappers, both marketplace manifests, the 6 OMP skill candidates, the canonical `skills/{agent-name}/` shared-agent packages, and `hooks/hooks.json` plus `verify-loom-install.mjs`.
+- Plugin-owned templates under `docs/harness/plugin-bridge/` render the dual `.codex-plugin/plugin.json` and `.claude-plugin/plugin.json` wrappers, both marketplace manifests, the 6 OMP skill candidates, and `hooks/hooks.json` plus `verify-loom-install.mjs`.
+- Shared-agent packages are authored under `.agents/skills/{agent-name}/` and rendered into `docs/harness/plugin-bridge/loom-nucleus/skills/{agent-name}/` for plugin distribution/test output. The bridge tree is not the canonical authoring surface for those packages.
 - `docs/harness/resource-manifest.json` marks the personal plugin marketplace/source root as `adapt`, while Codex/Claude plugin caches, auth, sessions, histories, DBs, local settings, and runtime state remain `local-only`.
 - The writer allowlist is deliberately narrow: only `~/.agents/plugins/marketplace.json` and `~/.agents/plugins/loom-nucleus/**` can be appliable. Track/adapt candidates outside that root refuse the whole write, and symlink-escape checks realpath existing ancestors before any file is created.
 - JSON manifests are parsed and forbidden-key scanned by the shared gate. Markdown YAML frontmatter is scanned; frontmatter-less Markdown stays content-only package guidance.
@@ -335,6 +338,7 @@ Live harness readback is deferred until the live-HOME promotion gate has passed 
 - **[Resolved by LOO-102]** `plugin.json` pins explicit version `0.1.0`.
 - **[Verified live — LOO-15, codex-cli 0.142.0]** Codex auto-discovers `~/.agents/plugins/marketplace.json` (no `codex plugin marketplace add` needed) and reports the marketplace root as `$HOME`, resolving `source.path` relative to that root. The plugin source is therefore referenced as `./.agents/plugins/loom-nucleus` (not `./loom-nucleus`). Install with `codex plugin add <plugin>@<marketplace>` (the verb is `add`, not `install`); credential-less local plugin policy fields parsed and installed cleanly in that proof.
 
+- **[Resolved by LOO-105]** Shared-agent package authorship is `.agents/skills/{agent-name}/`; the checked-in `docs/harness/plugin-bridge/loom-nucleus/skills/{agent-name}/` tree is rendered distribution/test output and must match the canonical source files used by `scripts/render-plugin-bridge.mjs`.
 ---
 
 ## 4. Stop-hook verified loop (botched-install detection)

@@ -9,6 +9,7 @@ const DEFAULTS = Object.freeze({
   contract: "docs/harness/shared-nucleus-agents.json",
   plan: "docs/harness/plugin-bridge/plan.json",
   bridgeDir: "docs/harness/plugin-bridge",
+  skillsDir: ".agents/skills",
 });
 
 export const DETERMINISTIC_RULES = Object.freeze([
@@ -29,8 +30,8 @@ export const DETERMINISTIC_RULES = Object.freeze([
   },
   {
     id: "skill-sections",
-    reason: "Required `SKILL.md` sections are fixed headings declared by the shared contract.",
-    fix: "Restore the missing section heading in the generated package entrypoint.",
+    reason: "Generated shared-agent `SKILL.md` sections are fixed headings declared by the shared contract.",
+    fix: "Restore the missing section heading in the generated package entrypoint; preserved active repo skills may keep their hand-authored structure.",
   },
 ]);
 
@@ -62,6 +63,20 @@ function isNonEmptyFile(filePath) {
 function isDirectory(dirPath) {
   return existsSync(dirPath) && statSync(dirPath).isDirectory();
 }
+
+function listRelativeFiles(root, current = root, files = []) {
+  if (!isDirectory(root)) return files;
+  for (const entry of readdirSync(current, { withFileTypes: true })) {
+    const filePath = path.join(current, entry.name);
+    if (entry.isDirectory()) {
+      listRelativeFiles(root, filePath, files);
+    } else if (entry.isFile()) {
+      files.push(path.relative(root, filePath).split(path.sep).join("/"));
+    }
+  }
+  return files.sort();
+}
+
 
 function frontmatterName(content) {
   const match = content.match(/^---\n([\s\S]*?)\n---\n/u);
@@ -138,6 +153,7 @@ export function validateSharedAgentPackages(options = {}) {
   const contractPath = repoPath(options.contract ?? DEFAULTS.contract);
   const planPath = repoPath(options.plan ?? DEFAULTS.plan);
   const bridgeDir = repoPath(options.bridgeDir ?? DEFAULTS.bridgeDir);
+  const canonicalSkillsRoot = repoPath(options.skillsDir ?? DEFAULTS.skillsDir);
   const contract = readJson(contractPath);
   const plan = readJson(planPath);
   const failures = [];
@@ -148,21 +164,38 @@ export function validateSharedAgentPackages(options = {}) {
   const forbiddenPrefixes = contract.namingRules.forbiddenPrefixes ?? [];
   const planAgentNames = (plan.agents ?? []).map((agent) => agent.name).sort();
   const expectedPluginSkillNames = [...expectedAgentNames, ...(plan.skills ?? []).map((skill) => skill.name)].sort();
-  const sharedSkillsRoot = path.join(bridgeDir, "loom-nucleus", "skills");
+  const pluginSkillsRoot = path.join(bridgeDir, "loom-nucleus", "skills");
 
   if (JSON.stringify(planAgentNames) !== JSON.stringify(expectedAgentNames)) {
     failures.push(`plugin-bridge plan agents must match shared contract roster: expected ${expectedAgentNames.join(", ")}, got ${planAgentNames.join(", ")}`);
   }
 
-  const actualPluginSkillNames = sortedDirectoryNames(sharedSkillsRoot);
+  const actualPluginSkillNames = sortedDirectoryNames(pluginSkillsRoot);
   const unexpectedSkillNames = actualPluginSkillNames.filter((name) => !expectedPluginSkillNames.includes(name));
   if (unexpectedSkillNames.length > 0) {
     failures.push(`plugin skills directory has unexpected packages: ${unexpectedSkillNames.join(", ")}`);
   }
 
-  const actualSharedPackageNames = actualPluginSkillNames.filter((name) => expectedAgentNames.includes(name)).sort();
-  if (JSON.stringify(actualSharedPackageNames) !== JSON.stringify(expectedAgentNames)) {
-    failures.push(`plugin skills directory missing shared packages: expected ${expectedAgentNames.join(", ")}, got ${actualSharedPackageNames.join(", ")}`);
+  const actualPluginSharedPackageNames = actualPluginSkillNames.filter((name) => expectedAgentNames.includes(name)).sort();
+  if (JSON.stringify(actualPluginSharedPackageNames) !== JSON.stringify(expectedAgentNames)) {
+    failures.push(`plugin skills directory missing shared packages: expected ${expectedAgentNames.join(", ")}, got ${actualPluginSharedPackageNames.join(", ")}`);
+  }
+
+  const actualCanonicalPackageNames = sortedDirectoryNames(canonicalSkillsRoot).filter((name) => expectedAgentNames.includes(name)).sort();
+  if (JSON.stringify(actualCanonicalPackageNames) !== JSON.stringify(expectedAgentNames)) {
+    failures.push(`canonical .agents/skills directory missing shared packages: expected ${expectedAgentNames.join(", ")}, got ${actualCanonicalPackageNames.join(", ")}`);
+  }
+
+  for (const agent of plan.agents ?? []) {
+    if (expectedAgentNames.includes(agent.name) && agent.packageRoot !== `.agents/skills/${agent.name}`) {
+      failures.push(`${agent.name}: plan packageRoot must be .agents/skills/${agent.name}`);
+    }
+  }
+
+  for (const template of plan.templates ?? []) {
+    if (template.kind === "shared-agent-package" && !template.template?.startsWith(".agents/skills/")) {
+      failures.push(`${template.id}: shared-agent package template must source from .agents/skills`);
+    }
   }
 
   for (const name of expectedAgentNames) {
@@ -170,32 +203,63 @@ export function validateSharedAgentPackages(options = {}) {
       failures.push(`${name}: canonical shared agent name must not use a harness prefix`);
     }
 
-    const packageDir = path.join(sharedSkillsRoot, name);
+    const packageDir = path.join(canonicalSkillsRoot, name);
+    const pluginPackageDir = path.join(pluginSkillsRoot, name);
     if (!isDirectory(packageDir)) {
-      failures.push(`${name}: missing package directory`);
+      failures.push(`${name}: missing canonical package directory`);
       continue;
+    }
+    if (!isDirectory(pluginPackageDir)) {
+      failures.push(`${name}: missing plugin distribution package directory`);
     }
 
     for (const requiredDir of packageSpec.requiredDirectories ?? []) {
       const dirPath = path.join(packageDir, requiredDir);
       if (!isDirectory(dirPath)) failures.push(`${name}: missing required directory ${requiredDir}`);
+      const pluginDirPath = path.join(pluginPackageDir, requiredDir);
+      if (!isDirectory(pluginDirPath)) failures.push(`${name}: plugin distribution missing required directory ${requiredDir}`);
     }
 
     for (const requiredFile of packageSpec.requiredFiles ?? []) {
       const filePath = path.join(packageDir, requiredFile);
       if (!isNonEmptyFile(filePath)) failures.push(`${name}: missing or empty ${requiredFile}`);
+      const pluginFilePath = path.join(pluginPackageDir, requiredFile);
+      if (!isNonEmptyFile(pluginFilePath)) failures.push(`${name}: plugin distribution missing or empty ${requiredFile}`);
+      if (existsSync(filePath) && existsSync(pluginFilePath) && readFileSync(filePath, "utf8") !== readFileSync(pluginFilePath, "utf8")) {
+        failures.push(`${name}: plugin distribution ${requiredFile} must match canonical .agents/skills source`);
+      }
     }
 
     const exemplarPath = path.join(packageDir, "exemplars", `pr-${name}.md`);
+    const pluginExemplarPath = path.join(pluginPackageDir, "exemplars", `pr-${name}.md`);
     if (!isNonEmptyFile(exemplarPath)) failures.push(`${name}: missing or empty exemplars/pr-${name}.md`);
+    if (!isNonEmptyFile(pluginExemplarPath)) failures.push(`${name}: plugin distribution missing or empty exemplars/pr-${name}.md`);
+    if (existsSync(exemplarPath) && existsSync(pluginExemplarPath) && readFileSync(exemplarPath, "utf8") !== readFileSync(pluginExemplarPath, "utf8")) {
+      failures.push(`${name}: plugin distribution exemplars/pr-${name}.md must match canonical .agents/skills source`);
+    }
+
+    const canonicalFiles = listRelativeFiles(packageDir);
+    const pluginFiles = listRelativeFiles(pluginPackageDir);
+    if (JSON.stringify(pluginFiles) !== JSON.stringify(canonicalFiles)) {
+      failures.push(`${name}: plugin distribution file list must match canonical .agents/skills source`);
+    }
+    for (const relativeFile of canonicalFiles) {
+      const filePath = path.join(packageDir, relativeFile);
+      const pluginFilePath = path.join(pluginPackageDir, relativeFile);
+      if (existsSync(pluginFilePath) && readFileSync(filePath, "utf8") !== readFileSync(pluginFilePath, "utf8")) {
+        failures.push(`${name}: plugin distribution ${relativeFile} must match canonical .agents/skills source`);
+      }
+    }
 
     const skillPath = path.join(packageDir, "SKILL.md");
     if (existsSync(skillPath)) {
       const skill = readFileSync(skillPath, "utf8");
       const nameField = frontmatterName(skill);
       if (nameField !== name) failures.push(`${name}: SKILL.md frontmatter name must be ${name}, got ${nameField ?? "<missing>"}`);
-      for (const section of packageSpec.skillMdSections ?? []) {
-        if (!hasHeading(skill, 2, section)) failures.push(`${name}: SKILL.md missing ## ${section}`);
+      if (skill.includes("This package is the canonical repo-local shared-agent package source for LOO-105.")) {
+        for (const section of packageSpec.skillMdSections ?? []) {
+          if (!hasHeading(skill, 2, section)) failures.push(`${name}: generated SKILL.md missing ## ${section}`);
+        }
       }
     }
 

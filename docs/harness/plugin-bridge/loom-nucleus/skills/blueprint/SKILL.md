@@ -1,54 +1,69 @@
 ---
 name: blueprint
-description: Turns current context into a PRD/spec with acceptance criteria, non-goals, proof plan, and explicit open decisions.
+description: Synthesizes a PRD/spec from existing context without interviewing and owns the kit's reusable PR, issue, project-doc, and PRD templates. Use when the user wants a PRD or spec written from current context, or wants/needs a reusable PR, issue, project-doc, or PRD template.
 ---
 
 # Blueprint
 
-Use when turns current context into a prd/spec with acceptance criteria, non-goals, proof plan, and explicit open decisions within the active issue, PR, or workflow packet.
+A blueprint is a saved layout you stamp down. This skill drafts the spec for an idea
+and owns the reusable templates the kit stamps into repos and Linear.
 
-## Operating Contract
+Linear is the planning system of record; GitHub is code delivery. The spec lands as a
+Linear **document** on the project `prospect` created — not as a GitHub issue or a repo
+file.
 
-- Role: Spec synthesizer.
-- Canonical name: `blueprint`; never render this package with `omp-`, `codex-`, or `claude-` prefixes.
-- Primary modes: `shape`.
-- After this entrypoint, load `AGENTS.md` for package governance, then the narrowest relevant file under `references/`.
-- Do not apply generated files to live HOME, close issues, merge PRs, or widen beyond the packet.
+## Required reading
 
-## Request Modes
+Before drafting, read the per-repo envelope `assembler` generated (the repo envelope):
+the Linear team/project/label map, the **domain glossary**, the commands, and the
+template set. Do not hardcode a tracker, team, labels, or commands — read the envelope.
+Also read the originating `prospect` idea/brief and any `research` document.
 
-- `shape`: follow the shape boundary in the shared nucleus contract.
+## Synthesize, never interview
 
-## Decision Authority
+Produce the spec from context you already have — the conversation, the idea doc, the
+research notes, and the codebase. **Do not interview the user.** If a genuine unknown
+blocks the spec, route to `research` to resolve it rather than relitigating intent here.
+Use the domain glossary's vocabulary for every term in the spec.
 
-1. User goal and explicit constraints.
-2. Active issue or PR acceptance criteria.
-3. Verified repository code, tests, and live PR state.
-4. Routed references in this package.
-5. Accepted exemplars.
-6. General heuristics.
+## Write the spec (PRD)
 
-## Workflow
+Draft from `templates/prd.md`. The spec MUST include:
 
-1. Resolve mode and packet scope before acting.
-2. Load only the references needed for the target surface.
-3. Execute the smallest coherent step allowed by the packet.
-4. Return the required output packet and any coverage gaps.
+- a problem statement and solution in the user's terms,
+- explicit **acceptance criteria** (observable, testable),
+- explicit **non-goals** (what it will not do),
+- a **proof plan** (how an agent proves each criterion without expanding scope; prefer
+  the highest existing test seam).
 
-## Standards or Rules
+Keep it prose. No file paths or code snippets — they rot. The one exception: a
+decision-encoding snippet (state machine, reducer, schema, type shape) inlined where
+prose is less precise, trimmed to the decision-rich parts. If a throwaway prototype is
+needed to de-risk a decision, route to `map-seed` first, then fold its findings (and any
+such snippet) into the spec.
 
-- Required input packet fields: `goal`, `source context`, `constraints`, `known evidence`, `open questions`.
-- Required output packet fields: `spec`, `acceptance criteria`, `non-goals`, `proof plan`, `coverage gaps`.
-- Non-goals:
-- Do not implement code
-- Do not create issues
-- Do not live-apply to real HOME
-- Do not invent unsupported standards
+## Publish to Linear
 
-## Review Output
+Publish the finished spec as a Linear **document** on the prospect's project via
+`save_document`. Return the created document id/link. The document is the spec's home;
+`ghosts` reads it to cut issues.
 
-Report mode, target surface, loaded references, rule IDs, proof run, and unresolved coverage gaps.
+## Templates (the canonical blueprints)
 
-## Skill Integrity
+This skill owns the kit's starter templates under `templates/`; `assembler` stamps
+repo-local and Linear-side copies from them. Keep them generic and placeholder-driven —
+never bake in repo-specific facts or secrets.
 
-This package is generated from `docs/harness/shared-nucleus-agents.*` for LOO-101. Update the contract first, then regenerate package content; do not fork agent policy inside one harness adapter.
+- `templates/prd.md` — the spec/PRD blueprint.
+- `templates/linear-project-doc.md` — a Linear project document scaffold.
+- `templates/linear-issue.md` — an issue-description scaffold (`ghosts` stamps it).
+- `templates/pull-request.md` — a PR scaffold encoding the bridge (branch carries the
+  Linear issue id; the merge auto-closes the issue).
+
+## Routing
+
+- New idea with no Linear home yet → `prospect` first; blueprint specs onto its project.
+- Unknowns that must be resolved before specifying → `research`.
+- A design that must be felt before it is specified → `map-seed`; fold its findings back.
+- Turning the finished spec into tracked work → `ghosts`. **Blueprint never creates issues** — when asked to "create the issues now", hand off to `ghosts`.
+- Implementing a spec'd issue → `roboports` (which cites `bus-first` for a minimal diff).

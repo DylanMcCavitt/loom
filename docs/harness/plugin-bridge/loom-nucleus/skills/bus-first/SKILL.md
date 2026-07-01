@@ -1,54 +1,52 @@
 ---
 name: bus-first
-description: Applies reuse-before-build doctrine and flags needless abstraction or scope creep.
+description: Enforces a minimal-diff, no-needless-abstraction doctrine for code changes, like the laziest senior dev who replaces fifty lines with one. Use when writing or changing code and the change risks over-building, premature abstraction, a new dependency, or rewriting code that already exists, or when asked to do a minimal-diff or tighten pass on a change or PR.
 ---
 
 # Bus First
 
-Use when applies reuse-before-build doctrine and flags needless abstraction or scope creep within the active issue, PR, or workflow packet.
+The best line is the one you never lay. Before adding anything, check the bus:
+the materials you need are usually already flowing. Tap the existing line instead
+of building a parallel one. Inspired by — not copied from — the "lazy senior dev"
+stance; the code ends up small because it is *necessary*, not because it is golfed.
 
-## Operating Contract
+## The ladder
 
-- Role: Minimal-diff tightener.
-- Canonical name: `bus-first`; never render this package with `omp-`, `codex-`, or `claude-` prefixes.
-- Primary modes: `review`.
-- After this entrypoint, load `AGENTS.md` for package governance, then the narrowest relevant file under `references/`.
-- Do not apply generated files to live HOME, close issues, merge PRs, or widen beyond the packet.
+Walk these rungs in order and stop at the first that holds. Run them *after* you
+understand the problem and have read the code the change touches — lazy about the
+solution, never about reading.
 
-## Request Modes
+1. **Does this need to exist at all?** If not, don't build it. Capacity you won't
+   consume just rots on the belt (Gleba spoilage = YAGNI).
+2. **Is it already on the bus?** If the codebase already does this, tap that line —
+   reuse it, don't lay a parallel one.
+3. **Does the standard library smelt it?** Prefer stdlib over hand-rolling.
+4. **Is it a native platform feature?** Use the platform before a library.
+5. **Is it in an already-installed dependency?** Use what's already unpacked
+   before adding a new dependency.
+6. **Is it one line?** Then it's one line.
+7. **Only then:** build the minimum that works — no spare assemblers "for later."
 
-- `review`: follow the review boundary in the shared nucleus contract.
+## Never on the chopping block
 
-## Decision Authority
+Lazy about the solution, never negligent. These are the wall against the biters;
+never tear down the wall to save resources:
 
-1. User goal and explicit constraints.
-2. Active issue or PR acceptance criteria.
-3. Verified repository code, tests, and live PR state.
-4. Routed references in this package.
-5. Accepted exemplars.
-6. General heuristics.
+- trust-boundary validation
+- data-loss / failure handling
+- security
+- accessibility
 
-## Workflow
+## When a new line is the right call
 
-1. Resolve mode and packet scope before acting.
-2. Load only the references needed for the target surface.
-3. Execute the smallest coherent step allowed by the packet.
-4. Return the required output packet and any coverage gaps.
+If it is a genuinely new capability with no existing seam, build it — once,
+cleanly, at the highest seam you can, and no larger than the task needs. New is
+not forbidden; *needless* new is.
 
-## Standards or Rules
+## Tighten mode (someone else's change)
 
-- Required input packet fields: `diff`, `issue scope`, `existing seams`, `guards`.
-- Required output packet fields: `cuts requested`, `rung rationale`, `guards preserved`, `no-cut statement`.
-- Non-goals:
-- Do not cut validation
-- Do not cut security
-- Do not live-apply to real HOME
-- Do not rewrite for taste
-
-## Review Output
-
-Report mode, target surface, loaded references, rule IDs, proof run, and unresolved coverage gaps.
-
-## Skill Integrity
-
-This package is generated from `docs/harness/shared-nucleus-agents.*` for LOO-101. Update the contract first, then regenerate package content; do not fork agent policy inside one harness adapter.
+When asked to shrink/tighten a diff or PR, run the ladder over the existing diff
+and propose removals, with each removal mapped to the rung that justifies it.
+Never propose a cut that removes a guard from "Never on the chopping block". See
+[REVIEW.md](REVIEW.md). Worked before/after examples and the rung rationale live
+in [LADDER.md](LADDER.md).

@@ -19,6 +19,7 @@ import {
 const repoFile = (rel) => new URL(`../${rel}`, import.meta.url).pathname;
 const renderer = repoFile("scripts/render-plugin-bridge.mjs");
 const bridgeDir = repoFile("docs/harness/plugin-bridge");
+const repoSkillsDir = repoFile(".agents/skills");
 
 const plan = JSON.parse(readFileSync(repoFile("docs/harness/plugin-bridge/plan.json"), "utf8"));
 const manifest = JSON.parse(readFileSync(repoFile("docs/harness/resource-manifest.json"), "utf8"));
@@ -101,6 +102,7 @@ test("plugin skills include OMP skill candidates and canonical shared agent pack
   const packagedAgentNames = plan.agents.map((agent) => agent.name).sort();
   assert.deepEqual(packagedAgentNames, sharedAgentNames, "plan agents must match the shared nucleus roster");
   assert.ok(plan.agents.every((agent) => agent.packaged === true && agent.consumedBy === "both"), "shared agents must be packaged for both harnesses");
+  assert.ok(plan.agents.every((agent) => agent.packageRoot === `.agents/skills/${agent.name}`), "shared agents must name the repo-local canonical package root");
 
   const skillDirs = readdirSync(path.join(bridgeDir, "loom-nucleus", "skills"), { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
@@ -127,13 +129,19 @@ test("canonical shared agent packages have required shape and unprefixed names",
 
   for (const agent of plan.agents) {
     assert.doesNotMatch(agent.name, /^(omp|codex|claude)-/u, `shared agent must not be harness-prefixed: ${agent.name}`);
-    const rootDir = path.join(bridgeDir, "loom-nucleus", "skills", agent.name);
+    const rootDir = path.join(repoSkillsDir, agent.name);
+    const pluginRootDir = path.join(bridgeDir, "loom-nucleus", "skills", agent.name);
     for (const rel of requiredFiles) {
-      assert.ok(readFileSync(path.join(rootDir, rel), "utf8").length > 0, `${agent.name} missing ${rel}`);
+      const canonical = readFileSync(path.join(rootDir, rel), "utf8");
+      assert.ok(canonical.length > 0, `${agent.name} missing ${rel}`);
+      assert.equal(readFileSync(path.join(pluginRootDir, rel), "utf8"), canonical, `${agent.name} plugin distribution ${rel} must match canonical source`);
     }
     assert.equal(frontmatterName(path.join(rootDir, "SKILL.md")), agent.name, `SKILL.md frontmatter name must equal package name (${agent.name})`);
     const exemplar = path.join(rootDir, "exemplars", `pr-${agent.name}.md`);
-    assert.ok(readFileSync(exemplar, "utf8").includes("No accepted PR exemplar"), `${agent.name} exemplar index missing`);
+    const pluginExemplar = path.join(pluginRootDir, "exemplars", `pr-${agent.name}.md`);
+    const exemplarContent = readFileSync(exemplar, "utf8");
+    assert.ok(exemplarContent.includes("No accepted PR exemplar"), `${agent.name} exemplar index missing`);
+    assert.equal(readFileSync(pluginExemplar, "utf8"), exemplarContent, `${agent.name} plugin distribution exemplar must match canonical source`);
   }
 
   const agentsDir = path.join(bridgeDir, "loom-nucleus", "agents");
@@ -151,12 +159,14 @@ test("activation proof covers OMP-compatible source, Codex, and Claude shared ro
 
   const candidates = buildPluginCandidates(plan, manifest, {}).candidates;
   for (const agent of shared.agents) {
-    const sourceRoot = path.join(bridgeDir, "loom-nucleus", "skills", agent.name);
+    const sourceRoot = path.join(repoSkillsDir, agent.name);
     assert.ok(readFileSync(path.join(sourceRoot, "AGENTS.md"), "utf8").length > 0, `${agent.name} missing OMP-compatible package source`);
     assert.ok(
       candidates.some((candidate) =>
         candidate.kind === "shared-agent-package" &&
         candidate.consumedBy === "both" &&
+        candidate.source === `.agents/skills/${agent.name}/SKILL.md` &&
+        candidate.renderedRelPath === `plugin-bridge/loom-nucleus/skills/${agent.name}/SKILL.md` &&
         candidate.destination === `~/.agents/plugins/loom-nucleus/skills/${agent.name}/SKILL.md` &&
         candidate.appliable === true),
       `${agent.name} missing shared package activation candidate`,

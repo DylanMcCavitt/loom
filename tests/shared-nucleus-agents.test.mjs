@@ -43,8 +43,8 @@ const FORBIDDEN_PREFIXES = ["omp-", "codex-", "claude-"];
 
 test("shared nucleus agent contract records the canonical Factorio roster", () => {
   assert.equal(contract.schemaVersion, 6);
-  assert.equal(contract.generatedForIssue, "LOO-102");
-  assert.equal(contract.status, "scratch-home-activation-ready");
+  assert.equal(contract.generatedForIssue, "LOO-105");
+  assert.equal(contract.status, "canonical-repo-source-ready");
   assert.deepEqual(contract.agents.map((agent) => agent.name), EXPECTED_ROSTER);
   assert.equal(new Set(contract.agents.map((agent) => agent.name)).size, EXPECTED_ROSTER.length);
 });

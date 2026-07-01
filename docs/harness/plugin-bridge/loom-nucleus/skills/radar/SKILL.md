@@ -1,55 +1,48 @@
 ---
 name: radar
-description: Checks repo/tracker/proof drift and recommends the next route without mutating state.
+description: Checks Factory Nucleus drift without writing to trackers or blueprints, classifies the drift, and suggests the next route with evidence. Use when the user asks to check drift, compare planned ghosts against repo/tracker state, run radar, detect stale plans, or decide whether work needs inserter, roboports, proof-pass, or rocket-launch next.
 ---
 
 # Radar
 
-Use when checks repo/tracker/proof drift and recommends the next route without mutating state within the active issue, PR, or workflow packet.
+Radar scans for drift. It compares the current repo/tracker/proof evidence against
+the planned factory state and reports what changed. V1 is **check-only**: it never
+rewrites blueprints, edits ghosts, moves Linear state, or changes files.
 
-## Operating Contract
+## Read first
 
-- Role: Drift scanner.
-- Canonical name: `radar`; never render this package with `omp-`, `codex-`, or `claude-` prefixes.
-- Primary modes: `review`, `prove`.
-- After this entrypoint, load `AGENTS.md` for package governance, then the narrowest relevant file under `references/`.
-- Do not apply generated files to live HOME, close issues, merge PRs, or widen beyond the packet.
+Read the repo envelope from `assembler`, the relevant ghosts, recent PR/proof
+evidence, and any local factory state artifacts. Do not infer tracker state from a
+branch name alone when an adapter or issue record is available.
 
-## Request Modes
+## Drift classes
 
-- `review`: follow the review boundary in the shared nucleus contract.
-- `prove`: follow the prove boundary in the shared nucleus contract.
+Report exactly one class:
 
-## Decision Authority
+- `none` — no relevant drift found.
+- `low-risk` — minor drift that does not threaten the plan (cosmetic or easily re-proven).
+- `material` — significant tracker, repo, or proof drift that needs work before launch.
+- `unknown` — required evidence is missing or contradictory, so the drift cannot be classified.
 
-1. User goal and explicit constraints.
-2. Active issue or PR acceptance criteria.
-3. Verified repository code, tests, and live PR state.
-4. Routed references in this package.
-5. Accepted exemplars.
-6. General heuristics.
+## Output shape
 
-## Workflow
+Return a concise check artifact with:
 
-1. Resolve mode and packet scope before acting.
-2. Load only the references needed for the target surface.
-3. Execute the smallest coherent step allowed by the packet.
-4. Return the required output packet and any coverage gaps.
+- `driftClass`
+- `affectedGhosts`
+- `suggestedSyncActions`
+- `suggestedRoute` (`inserter`, `roboports`, `proof-pass`, or `rocket-launch`)
+- `evidence` references to issues, PRs, files, commands, or artifacts observed
 
-## Standards or Rules
+## Routing
 
-- Required input packet fields: `issue or plan`, `repo state`, `tracker state`, `proof artifacts`.
-- Required output packet fields: `drift class`, `evidence`, `recommended route`, `blockers`.
-- Non-goals:
-- Do not implement code
-- Do not mutate trackers
-- Do not live-apply to real HOME
-- Do not rewrite plans
+- No drift; launch-ready → `rocket-launch`.
+- Low-risk drift; only the evidence needs refreshing → `proof-pass`.
+- Material drift; implementation or branch work is needed → `roboports`.
+- Drift cannot be classified; triage and sort first → `inserter`.
 
-## Review Output
+## Invariants
 
-Report mode, target surface, loaded references, rule IDs, proof run, and unresolved coverage gaps.
-
-## Skill Integrity
-
-This package is generated from `docs/harness/shared-nucleus-agents.*` for LOO-101. Update the contract first, then regenerate package content; do not fork agent policy inside one harness adapter.
+- Check-only: no tracker writes, blueprint rewrites, repo edits, or PR changes.
+- Evidence-grounded: every drift claim cites what was read or run.
+- Conservative: missing or conflicting evidence is `unknown`, not `none`.

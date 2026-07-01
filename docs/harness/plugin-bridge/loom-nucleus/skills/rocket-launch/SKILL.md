@@ -1,54 +1,49 @@
 ---
 name: rocket-launch
-description: Records launch-gate readiness only after review/proof/CI gates and tracker bridge evidence are satisfied.
+description: Ship a ready change off-planet by enforcing the launch gates, merging the PR, and letting the bridge close its Linear issue. Use when a change is ready to ship — merge the PR, run the review gate, and close out the Linear issue; not for opening a draft or work that is not ready (that stays with `roboports`).
 ---
 
 # Rocket Launch
 
-Use when records launch-gate readiness only after review/proof/ci gates and tracker bridge evidence are satisfied within the active issue, PR, or workflow packet.
+Ship a ready change off-planet. Enforce the launch gates, merge the PR, and let the bridge close the Linear issue, leaving a record a human can audit.
 
-## Operating Contract
+This skill does not merge PRs, close issues, or post status updates while being validated. During real closeout it owns the ship step for one ready change: gate, merge, and confirm the bridge closed the issue.
 
-- Role: Launch gatekeeper.
-- Canonical name: `rocket-launch`; never render this package with `omp-`, `codex-`, or `claude-` prefixes.
-- Primary modes: `launch`.
-- After this entrypoint, load `AGENTS.md` for package governance, then the narrowest relevant file under `references/`.
-- Do not apply generated files to live HOME, close issues, merge PRs, or widen beyond the packet.
+## The bridge
 
-## Request Modes
+The branch name carries the Linear issue id and the PR's magic words auto-close that issue on merge. Closeout means **merge the PR and verify the bridge closed the issue** — never close the Linear issue by hand to fake a ship.
 
-- `launch`: follow the launch boundary in the shared nucleus contract.
+## Required reading
 
-## Decision Authority
+Before shipping, read:
 
-1. User goal and explicit constraints.
-2. Active issue or PR acceptance criteria.
-3. Verified repository code, tests, and live PR state.
-4. Routed references in this package.
-5. Accepted exemplars.
-6. General heuristics.
+1. The repo envelope `assembler` generated (Linear team/project/label map, commands, CI, merge policy). Do not hardcode commands, trackers, or merge style — read the envelope. If it is missing, route to `assembler` first.
+2. The Linear issue with its full acceptance criteria, and the PR (branch, diff, CI status, review threads).
 
-## Workflow
+## Launch gates
 
-1. Resolve mode and packet scope before acting.
-2. Load only the references needed for the target surface.
-3. Execute the smallest coherent step allowed by the packet.
-4. Return the required output packet and any coverage gaps.
+ALL gates must be green before merge. A single red gate blocks the launch.
 
-## Standards or Rules
+1. **Tests** — targeted tests for the changed behavior pass. Use `proof-pass` to gather the proof (tests, local smoke, browser, artifacts) for the claim being shipped.
+2. **Review** — at least one review-subagent lens is clean, or its findings are fixed. Run `pr-review` for the lens and re-run it after fixes land.
+3. **Acceptance** — every Linear acceptance criterion is checked against observed behavior, not assumed.
+4. **CI** — GitHub CI is green on the PR head.
+5. **Minimal diff** — a `bus-first` pass over the diff: minimal, no stray abstraction, nothing the issue did not ask for.
 
-- Required input packet fields: `PR`, `issue`, `gates`, `proof`, `tracker bridge evidence`.
-- Required output packet fields: `gate record`, `tracker bridge evidence`, `follow-ups`.
-- Non-goals:
-- Do not merge PRs in this contract slice
-- Do not close issues by hand to fake bridge closeout
-- Do not live-apply to real HOME
-- Do not widen scope at launch
+If any gate is red: stop, report which gate failed and why, and route the fix back to `roboports`. Do not merge.
 
-## Review Output
+## Launch
 
-Report mode, target surface, loaded references, rule IDs, proof run, and unresolved coverage gaps.
+Once every gate is green:
 
-## Skill Integrity
+1. Merge the PR per the envelope's merge policy.
+2. Confirm the bridge closed the Linear issue (branch id + PR magic words). If it did not auto-close, repair the link rather than closing the issue by hand.
+3. Post a Linear status update (`save_status_update`) recording the ship: what merged, the gate outcomes, the proof, and the PR link.
+4. Leave a human-reviewable record: gates run and their results, the merge commit / PR link, and any follow-ups.
 
-This package is generated from `docs/harness/shared-nucleus-agents.*` for LOO-101. Update the contract first, then regenerate package content; do not fork agent policy inside one harness adapter.
+## Invariants
+
+- Never merges with a red gate.
+- Never silently closes the issue: closeout goes through the bridge (merge) and the acceptance check, recorded in a Linear status update.
+- Ships only what is ready — an unready change, a draft, or unfinished work routes back to `roboports`, never a forced merge.
+- Leaves a human-reviewable record of the gates and the merge.

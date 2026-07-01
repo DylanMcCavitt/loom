@@ -1,8 +1,8 @@
 {
   "schemaVersion": 6,
-  "generatedForIssue": "LOO-102",
+  "generatedForIssue": "LOO-105",
   "name": "shared-nucleus-agent-contract",
-  "status": "scratch-home-activation-ready",
+  "status": "canonical-repo-source-ready",
   "sourcePattern": {
     "name": "Teaching agents product design at Vercel",
     "url": "https://vercel.com/blog/teaching-agents-product-design-at-vercel",
@@ -17,7 +17,11 @@
   },
   "namingRules": {
     "theme": "Factorio workflow nouns",
-    "forbiddenPrefixes": ["omp-", "codex-", "claude-"],
+    "forbiddenPrefixes": [
+      "omp-",
+      "codex-",
+      "claude-"
+    ],
     "canonicalNamesAreSharedAcrossHarnesses": true,
     "directOmpBundledRolePortsAreSuperseded": true
   },
@@ -165,27 +169,70 @@
   "evidenceIntake": {
     "collector": "gathers messages, links, files, and nearby context without scoring or proposing rules",
     "collectorWorkflow": {
-      "inputs": ["messages", "links", "files", "nearby context"],
+      "inputs": [
+        "messages",
+        "links",
+        "files",
+        "nearby context"
+      ],
       "nearbyContext": [
         "active issue or PR scope",
         "referenced agent, skill, rule, exemplar, eval, lint, or coverage-gap surface",
         "adjacent shipped guidance needed to understand the excerpt"
       ],
-      "forbiddenActions": ["score candidates", "rank candidates", "propose rules", "choose destinations", "write accepted guidance"],
+      "forbiddenActions": [
+        "score candidates",
+        "rank candidates",
+        "propose rules",
+        "choose destinations",
+        "write accepted guidance"
+      ],
       "output": "raw evidence packet with source handles, excerpts, timestamps or revisions when available, and unresolved context gaps"
     },
     "judge": "validates sources, separates facts/inferences/open questions, groups candidates, and keeps each candidate pending",
     "judgeWorkflow": {
       "validatesSources": true,
-      "separates": ["facts", "inferences", "open questions"],
-      "groupsCandidatesBy": ["agent", "workflow", "rule surface", "destination surface", "evidence theme"],
+      "separates": [
+        "facts",
+        "inferences",
+        "open questions"
+      ],
+      "groupsCandidatesBy": [
+        "agent",
+        "workflow",
+        "rule surface",
+        "destination surface",
+        "evidence theme"
+      ],
       "candidateStatus": "pending",
-      "forbiddenActions": ["accept candidates", "reject candidates", "score candidates", "apply changes", "turn candidates into rules"]
+      "forbiddenActions": [
+        "accept candidates",
+        "reject candidates",
+        "score candidates",
+        "apply changes",
+        "turn candidates into rules"
+      ]
     },
     "humanReview": "chooses rule, reference, exemplar, lint rule, eval, coverage gap, or no change",
-    "humanReviewChoices": ["rule", "reference", "exemplar", "lint rule", "eval", "coverage gap", "no change"],
+    "humanReviewChoices": [
+      "rule",
+      "reference",
+      "exemplar",
+      "lint rule",
+      "eval",
+      "coverage gap",
+      "no change"
+    ],
     "decisionLogFormat": {
-      "requiredFields": ["scope", "rationale", "evidence", "exceptions", "approver", "targetFile", "checks"],
+      "requiredFields": [
+        "scope",
+        "rationale",
+        "evidence",
+        "exceptions",
+        "approver",
+        "targetFile",
+        "checks"
+      ],
       "fields": {
         "scope": "agent, workflow, mode, rule, or destination surface the decision covers",
         "rationale": "why the human reviewer accepted, rejected, or deferred the candidate",
@@ -238,38 +285,110 @@
   "delegationModes": [
     {
       "mode": "shape",
-      "allowedNextAgents": ["blueprint", "ghosts", "main-bus", "science-pack", "radar", "belt"],
-      "forbiddenActions": ["implement code", "render native agents", "open launch PRs", "merge or close issues"],
+      "allowedNextAgents": [
+        "blueprint",
+        "ghosts",
+        "main-bus",
+        "science-pack",
+        "radar",
+        "belt"
+      ],
+      "forbiddenActions": [
+        "implement code",
+        "render native agents",
+        "open launch PRs",
+        "merge or close issues"
+      ],
       "advanceRule": "Advance only from an accepted plan, issue decomposition, or documented coverage-gap route."
     },
     {
       "mode": "implement",
-      "allowedNextAgents": ["roboports", "recycler", "modules", "lab", "biters", "spitters", "spidertron", "bus-first", "repair-pack", "belt"],
-      "forbiddenActions": ["merge PRs", "close issues", "live HOME apply", "delegate outside the issue/worktree scope"],
+      "allowedNextAgents": [
+        "roboports",
+        "recycler",
+        "modules",
+        "lab",
+        "biters",
+        "spitters",
+        "spidertron",
+        "bus-first",
+        "repair-pack",
+        "belt"
+      ],
+      "forbiddenActions": [
+        "merge PRs",
+        "close issues",
+        "live HOME apply",
+        "delegate outside the issue/worktree scope"
+      ],
       "advanceRule": "Advance through disjoint implementation scopes, then proof/review waves, then repair loops owned by the parent."
     },
     {
       "mode": "review",
-      "allowedNextAgents": ["biters", "spitters", "bus-first", "radar", "main-bus", "science-pack", "belt"],
-      "forbiddenActions": ["edit code", "run broad implementation", "merge or close issues", "declare proof for untested behavior"],
+      "allowedNextAgents": [
+        "biters",
+        "spitters",
+        "bus-first",
+        "radar",
+        "main-bus",
+        "science-pack",
+        "belt"
+      ],
+      "forbiddenActions": [
+        "edit code",
+        "run broad implementation",
+        "merge or close issues",
+        "declare proof for untested behavior"
+      ],
       "advanceRule": "Advance only by returning prioritized findings or a no-finding statement to the parent."
     },
     {
       "mode": "prove",
-      "allowedNextAgents": ["lab", "spidertron", "radar", "belt"],
-      "forbiddenActions": ["change behavior", "add features", "mock proof", "claim unexercised branches"],
+      "allowedNextAgents": [
+        "lab",
+        "spidertron",
+        "radar",
+        "belt"
+      ],
+      "forbiddenActions": [
+        "change behavior",
+        "add features",
+        "mock proof",
+        "claim unexercised branches"
+      ],
       "advanceRule": "Advance only by returning observed evidence, artifacts, and untested branches."
     },
     {
       "mode": "repair",
-      "allowedNextAgents": ["repair-pack", "lab"],
-      "forbiddenActions": ["fix adjacent cleanup", "accept multiple findings", "change acceptance criteria", "skip the named proof", "spawn review agents"],
+      "allowedNextAgents": [
+        "repair-pack",
+        "lab"
+      ],
+      "forbiddenActions": [
+        "fix adjacent cleanup",
+        "accept multiple findings",
+        "change acceptance criteria",
+        "skip the named proof",
+        "spawn review agents"
+      ],
       "advanceRule": "Advance one concrete finding to one repair packet, then to repair-pack or lab for the named proof only; coordinator-owned bus-first recheck happens after the diff changes, not as repair-pack delegation."
     },
     {
       "mode": "launch",
-      "allowedNextAgents": ["rocket-launch", "lab", "radar", "belt"],
-      "forbiddenActions": ["merge PRs", "close Linear issues", "live HOME apply", "native agent rendering", "change scope", "bypass tracker bridge"],
+      "allowedNextAgents": [
+        "rocket-launch",
+        "lab",
+        "radar",
+        "belt"
+      ],
+      "forbiddenActions": [
+        "merge PRs",
+        "close Linear issues",
+        "live HOME apply",
+        "native agent rendering",
+        "change scope",
+        "bypass tracker bridge"
+      ],
       "advanceRule": "Rocket-launch records launch-gate evidence for the tracker bridge; proof/radar/belt may only provide evidence."
     }
   ],
@@ -286,11 +405,32 @@
       "proofState",
       "stopReason"
     ],
-    "proofStates": ["not-required", "planned", "running", "passed", "failed", "blocked"],
-    "stopReasons": ["completed", "blocked", "max-depth", "coverage-gap", "red-proof", "scope-boundary", "no-allowed-child"]
+    "proofStates": [
+      "not-required",
+      "planned",
+      "running",
+      "passed",
+      "failed",
+      "blocked"
+    ],
+    "stopReasons": [
+      "completed",
+      "blocked",
+      "max-depth",
+      "coverage-gap",
+      "red-proof",
+      "scope-boundary",
+      "no-allowed-child"
+    ]
   },
   "parallelFanout": {
-    "reviewProofLenses": ["correctness", "security", "user-visible behavior", "minimal diff", "workflow drift"],
+    "reviewProofLenses": [
+      "correctness",
+      "security",
+      "user-visible behavior",
+      "minimal diff",
+      "workflow drift"
+    ],
     "writeScopes": "Implementation children may run in parallel only when each packet names disjoint files or one parent owns all integration edits.",
     "reviewScopes": "Review/proof children may inspect the same diff in parallel when each lens has a distinct finding contract.",
     "coordination": "Siblings coordinate through the parent packet or explicit messages; they do not spawn a second unmanaged swarm."
@@ -305,7 +445,12 @@
       "return review-ready PR packet to the parent; rocket-launch records launch-gate evidence while the tracker bridge owns closeout outside this contract slice"
     ],
     "loopBack": "repair-pack returns to lab and the parent; repeated findings require fresh compact packets.",
-    "stopConditions": ["no concrete finding", "coverage gap needs human decision", "red proof remains after repair", "launch gate not assigned"]
+    "stopConditions": [
+      "no concrete finding",
+      "coverage gap needs human decision",
+      "red proof remains after repair",
+      "launch gate not assigned"
+    ]
   },
   "repairPack": {
     "packageShape": {
@@ -317,11 +462,22 @@
         "references/rules.md",
         "references/coverage-gaps.md"
       ],
-      "requiredDirectories": ["references/", "exemplars/"],
+      "requiredDirectories": [
+        "references/",
+        "exemplars/"
+      ],
       "exemplars": "exemplars/finding-{stable-id}.md records accepted one-finding fixes, proof reruns, and rejected drive-by cleanup."
     },
-    "supportedModes": ["repair"],
-    "optionalDelegatedModes": [{ "mode": "prove", "agent": "lab", "condition": "only for the named proof check in the finding packet" }],
+    "supportedModes": [
+      "repair"
+    ],
+    "optionalDelegatedModes": [
+      {
+        "mode": "prove",
+        "agent": "lab",
+        "condition": "only for the named proof check in the finding packet"
+      }
+    ],
     "findingPacketSchema": {
       "requiredFields": [
         "file",
@@ -353,9 +509,13 @@
       "Return changed files, proof result, residual risk, and blocker reason when blocked."
     ],
     "delegation": {
-      "allowedChildren": ["lab"],
+      "allowedChildren": [
+        "lab"
+      ],
       "maxChildDepth": 1,
-      "allowedChildModes": ["prove"],
+      "allowedChildModes": [
+        "prove"
+      ],
       "condition": "lab may run only the named proof check from the finding packet after the fix or to confirm a blocked proof state"
     },
     "postFixLoop": [
@@ -384,213 +544,709 @@
     ]
   },
   "agentDelegation": {
-    "blueprint": { "allowedChildren": ["main-bus", "science-pack", "ghosts", "belt"], "mayAdvanceNextWave": true },
-    "ghosts": { "allowedChildren": ["science-pack", "belt"], "mayAdvanceNextWave": true },
-    "inserter": { "allowedChildren": ["radar", "belt"], "mayAdvanceNextWave": false },
-    "roboports": { "allowedChildren": ["lab", "biters", "spitters", "spidertron", "bus-first", "repair-pack", "belt"], "orderedWaves": [["lab", "biters", "spitters", "spidertron"], ["bus-first"], ["repair-pack"], ["lab"]], "mayAdvanceNextWave": true },
-    "radar": { "allowedChildren": ["belt"], "mayAdvanceNextWave": false },
-    "lab": { "allowedChildren": [], "mayAdvanceNextWave": false },
-    "biters": { "allowedChildren": ["repair-pack", "belt"], "mayAdvanceNextWave": false },
-    "spitters": { "allowedChildren": ["repair-pack", "belt"], "mayAdvanceNextWave": false },
-    "spidertron": { "allowedChildren": ["repair-pack", "belt"], "mayAdvanceNextWave": false },
-    "bus-first": { "allowedChildren": ["repair-pack", "belt"], "mayAdvanceNextWave": false },
-    "repair-pack": { "allowedChildren": ["lab"], "maxChildDepth": 1, "mayAdvanceNextWave": true },
-    "main-bus": { "allowedChildren": ["science-pack", "blueprint", "belt"], "mayAdvanceNextWave": false },
-    "science-pack": { "allowedChildren": ["belt"], "mayAdvanceNextWave": false },
-    "belt": { "allowedChildren": [], "mayAdvanceNextWave": false },
-    "recycler": { "allowedChildren": ["lab", "biters", "bus-first", "repair-pack"], "mayAdvanceNextWave": true },
-    "modules": { "allowedChildren": ["lab", "biters", "bus-first", "repair-pack"], "mayAdvanceNextWave": true },
-    "rocket-launch": { "allowedChildren": ["lab", "radar", "belt"], "mayAdvanceNextWave": true }
+    "blueprint": {
+      "allowedChildren": [
+        "main-bus",
+        "science-pack",
+        "ghosts",
+        "belt"
+      ],
+      "mayAdvanceNextWave": true
+    },
+    "ghosts": {
+      "allowedChildren": [
+        "science-pack",
+        "belt"
+      ],
+      "mayAdvanceNextWave": true
+    },
+    "inserter": {
+      "allowedChildren": [
+        "radar",
+        "belt"
+      ],
+      "mayAdvanceNextWave": false
+    },
+    "roboports": {
+      "allowedChildren": [
+        "lab",
+        "biters",
+        "spitters",
+        "spidertron",
+        "bus-first",
+        "repair-pack",
+        "belt"
+      ],
+      "orderedWaves": [
+        [
+          "lab",
+          "biters",
+          "spitters",
+          "spidertron"
+        ],
+        [
+          "bus-first"
+        ],
+        [
+          "repair-pack"
+        ],
+        [
+          "lab"
+        ]
+      ],
+      "mayAdvanceNextWave": true
+    },
+    "radar": {
+      "allowedChildren": [
+        "belt"
+      ],
+      "mayAdvanceNextWave": false
+    },
+    "lab": {
+      "allowedChildren": [],
+      "mayAdvanceNextWave": false
+    },
+    "biters": {
+      "allowedChildren": [
+        "repair-pack",
+        "belt"
+      ],
+      "mayAdvanceNextWave": false
+    },
+    "spitters": {
+      "allowedChildren": [
+        "repair-pack",
+        "belt"
+      ],
+      "mayAdvanceNextWave": false
+    },
+    "spidertron": {
+      "allowedChildren": [
+        "repair-pack",
+        "belt"
+      ],
+      "mayAdvanceNextWave": false
+    },
+    "bus-first": {
+      "allowedChildren": [
+        "repair-pack",
+        "belt"
+      ],
+      "mayAdvanceNextWave": false
+    },
+    "repair-pack": {
+      "allowedChildren": [
+        "lab"
+      ],
+      "maxChildDepth": 1,
+      "mayAdvanceNextWave": true
+    },
+    "main-bus": {
+      "allowedChildren": [
+        "science-pack",
+        "blueprint",
+        "belt"
+      ],
+      "mayAdvanceNextWave": false
+    },
+    "science-pack": {
+      "allowedChildren": [
+        "belt"
+      ],
+      "mayAdvanceNextWave": false
+    },
+    "belt": {
+      "allowedChildren": [],
+      "mayAdvanceNextWave": false
+    },
+    "recycler": {
+      "allowedChildren": [
+        "lab",
+        "biters",
+        "bus-first",
+        "repair-pack"
+      ],
+      "mayAdvanceNextWave": true
+    },
+    "modules": {
+      "allowedChildren": [
+        "lab",
+        "biters",
+        "bus-first",
+        "repair-pack"
+      ],
+      "mayAdvanceNextWave": true
+    },
+    "rocket-launch": {
+      "allowedChildren": [
+        "lab",
+        "radar",
+        "belt"
+      ],
+      "mayAdvanceNextWave": true
+    }
   },
   "agents": [
     {
       "name": "blueprint",
       "role": "Spec synthesizer",
       "purpose": "Turns current context into a PRD/spec with acceptance criteria, non-goals, proof plan, and explicit open decisions.",
-      "modes": ["shape"],
-      "references": ["agent-judgment", "patterns", "coverage-gaps"],
+      "modes": [
+        "shape"
+      ],
+      "references": [
+        "agent-judgment",
+        "patterns",
+        "coverage-gaps"
+      ],
       "canDelegate": false,
-      "nonGoals": ["Do not implement code", "Do not create issues", "Do not live-apply to real HOME", "Do not invent unsupported standards"],
-      "inputPacket": ["goal", "source context", "constraints", "known evidence", "open questions"],
-      "outputPacket": ["spec", "acceptance criteria", "non-goals", "proof plan", "coverage gaps"]
+      "nonGoals": [
+        "Do not implement code",
+        "Do not create issues",
+        "Do not live-apply to real HOME",
+        "Do not invent unsupported standards"
+      ],
+      "inputPacket": [
+        "goal",
+        "source context",
+        "constraints",
+        "known evidence",
+        "open questions"
+      ],
+      "outputPacket": [
+        "spec",
+        "acceptance criteria",
+        "non-goals",
+        "proof plan",
+        "coverage gaps"
+      ]
     },
     {
       "name": "ghosts",
       "role": "Issue decomposer",
       "purpose": "Splits an accepted plan/spec into dependency-ordered Linear issues and sub-issues with narrow acceptance criteria.",
-      "modes": ["shape"],
-      "references": ["patterns", "rules", "coverage-gaps"],
+      "modes": [
+        "shape"
+      ],
+      "references": [
+        "patterns",
+        "rules",
+        "coverage-gaps"
+      ],
       "canDelegate": false,
-      "nonGoals": ["Do not implement code", "Do not change parent scope", "Do not live-apply to real HOME", "Do not stamp issues from thin context"],
-      "inputPacket": ["approved plan", "parent issue", "dependency constraints", "labels/states"],
-      "outputPacket": ["created issue ids", "dependency graph", "acceptance criteria", "blockers"]
+      "nonGoals": [
+        "Do not implement code",
+        "Do not change parent scope",
+        "Do not live-apply to real HOME",
+        "Do not stamp issues from thin context"
+      ],
+      "inputPacket": [
+        "approved plan",
+        "parent issue",
+        "dependency constraints",
+        "labels/states"
+      ],
+      "outputPacket": [
+        "created issue ids",
+        "dependency graph",
+        "acceptance criteria",
+        "blockers"
+      ]
     },
     {
       "name": "inserter",
       "role": "Triage router",
       "purpose": "Classifies, prioritizes, labels, and routes incoming tracker work without building it.",
-      "modes": ["shape", "review"],
-      "references": ["rules", "glossary"],
+      "modes": [
+        "shape",
+        "review"
+      ],
+      "references": [
+        "rules",
+        "glossary"
+      ],
       "canDelegate": false,
-      "nonGoals": ["Do not implement code", "Do not create broad plans", "Do not live-apply to real HOME", "Do not close issues silently"],
-      "inputPacket": ["issue", "tracker state", "labels", "domain terms"],
-      "outputPacket": ["classification", "priority", "routing", "needed info"]
+      "nonGoals": [
+        "Do not implement code",
+        "Do not create broad plans",
+        "Do not live-apply to real HOME",
+        "Do not close issues silently"
+      ],
+      "inputPacket": [
+        "issue",
+        "tracker state",
+        "labels",
+        "domain terms"
+      ],
+      "outputPacket": [
+        "classification",
+        "priority",
+        "routing",
+        "needed info"
+      ]
     },
     {
       "name": "roboports",
       "role": "Issue delivery coordinator",
       "purpose": "Runs one tracked issue through branch/worktree, implementation, proof, review, and PR readiness.",
-      "modes": ["implement"],
-      "references": ["delegation-dag", "review-and-proof", "rules"],
+      "modes": [
+        "implement"
+      ],
+      "references": [
+        "delegation-dag",
+        "review-and-proof",
+        "rules"
+      ],
       "canDelegate": true,
-      "preferredChildren": ["lab", "biters", "spitters", "spidertron", "bus-first", "repair-pack"],
-      "nonGoals": ["Do not merge PRs", "Do not close issues", "Do not live-apply to real HOME", "Do not widen beyond the issue"],
-      "inputPacket": ["issue id", "acceptance criteria", "branch/worktree", "allowed files", "proof plan"],
-      "outputPacket": ["PR url", "changed files", "proof", "review findings", "residual risks"]
+      "preferredChildren": [
+        "lab",
+        "biters",
+        "spitters",
+        "spidertron",
+        "bus-first",
+        "repair-pack"
+      ],
+      "nonGoals": [
+        "Do not merge PRs",
+        "Do not close issues",
+        "Do not live-apply to real HOME",
+        "Do not widen beyond the issue"
+      ],
+      "inputPacket": [
+        "issue id",
+        "acceptance criteria",
+        "branch/worktree",
+        "allowed files",
+        "proof plan"
+      ],
+      "outputPacket": [
+        "PR url",
+        "changed files",
+        "proof",
+        "review findings",
+        "residual risks"
+      ]
     },
     {
       "name": "radar",
       "role": "Drift scanner",
       "purpose": "Checks repo/tracker/proof drift and recommends the next route without mutating state.",
-      "modes": ["review", "prove"],
-      "references": ["harness-surfaces", "coverage-gaps"],
+      "modes": [
+        "review",
+        "prove"
+      ],
+      "references": [
+        "harness-surfaces",
+        "coverage-gaps"
+      ],
       "canDelegate": false,
-      "nonGoals": ["Do not implement code", "Do not mutate trackers", "Do not live-apply to real HOME", "Do not rewrite plans"],
-      "inputPacket": ["issue or plan", "repo state", "tracker state", "proof artifacts"],
-      "outputPacket": ["drift class", "evidence", "recommended route", "blockers"]
+      "nonGoals": [
+        "Do not implement code",
+        "Do not mutate trackers",
+        "Do not live-apply to real HOME",
+        "Do not rewrite plans"
+      ],
+      "inputPacket": [
+        "issue or plan",
+        "repo state",
+        "tracker state",
+        "proof artifacts"
+      ],
+      "outputPacket": [
+        "drift class",
+        "evidence",
+        "recommended route",
+        "blockers"
+      ]
     },
     {
       "name": "lab",
       "role": "Proof specialist",
       "purpose": "Runs proof-only validation and records behavior evidence without expanding scope.",
-      "modes": ["prove"],
-      "references": ["review-and-proof"],
+      "modes": [
+        "prove"
+      ],
+      "references": [
+        "review-and-proof"
+      ],
       "canDelegate": false,
-      "nonGoals": ["Do not implement fixes", "Do not mock behavior", "Do not live-apply to real HOME", "Do not claim untested coverage"],
-      "inputPacket": ["behavior claim", "commands/scenarios", "environment", "expected evidence"],
-      "outputPacket": ["commands run", "observed result", "artifacts", "untested branches"]
+      "nonGoals": [
+        "Do not implement fixes",
+        "Do not mock behavior",
+        "Do not live-apply to real HOME",
+        "Do not claim untested coverage"
+      ],
+      "inputPacket": [
+        "behavior claim",
+        "commands/scenarios",
+        "environment",
+        "expected evidence"
+      ],
+      "outputPacket": [
+        "commands run",
+        "observed result",
+        "artifacts",
+        "untested branches"
+      ]
     },
     {
       "name": "biters",
       "role": "General adversarial reviewer",
       "purpose": "Attacks correctness, regression, maintainability, scope, and missing-test risks before merge.",
-      "modes": ["review"],
-      "references": ["review-and-proof", "rules"],
+      "modes": [
+        "review"
+      ],
+      "references": [
+        "review-and-proof",
+        "rules"
+      ],
       "canDelegate": false,
-      "nonGoals": ["Do not edit code", "Do not nitpick style", "Do not live-apply to real HOME", "Do not weaken guards"],
-      "inputPacket": ["diff", "acceptance criteria", "risk focus", "proof already run"],
-      "outputPacket": ["findings by severity", "file/line", "user consequence", "smallest fix"]
+      "nonGoals": [
+        "Do not edit code",
+        "Do not nitpick style",
+        "Do not live-apply to real HOME",
+        "Do not weaken guards"
+      ],
+      "inputPacket": [
+        "diff",
+        "acceptance criteria",
+        "risk focus",
+        "proof already run"
+      ],
+      "outputPacket": [
+        "findings by severity",
+        "file/line",
+        "user consequence",
+        "smallest fix"
+      ]
     },
     {
       "name": "spitters",
       "role": "Security attacker",
       "purpose": "Runs AppSec/adversarial security review across trust boundaries and abuse paths.",
-      "modes": ["review"],
-      "references": ["review-and-proof", "harness-surfaces"],
+      "modes": [
+        "review"
+      ],
+      "references": [
+        "review-and-proof",
+        "harness-surfaces"
+      ],
       "canDelegate": false,
-      "nonGoals": ["Do not edit code", "Do not exfiltrate secrets", "Do not live-apply to real HOME", "Do not broaden into general review"],
-      "inputPacket": ["target surface", "trust boundaries", "diff", "known assets"],
-      "outputPacket": ["attack paths", "severity", "reproduction", "mitigation"]
+      "nonGoals": [
+        "Do not edit code",
+        "Do not exfiltrate secrets",
+        "Do not live-apply to real HOME",
+        "Do not broaden into general review"
+      ],
+      "inputPacket": [
+        "target surface",
+        "trust boundaries",
+        "diff",
+        "known assets"
+      ],
+      "outputPacket": [
+        "attack paths",
+        "severity",
+        "reproduction",
+        "mitigation"
+      ]
     },
     {
       "name": "spidertron",
       "role": "UI workflow tester",
       "purpose": "Drives browser/desktop UI workflows and captures user-visible proof.",
-      "modes": ["prove", "review"],
-      "references": ["review-and-proof", "harness-surfaces"],
+      "modes": [
+        "prove",
+        "review"
+      ],
+      "references": [
+        "review-and-proof",
+        "harness-surfaces"
+      ],
       "canDelegate": false,
-      "nonGoals": ["Do not redesign UI", "Do not rely on source-only proof", "Do not live-apply to real HOME", "Do not skip accessibility-visible state"],
-      "inputPacket": ["route/window", "user job", "states", "proof targets"],
-      "outputPacket": ["screenshots/observations", "state coverage", "accessibility notes", "gaps"]
+      "nonGoals": [
+        "Do not redesign UI",
+        "Do not rely on source-only proof",
+        "Do not live-apply to real HOME",
+        "Do not skip accessibility-visible state"
+      ],
+      "inputPacket": [
+        "route/window",
+        "user job",
+        "states",
+        "proof targets"
+      ],
+      "outputPacket": [
+        "screenshots/observations",
+        "state coverage",
+        "accessibility notes",
+        "gaps"
+      ]
     },
     {
       "name": "bus-first",
       "role": "Minimal-diff tightener",
       "purpose": "Applies reuse-before-build doctrine and flags needless abstraction or scope creep.",
-      "modes": ["review"],
-      "references": ["rules", "patterns"],
+      "modes": [
+        "review"
+      ],
+      "references": [
+        "rules",
+        "patterns"
+      ],
       "canDelegate": false,
-      "nonGoals": ["Do not cut validation", "Do not cut security", "Do not live-apply to real HOME", "Do not rewrite for taste"],
-      "inputPacket": ["diff", "issue scope", "existing seams", "guards"],
-      "outputPacket": ["cuts requested", "rung rationale", "guards preserved", "no-cut statement"]
+      "nonGoals": [
+        "Do not cut validation",
+        "Do not cut security",
+        "Do not live-apply to real HOME",
+        "Do not rewrite for taste"
+      ],
+      "inputPacket": [
+        "diff",
+        "issue scope",
+        "existing seams",
+        "guards"
+      ],
+      "outputPacket": [
+        "cuts requested",
+        "rung rationale",
+        "guards preserved",
+        "no-cut statement"
+      ]
     },
     {
       "name": "repair-pack",
       "role": "Narrow finding fixer",
       "purpose": "Fixes exactly one concrete review/proof finding from a fresh compact packet.",
-      "modes": ["repair"],
-      "references": ["repair-pack", "rules", "coverage-gaps", "review-and-proof"],
+      "modes": [
+        "repair"
+      ],
+      "references": [
+        "repair-pack",
+        "rules",
+        "coverage-gaps",
+        "review-and-proof"
+      ],
       "canDelegate": true,
-      "preferredChildren": ["lab"],
-      "nonGoals": ["Do not accept broad work", "Do not fix adjacent cleanup", "Do not live-apply to real HOME", "Do not spawn broad agents", "Do not implement native agent files or eval harnesses"],
-      "inputPacket": ["file", "symbol", "scope", "concrete risk", "minimal expected fix", "proof check", "rule/source id", "non-goals", "allowed files"],
-      "outputPacket": ["changed files", "proof rerun", "bus-first recheck need", "remaining risk", "blocked reason"]
+      "preferredChildren": [
+        "lab"
+      ],
+      "nonGoals": [
+        "Do not accept broad work",
+        "Do not fix adjacent cleanup",
+        "Do not live-apply to real HOME",
+        "Do not spawn broad agents",
+        "Do not implement native agent files or eval harnesses"
+      ],
+      "inputPacket": [
+        "file",
+        "symbol",
+        "scope",
+        "concrete risk",
+        "minimal expected fix",
+        "proof check",
+        "rule/source id",
+        "non-goals",
+        "allowed files"
+      ],
+      "outputPacket": [
+        "changed files",
+        "proof rerun",
+        "bus-first recheck need",
+        "remaining risk",
+        "blocked reason"
+      ]
     },
     {
       "name": "main-bus",
       "role": "Architecture seam planner",
       "purpose": "Plans shared lanes/seams so features plug into existing structure instead of parallel spaghetti.",
-      "modes": ["shape", "review"],
-      "references": ["agent-judgment", "patterns"],
+      "modes": [
+        "shape",
+        "review"
+      ],
+      "references": [
+        "agent-judgment",
+        "patterns"
+      ],
       "canDelegate": false,
-      "nonGoals": ["Do not implement code", "Do not over-abstract", "Do not live-apply to real HOME", "Do not replace accepted issue scope"],
-      "inputPacket": ["architecture problem", "current seams", "future callers", "constraints"],
-      "outputPacket": ["minimal restructure", "tradeoffs", "ADR/doc target", "risks"]
+      "nonGoals": [
+        "Do not implement code",
+        "Do not over-abstract",
+        "Do not live-apply to real HOME",
+        "Do not replace accepted issue scope"
+      ],
+      "inputPacket": [
+        "architecture problem",
+        "current seams",
+        "future callers",
+        "constraints"
+      ],
+      "outputPacket": [
+        "minimal restructure",
+        "tradeoffs",
+        "ADR/doc target",
+        "risks"
+      ]
     },
     {
       "name": "science-pack",
       "role": "Research spike",
       "purpose": "Resolves one open unknown with source-grounded findings before build.",
-      "modes": ["shape", "review"],
-      "references": ["coverage-gaps", "patterns"],
+      "modes": [
+        "shape",
+        "review"
+      ],
+      "references": [
+        "coverage-gaps",
+        "patterns"
+      ],
       "canDelegate": false,
-      "nonGoals": ["Do not implement code", "Do not treat unverified sources as policy", "Do not live-apply to real HOME", "Do not broaden the question"],
-      "inputPacket": ["unknown", "decision needed", "source constraints", "timebox"],
-      "outputPacket": ["findings", "sources", "recommendation", "open questions"]
+      "nonGoals": [
+        "Do not implement code",
+        "Do not treat unverified sources as policy",
+        "Do not live-apply to real HOME",
+        "Do not broaden the question"
+      ],
+      "inputPacket": [
+        "unknown",
+        "decision needed",
+        "source constraints",
+        "timebox"
+      ],
+      "outputPacket": [
+        "findings",
+        "sources",
+        "recommendation",
+        "open questions"
+      ]
     },
     {
       "name": "belt",
       "role": "Handoff carrier",
       "purpose": "Moves durable context between agents/threads with concise state, proof, risks, and next actions.",
-      "modes": ["shape", "review"],
-      "references": ["rules", "glossary"],
+      "modes": [
+        "shape",
+        "review"
+      ],
+      "references": [
+        "rules",
+        "glossary"
+      ],
       "canDelegate": false,
-      "nonGoals": ["Do not implement code", "Do not include transcripts by default", "Do not live-apply to real HOME", "Do not omit blockers"],
-      "inputPacket": ["current state", "changed files", "proof", "risks", "next action"],
-      "outputPacket": ["handoff", "proof summary", "blockers", "resume command/context"]
+      "nonGoals": [
+        "Do not implement code",
+        "Do not include transcripts by default",
+        "Do not live-apply to real HOME",
+        "Do not omit blockers"
+      ],
+      "inputPacket": [
+        "current state",
+        "changed files",
+        "proof",
+        "risks",
+        "next action"
+      ],
+      "outputPacket": [
+        "handoff",
+        "proof summary",
+        "blockers",
+        "resume command/context"
+      ]
     },
     {
       "name": "recycler",
       "role": "Behavior-preserving refactorer",
       "purpose": "Deletes, consolidates, or clarifies existing code without changing behavior.",
-      "modes": ["implement"],
-      "references": ["rules", "patterns"],
+      "modes": [
+        "implement"
+      ],
+      "references": [
+        "rules",
+        "patterns"
+      ],
       "canDelegate": false,
-      "nonGoals": ["Do not change behavior", "Do not add features", "Do not live-apply to real HOME", "Do not remove load-bearing guards"],
-      "inputPacket": ["target code", "behavior proof", "dup/dead code evidence", "allowed scope"],
-      "outputPacket": ["diff", "behavior proof", "removed code", "risks"]
+      "nonGoals": [
+        "Do not change behavior",
+        "Do not add features",
+        "Do not live-apply to real HOME",
+        "Do not remove load-bearing guards"
+      ],
+      "inputPacket": [
+        "target code",
+        "behavior proof",
+        "dup/dead code evidence",
+        "allowed scope"
+      ],
+      "outputPacket": [
+        "diff",
+        "behavior proof",
+        "removed code",
+        "risks"
+      ]
     },
     {
       "name": "modules",
       "role": "Measured performance optimizer",
       "purpose": "Optimizes a proven bottleneck with before/after measurement and stops when returns diminish.",
-      "modes": ["implement", "prove"],
-      "references": ["review-and-proof", "patterns"],
+      "modes": [
+        "implement",
+        "prove"
+      ],
+      "references": [
+        "review-and-proof",
+        "patterns"
+      ],
       "canDelegate": false,
-      "nonGoals": ["Do not optimize without measurement", "Do not trade correctness for speed", "Do not live-apply to real HOME", "Do not rewrite unrelated code"],
-      "inputPacket": ["bottleneck evidence", "benchmark", "constraints", "acceptable tradeoffs"],
-      "outputPacket": ["before/after", "diff", "remaining bottleneck", "stop reason"]
+      "nonGoals": [
+        "Do not optimize without measurement",
+        "Do not trade correctness for speed",
+        "Do not live-apply to real HOME",
+        "Do not rewrite unrelated code"
+      ],
+      "inputPacket": [
+        "bottleneck evidence",
+        "benchmark",
+        "constraints",
+        "acceptable tradeoffs"
+      ],
+      "outputPacket": [
+        "before/after",
+        "diff",
+        "remaining bottleneck",
+        "stop reason"
+      ]
     },
     {
       "name": "rocket-launch",
       "role": "Launch gatekeeper",
       "purpose": "Records launch-gate readiness only after review/proof/CI gates and tracker bridge evidence are satisfied.",
-      "modes": ["launch"],
-      "references": ["review-and-proof", "rules"],
+      "modes": [
+        "launch"
+      ],
+      "references": [
+        "review-and-proof",
+        "rules"
+      ],
       "canDelegate": false,
-      "nonGoals": ["Do not merge PRs in this contract slice", "Do not close issues by hand to fake bridge closeout", "Do not live-apply to real HOME", "Do not widen scope at launch"],
-      "inputPacket": ["PR", "issue", "gates", "proof", "tracker bridge evidence"],
-      "outputPacket": ["gate record", "tracker bridge evidence", "follow-ups"]
+      "nonGoals": [
+        "Do not merge PRs in this contract slice",
+        "Do not close issues by hand to fake bridge closeout",
+        "Do not live-apply to real HOME",
+        "Do not widen scope at launch"
+      ],
+      "inputPacket": [
+        "PR",
+        "issue",
+        "gates",
+        "proof",
+        "tracker bridge evidence"
+      ],
+      "outputPacket": [
+        "gate record",
+        "tracker bridge evidence",
+        "follow-ups"
+      ]
     }
   ],
   "supersededCandidates": [
@@ -616,14 +1272,14 @@
     }
   ],
   "activation": {
-    "issue": "LOO-102",
+    "issue": "LOO-105",
     "nativeAgentRendering": "deferred; shared packages activate as plugin skills, not direct OMP/Codex/Claude role-agent files",
-    "scratchHomeApply": "implemented by scripts/render-plugin-bridge.mjs --write --home <scratch>; creates only approved ~/.agents/plugins/marketplace.json and ~/.agents/plugins/loom-nucleus/** candidates",
+    "scratchHomeApply": "implemented by scripts/render-plugin-bridge.mjs --write --home <scratch>; renders canonical .agents/skills/{agent-name}/ packages into approved ~/.agents/plugins/marketplace.json and ~/.agents/plugins/loom-nucleus/** candidates",
     "markerManifest": "~/.loom-harness/applied-manifest.json",
     "secondApply": "clean no-op: all appliable candidates report already-applied and markerChanged is false",
     "verifier": "docs/harness/plugin-bridge/loom-nucleus/hooks/verify-loom-install.mjs reports missing components and marker drift without writing",
     "proofSurfaces": {
-      "omp": "source Vercel-shaped package surface under docs/harness/plugin-bridge/loom-nucleus/skills/{agent-name}/",
+      "omp": "canonical repo-local Vercel-shaped package source under .agents/skills/{agent-name}/",
       "codex": "Codex plugin skills surface via docs/harness/plugin-bridge/loom-nucleus/.codex-plugin/plugin.json#skills",
       "claude": "Claude plugin skills surface via docs/harness/plugin-bridge/loom-nucleus/.claude-plugin/plugin.json#skills"
     },
