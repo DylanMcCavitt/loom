@@ -1,6 +1,6 @@
 # Shared nucleus agent contract
 
-Issues: LOO-96 base contract; LOO-97 autonomous delegation DAG; LOO-98 repair-pack finding-fix loop; LOO-99 offline shared-agent eval harness; LOO-101 canonical package rendering; LOO-103 evidence intake and decision log; LOO-104 deterministic shared-package checks. Status: contract plus offline eval harness plus canonical plugin package templates plus deterministic package checks; this document defines the canonical shared agent model and does not render or activate native OMP, Codex, or Claude agent files.
+Issues: LOO-96 base contract; LOO-97 autonomous delegation DAG; LOO-98 repair-pack finding-fix loop; LOO-99 offline shared-agent eval harness; LOO-101 canonical package rendering; LOO-102 scratch-HOME shared roster activation; LOO-103 evidence intake and decision log; LOO-104 deterministic shared-package checks. Status: contract plus offline eval harness plus canonical plugin package templates plus deterministic package checks plus scratch-HOME activation proof; this document defines the canonical shared agent model and does not authorize native OMP/Codex/Claude role-agent files or real-HOME apply without HITL review.
 
 Source pattern: [Teaching agents product design at Vercel](https://vercel.com/blog/teaching-agents-product-design-at-vercel).
 
@@ -221,6 +221,18 @@ Accepted changes land in the narrowest relevant destination:
 - eval -> offline eval fixture when behavior should be regression-tested;
 - coverage gap -> `references/coverage-gaps.md` when evidence is missing or the standard remains unresolved;
 - no change -> decision log only, with no guidance, lint, eval, exemplar, or reference file changes.
+
+## Activation gate
+
+LOO-102 activates the starter roster only through the plugin-bridge scratch-HOME path:
+
+1. `node scripts/render-plugin-bridge.mjs --home <scratch> --write --json` renders approved create-missing candidates under `~/.agents/plugins/loom-nucleus/` and the personal marketplace catalog, then records marker metadata in `~/.loom-harness/applied-manifest.json`.
+2. A second `--write` against the same scratch HOME must be a clean no-op: every appliable candidate reports `already-applied`, no new files are created, and the marker manifest is unchanged.
+3. `docs/harness/plugin-bridge/loom-nucleus/hooks/verify-loom-install.mjs` verifies the installed copy without writing: missing components, marker hash drift, malformed manifests, forbidden provider/auth/profile keys, and non-portable absolute paths produce structured non-zero reports.
+4. Proof covers the shared roster package shape once at the source surface and once through each native plugin consumer: OMP-compatible Vercel-shaped packages under `docs/harness/plugin-bridge/loom-nucleus/skills/{agent-name}/`, Codex via `.codex-plugin/plugin.json#skills`, and Claude via `.claude-plugin/plugin.json#skills`.
+5. Existing OMP, Codex, and Claude auth, sessions, histories, caches, DBs, browser state, local settings, plugin caches, and runtime files remain local-only. The renderer only reads tracked source, the resource manifest, and the scratch HOME marker/files it owns.
+
+Live-HOME promotion gate: **dry-run -> review -> explicit apply**. A dry-run manifest and deterministic checks must pass before review; the human reviewer must explicitly approve the apply target before any non-scratch HOME write. The evidence/decision-log owner is the LOO-103 collector -> judge -> human review loop. Required deterministic checks before apply are `scripts/validate-shared-agent-packages.mjs`, `scripts/validate-shared-agent-evals.mjs`, `scripts/render-plugin-bridge.mjs --json`, and the targeted plugin-bridge scratch apply/verifier proof.
 
 ## Packet contract
 

@@ -1,8 +1,8 @@
 {
-  "schemaVersion": 5,
-  "generatedForIssue": "LOO-103",
+  "schemaVersion": 6,
+  "generatedForIssue": "LOO-102",
   "name": "shared-nucleus-agent-contract",
-  "status": "contract-only",
+  "status": "scratch-home-activation-ready",
   "sourcePattern": {
     "name": "Teaching agents product design at Vercel",
     "url": "https://vercel.com/blog/teaching-agents-product-design-at-vercel",
@@ -616,10 +616,33 @@
     }
   ],
   "activation": {
-    "nativeAgentRendering": "future issue",
+    "issue": "LOO-102",
+    "nativeAgentRendering": "deferred; shared packages activate as plugin skills, not direct OMP/Codex/Claude role-agent files",
+    "scratchHomeApply": "implemented by scripts/render-plugin-bridge.mjs --write --home <scratch>; creates only approved ~/.agents/plugins/marketplace.json and ~/.agents/plugins/loom-nucleus/** candidates",
+    "markerManifest": "~/.loom-harness/applied-manifest.json",
+    "secondApply": "clean no-op: all appliable candidates report already-applied and markerChanged is false",
+    "verifier": "docs/harness/plugin-bridge/loom-nucleus/hooks/verify-loom-install.mjs reports missing components and marker drift without writing",
+    "proofSurfaces": {
+      "omp": "source Vercel-shaped package surface under docs/harness/plugin-bridge/loom-nucleus/skills/{agent-name}/",
+      "codex": "Codex plugin skills surface via docs/harness/plugin-bridge/loom-nucleus/.codex-plugin/plugin.json#skills",
+      "claude": "Claude plugin skills surface via docs/harness/plugin-bridge/loom-nucleus/.claude-plugin/plugin.json#skills"
+    },
+    "liveHomePromotionGate": "dry-run -> review -> explicit apply",
+    "evidenceDecisionOwner": "LOO-103 collector -> judge -> human review decision log",
+    "deterministicChecksBeforeApply": [
+      "scripts/validate-shared-agent-packages.mjs",
+      "scripts/validate-shared-agent-evals.mjs",
+      "scripts/render-plugin-bridge.mjs --json",
+      "targeted plugin-bridge scratch apply and verifier proof"
+    ],
     "evalHarness": "implemented by LOO-99 offline fixture harness at scripts/validate-shared-agent-evals.mjs and tests/fixtures/shared-agent-evals.json",
     "lintRules": "implemented by LOO-104 deterministic package checks at scripts/validate-shared-agent-packages.mjs",
-    "evidenceIntakeAutomation": "future issue",
-    "liveHomeApply": "forbidden in this contract slice"
+    "evidenceIntakeAutomation": "future issue; LOO-103 owns manual evidence intake and decision-log workflow",
+    "localOnlyRuntimeData": [
+      "OMP auth, sessions, histories, caches, DBs, terminal state, logs, and local settings",
+      "Codex auth, sessions, histories, caches, DBs, browser state, blobs, plugin caches, and local settings",
+      "Claude auth, sessions, histories, caches, DBs, daemon state, plugin caches/data, and local settings"
+    ],
+    "liveHomeApply": "requires explicit HITL approval after dry-run review; forbidden by default"
   }
 }

@@ -141,6 +141,29 @@ test("canonical shared agent packages have required shape and unprefixed names",
   assert.ok(plan.supersededOmpAgentPorts.every((entry) => entry.decision === "superseded-by-shared-agent-packages"));
 });
 
+test("activation proof covers OMP-compatible source, Codex, and Claude shared roster surfaces", () => {
+  const codexPlugin = JSON.parse(readFileSync(path.join(bridgeDir, "loom-nucleus", ".codex-plugin", "plugin.json"), "utf8"));
+  const claudePlugin = JSON.parse(readFileSync(path.join(bridgeDir, "loom-nucleus", ".claude-plugin", "plugin.json"), "utf8"));
+  assert.equal(codexPlugin.skills, "./skills", "Codex must consume shared roster as plugin skills");
+  assert.equal(claudePlugin.skills, "./skills", "Claude must consume shared roster as plugin skills");
+  assert.ok(!("agents" in codexPlugin), "Codex must not receive native agent ports");
+  assert.ok(!("agents" in claudePlugin), "Claude must not receive native agent ports");
+
+  const candidates = buildPluginCandidates(plan, manifest, {}).candidates;
+  for (const agent of shared.agents) {
+    const sourceRoot = path.join(bridgeDir, "loom-nucleus", "skills", agent.name);
+    assert.ok(readFileSync(path.join(sourceRoot, "AGENTS.md"), "utf8").length > 0, `${agent.name} missing OMP-compatible package source`);
+    assert.ok(
+      candidates.some((candidate) =>
+        candidate.kind === "shared-agent-package" &&
+        candidate.consumedBy === "both" &&
+        candidate.destination === `~/.agents/plugins/loom-nucleus/skills/${agent.name}/SKILL.md` &&
+        candidate.appliable === true),
+      `${agent.name} missing shared package activation candidate`,
+    );
+  }
+});
+
 // --- gate rejects botched targets ---------------------------------------------------------------
 
 test("gate rejects candidates aimed at cache/auth/data/local-only destinations", () => {
@@ -245,7 +268,11 @@ test("--write applies create-missing-only and a second run is a clean no-op", ()
   const expectedAppliable = buildPluginCandidates(plan, manifest, {}).candidates.filter((candidate) => candidate.appliable).length;
   const created = first.manifest.actions.filter((action) => action.action === "created");
   assert.equal(created.length, expectedAppliable, "fresh apply must create every appliable target");
+  assert.ok(created.every((action) => action.destination.startsWith("~/.agents/plugins/")), "apply must stay inside the approved plugin root");
   assert.equal(first.manifest.markerChanged, true);
+  const marker = JSON.parse(readFileSync(path.join(home, ".loom-harness", "applied-manifest.json"), "utf8"));
+  assert.equal(Object.keys(marker.entries).length, expectedAppliable, "marker must record each created target");
+  assert.ok(Object.keys(marker.entries).every((destination) => destination.startsWith("~/.agents/plugins/")), "marker must not adopt runtime/local-only paths");
 
   // The catalog and co-located plugin source both landed under the personal marketplace root.
   const written = listFiles(path.join(home, ".agents", "plugins"));

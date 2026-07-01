@@ -42,9 +42,9 @@ const REQUIRED_RULE_FIELDS = [
 const FORBIDDEN_PREFIXES = ["omp-", "codex-", "claude-"];
 
 test("shared nucleus agent contract records the canonical Factorio roster", () => {
-  assert.equal(contract.schemaVersion, 5);
-  assert.equal(contract.generatedForIssue, "LOO-103");
-  assert.equal(contract.status, "contract-only");
+  assert.equal(contract.schemaVersion, 6);
+  assert.equal(contract.generatedForIssue, "LOO-102");
+  assert.equal(contract.status, "scratch-home-activation-ready");
   assert.deepEqual(contract.agents.map((agent) => agent.name), EXPECTED_ROSTER);
   assert.equal(new Set(contract.agents.map((agent) => agent.name)).size, EXPECTED_ROSTER.length);
 });
@@ -324,13 +324,20 @@ test("direct OMP-prefixed Codex role candidates are marked superseded", () => {
   }
 });
 
-test("contract slice records checks without claiming native rendering intake automation or live activation", () => {
-  assert.equal(contract.activation.nativeAgentRendering, "future issue");
+test("contract slice records scratch activation gates without authorizing live HOME apply", () => {
+  assert.match(contract.activation.scratchHomeApply, /scripts\/render-plugin-bridge\.mjs --write --home <scratch>/u);
+  assert.match(contract.activation.markerManifest, /~\/\.loom-harness\/applied-manifest\.json/u);
+  assert.match(contract.activation.secondApply, /already-applied/u);
+  assert.match(contract.activation.verifier, /verify-loom-install\.mjs/u);
+  assert.deepEqual(Object.keys(contract.activation.proofSurfaces), ["omp", "codex", "claude"]);
+  assert.match(contract.activation.liveHomePromotionGate, /dry-run -> review -> explicit apply/u);
+  assert.match(contract.activation.evidenceDecisionOwner, /LOO-103/u);
+  assert.ok(contract.activation.deterministicChecksBeforeApply.includes("scripts/validate-shared-agent-packages.mjs"));
+  assert.ok(contract.activation.deterministicChecksBeforeApply.includes("scripts/validate-shared-agent-evals.mjs"));
   assert.match(contract.activation.evalHarness, /scripts\/validate-shared-agent-evals\.mjs/u);
   assert.match(contract.activation.lintRules, /scripts\/validate-shared-agent-packages\.mjs/u);
-  assert.equal(contract.activation.evidenceIntakeAutomation, "future issue");
-  assert.equal(contract.activation.liveHomeApply, "forbidden in this contract slice");
-  assert.match(markdown, /does not render or activate/u);
+  assert.match(contract.activation.liveHomeApply, /explicit HITL approval/u);
+  assert.match(markdown, /dry-run -> review -> explicit apply/u);
   for (const issue of ["LOO-97", "LOO-98", "LOO-99", "LOO-100", "LOO-101", "LOO-102", "LOO-103", "LOO-104"]) {
     assert.match(markdown, new RegExp(issue, "u"));
   }
