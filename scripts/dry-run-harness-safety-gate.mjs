@@ -20,6 +20,14 @@ import {
   scanHarnessSafety,
   validateHarnessManifest as validateManifestResourceManifest,
 } from "./lib/harness-safety.mjs";
+import {
+  codexPlanPath,
+  compatSkillsRoot,
+  claudePlanPath,
+  dryRunLinkPlanPath,
+  nucleusSkillsRoot,
+  resourceManifestPath,
+} from "./lib/layout.mjs";
 
 const USAGE = [
   "Usage: node scripts/dry-run-harness-safety-gate.mjs",
@@ -32,10 +40,10 @@ const USAGE = [
   "  [--source-root <dir>]",
 ].join(" ");
 
-const DEFAULT_MANIFEST = "docs/harness/resource-manifest.json";
-const DEFAULT_PLAN = "docs/harness/dry-run-link-plan.json";
-const DEFAULT_CODEX_PLAN = "docs/harness/codex-adapter-plan/adapter-plan.json";
-const DEFAULT_CLAUDE_PLAN = "docs/harness/claude-adapter-plan/adapter-plan.json";
+const DEFAULT_MANIFEST = resourceManifestPath;
+const DEFAULT_PLAN = dryRunLinkPlanPath;
+const DEFAULT_CODEX_PLAN = codexPlanPath;
+const DEFAULT_CLAUDE_PLAN = claudePlanPath;
 const LINK_MODES = new Set(["candidate-symlink", "report-only"]);
 const REQUIRED_LINK_FIELDS = [
   "id",
@@ -242,9 +250,9 @@ function isBulkClaudeSkillRootLink(link) {
   const target = normalizePathText(link.proposedTarget).replace(/\/$/u, "");
   return live === "~/.claude/skills"
     || live === ".claude/skills"
-    || target === ".agents/skills"
-    || target === "nucleus/skills"
-    || target === "~/.agents/skills";
+    || target === compatSkillsRoot
+    || target === nucleusSkillsRoot
+    || target === `~/${compatSkillsRoot}`;
 }
 
 function validatePlan(plan, manifestInfo, codexInfo, claudeInfo, options) {
@@ -397,11 +405,11 @@ function trackedPathErrors() {
   const result = spawnSync("git", ["ls-files", "-z"], { encoding: "utf8" });
   if (result.status !== 0) return [`git tracked path check failed: ${result.stderr || result.stdout}`];
   for (const trackedPath of result.stdout.split("\0").filter(Boolean)) {
-    // Skill content lives under nucleus/skills/ and rendered .agents/skills/; skill names such as "computer-use"
+    // Skill content lives under the canonical skills root and rendered compat skills root; skill names such as "computer-use"
     // or "browser" legitimately match runtime-state path tokens. Skill files are
     // secret-scanned by validate-skills and the tracked-source content scan, so they
     // are exempt from this runtime-state path-name check.
-    if (trackedPath.startsWith("nucleus/skills/") || trackedPath.startsWith(".agents/skills/")) continue;
+    if (trackedPath.startsWith(`${nucleusSkillsRoot}/`) || trackedPath.startsWith(`${compatSkillsRoot}/`)) continue;
     const reason = dangerousPathReason(trackedPath);
     if (reason) errors.push(`tracked repo path is dangerous ${reason}: ${trackedPath}`);
   }

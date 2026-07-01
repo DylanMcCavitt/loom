@@ -3,14 +3,20 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { expandedPlanTemplates } from "./render-plugin-bridge.mjs";
+import {
+  nucleusSkillsRoot,
+  pluginBridgeDir,
+  pluginBridgePlanPath,
+  sharedAgentContractPath,
+} from "./lib/layout.mjs";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
 const DEFAULTS = Object.freeze({
-  contract: "nucleus/agents/shared-nucleus-agents.json",
-  plan: "adapters/plugin-bridge/plan.json",
-  bridgeDir: "adapters/plugin-bridge",
-  skillsDir: "nucleus/skills",
+  contract: sharedAgentContractPath,
+  plan: pluginBridgePlanPath,
+  bridgeDir: pluginBridgeDir,
+  skillsDir: nucleusSkillsRoot,
 });
 
 export const DETERMINISTIC_RULES = Object.freeze([

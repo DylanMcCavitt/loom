@@ -3,8 +3,9 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
+import { resourceManifestPath } from "../scripts/lib/layout.mjs";
 
-const manifestPath = new URL("../docs/harness/resource-manifest.json", import.meta.url).pathname;
+const manifestPath = new URL(`../${resourceManifestPath}`, import.meta.url).pathname;
 const validator = new URL("../scripts/validate-harness-manifest.mjs", import.meta.url).pathname;
 const dryRun = new URL("../scripts/dry-run-harness-inventory.mjs", import.meta.url).pathname;
 const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));

@@ -4,14 +4,20 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, 
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { claudeTemplatesDir } from "./lib/layout.mjs";
+import {
+  claudePlanMarkdownPath,
+  claudePlanPath,
+  claudeTemplatesDir,
+  ompBuiltinsPortabilityPath,
+  ompBuiltinsSourcePath,
+} from "./lib/layout.mjs";
 import { parseFrontmatter as parseMarkdownFrontmatter } from "./lib/frontmatter.mjs";
 import { scanHarnessSafety } from "./lib/harness-safety.mjs";
 
-const PLAN_PATH = process.env.CLAUDE_ADAPTER_PLAN_PATH ?? "docs/harness/claude-adapter-plan/adapter-plan.json";
-const SOURCE_PATH = "distributions/snapshots/omp-builtins/source.json";
-const PORTABILITY_PATH = "distributions/snapshots/omp-builtins/portability-matrix.json";
-const PLAN_MD_PATH = "docs/harness/claude-adapter-plan.md";
+const PLAN_PATH = process.env.CLAUDE_ADAPTER_PLAN_PATH ?? claudePlanPath;
+const SOURCE_PATH = ompBuiltinsSourcePath;
+const PORTABILITY_PATH = ompBuiltinsPortabilityPath;
+const PLAN_MD_PATH = claudePlanMarkdownPath;
 const DEFAULT_TEMPLATE_DIR = claudeTemplatesDir;
 const TEMPLATE_DIR = process.env.CLAUDE_ADAPTER_PLAN_TEMPLATE_DIR ?? DEFAULT_TEMPLATE_DIR;
 

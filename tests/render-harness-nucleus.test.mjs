@@ -5,17 +5,13 @@ import { mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
-import { codexTemplatesDir } from "../scripts/lib/layout.mjs";
+import { codexPlanPath, codexTemplatesDir, ompSourceRoot } from "../scripts/lib/layout.mjs";
 
-const renderer = new URL("../scripts/render-harness-nucleus.mjs", import.meta.url).pathname;
+const renderer = new URL("../scripts/render-nucleus.mjs", import.meta.url).pathname;
 const templatesDir = new URL(`../${codexTemplatesDir}`, import.meta.url).pathname;
-const planPath = new URL("../docs/harness/codex-adapter-plan/adapter-plan.json", import.meta.url).pathname;
-import {
-  applyCandidates,
-  configKeys,
-  configKindFor,
-  renderAndGate,
-} from "../scripts/render-harness-nucleus.mjs";
+const planPath = new URL(`../${codexPlanPath}`, import.meta.url).pathname;
+import { applyCandidates } from "../scripts/lib/harness-apply-engine.mjs";
+import { configKeys, configKindFor, renderAndGate } from "../scripts/lib/harness-render-gate.mjs";
 
 function withTempPlan(addBoundary) {
   const plan = JSON.parse(readFileSync(planPath, "utf8"));
@@ -120,7 +116,7 @@ test("dry-run reports OMP repo-mirror symlinks separately from marker ownership"
   try {
     const agentDir = path.join(home, ".omp", "agent");
     mkdirSync(agentDir, { recursive: true });
-    const source = new URL("../adapters/omp/source/AGENTS.md", import.meta.url).pathname;
+    const source = new URL(`../${ompSourceRoot}/AGENTS.md`, import.meta.url).pathname;
     symlinkSync(source, path.join(agentDir, "AGENTS.md"));
 
     const { result, manifest } = runJson(["--home", home]);
@@ -149,7 +145,7 @@ test("dry-run does not follow retargeted marker-owned OMP symlinks", () => {
   try {
     const agentDir = path.join(home, ".omp", "agent");
     const markerDir = path.join(home, ".loom-harness");
-    const source = new URL("../adapters/omp/source/AGENTS.md", import.meta.url).pathname;
+    const source = new URL(`../${ompSourceRoot}/AGENTS.md`, import.meta.url).pathname;
     const live = path.join(agentDir, "AGENTS.md");
     const retarget = path.join(home, "retarget-dir");
     mkdirSync(agentDir, { recursive: true });
@@ -223,6 +219,7 @@ test("--write applies create-missing-only, records markers, and a second run is 
   const markerFile = path.join(home, ".loom-harness", "applied-manifest.json");
   const marker = JSON.parse(readFileSync(markerFile, "utf8"));
   assert.equal(Object.keys(marker.entries).length, 3);
+  assert.equal(marker.generatedBy, "render-nucleus");
 
   // No applied artifact carries provider/model/auth/telemetry/profile keys or secrets.
   for (const rel of listFiles(home)) {
@@ -530,12 +527,12 @@ test("applyCandidates skips a pre-existing non-marker user file (create-missing-
 test("applyCandidates requires explicit approval before claiming OMP repo-mirror symlinks", () => {
   const home = tempDir("apply-home-");
   const dest = "~/.omp/agent/AGENTS.md";
-  const source = new URL("../adapters/omp/source/AGENTS.md", import.meta.url).pathname;
+  const source = new URL(`../${ompSourceRoot}/AGENTS.md`, import.meta.url).pathname;
   const content = readFileSync(source, "utf8");
   const live = path.join(home, ".omp", "agent", "AGENTS.md");
   mkdirSync(path.dirname(live), { recursive: true });
   symlinkSync(source, live);
-  const candidate = applyCandidate(dest, content, { source: "adapters/omp/source/AGENTS.md" });
+  const candidate = applyCandidate(dest, content, { source: `${ompSourceRoot}/AGENTS.md` });
 
   const unapproved = applyCandidates([candidate], home, emptyMarker());
   assert.equal(unapproved.actions[0].action, "skipped");
@@ -554,12 +551,12 @@ test("applyCandidates requires explicit approval before claiming OMP repo-mirror
 test("applyCandidates does not claim divergent OMP repo-mirror symlinks", () => {
   const home = tempDir("apply-home-");
   const dest = "~/.omp/agent/AGENTS.md";
-  const source = new URL("../adapters/omp/source/AGENTS.md", import.meta.url).pathname;
+  const source = new URL(`../${ompSourceRoot}/AGENTS.md`, import.meta.url).pathname;
   const live = path.join(home, ".omp", "agent", "AGENTS.md");
   mkdirSync(path.dirname(live), { recursive: true });
   symlinkSync(source, live);
   const marker = emptyMarker();
-  const candidate = applyCandidate(dest, "DIFFERENT\n", { source: "adapters/omp/source/AGENTS.md" });
+  const candidate = applyCandidate(dest, "DIFFERENT\n", { source: `${ompSourceRoot}/AGENTS.md` });
 
   const result = applyCandidates([candidate], home, marker, { approveOmpRepoOwned: true });
   assert.equal(result.actions[0].action, "skipped");
@@ -573,14 +570,14 @@ test("applyCandidates does not claim divergent OMP repo-mirror symlinks", () => 
 test("applyCandidates does not follow a claimed symlink after retargeting", () => {
   const home = tempDir("apply-home-");
   const dest = "~/.omp/agent/AGENTS.md";
-  const source = new URL("../adapters/omp/source/AGENTS.md", import.meta.url).pathname;
+  const source = new URL(`../${ompSourceRoot}/AGENTS.md`, import.meta.url).pathname;
   const live = path.join(home, ".omp", "agent", "AGENTS.md");
   const other = path.join(home, "other.md");
   mkdirSync(path.dirname(live), { recursive: true });
   symlinkSync(source, live);
   writeFileSync(other, "USER TARGET\n");
   const marker = emptyMarker();
-  const candidate = applyCandidate(dest, readFileSync(source, "utf8"), { source: "adapters/omp/source/AGENTS.md" });
+  const candidate = applyCandidate(dest, readFileSync(source, "utf8"), { source: `${ompSourceRoot}/AGENTS.md` });
   applyCandidates([candidate], home, marker, { approveOmpRepoOwned: true });
   rmSync(live, { force: true });
   symlinkSync(other, live);
@@ -600,7 +597,7 @@ test("applyCandidates backs up and replaces existing OMP files only with explici
   const content = "repo: true\n";
   mkdirSync(path.dirname(live), { recursive: true });
   writeFileSync(live, "USER OWNED\n");
-  const candidate = applyCandidate(dest, content, { source: "adapters/omp/source/config.yml" });
+  const candidate = applyCandidate(dest, content, { source: `${ompSourceRoot}/config.yml` });
 
   const unapproved = applyCandidates([candidate], home, emptyMarker());
   assert.equal(unapproved.actions[0].action, "skipped");

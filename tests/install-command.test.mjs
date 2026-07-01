@@ -9,8 +9,8 @@ const repoRoot = new URL("..", import.meta.url).pathname;
 const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
 
 test("package.json wires the nucleus dry-run and gated install scripts", () => {
-  assert.equal(pkg.scripts["render-nucleus"], "node scripts/render-harness-nucleus.mjs");
-  assert.equal(pkg.scripts["install-nucleus"], "node scripts/render-harness-nucleus.mjs --write");
+  assert.equal(pkg.scripts["render-nucleus"], "node scripts/render-nucleus.mjs");
+  assert.equal(pkg.scripts["install-nucleus"], "node scripts/render-nucleus.mjs --write");
 });
 
 test("the wired render-nucleus dry-run reports appliable candidates against a fake HOME", () => {

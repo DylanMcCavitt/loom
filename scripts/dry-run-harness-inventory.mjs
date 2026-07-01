@@ -3,8 +3,10 @@ import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 
+import { resourceManifestPath } from "./lib/layout.mjs";
+
 const USAGE = "Usage: node scripts/dry-run-harness-inventory.mjs [--manifest <path>] [--check-live]";
-const DEFAULT_MANIFEST = "docs/harness/resource-manifest.json";
+const DEFAULT_MANIFEST = resourceManifestPath;
 
 function readArgs(argv) {
   const options = { manifest: DEFAULT_MANIFEST, checkLive: false };

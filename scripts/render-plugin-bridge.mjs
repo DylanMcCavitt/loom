@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // Cross-harness plugin-bridge renderer (LOO-8 slice 2).
 //
-// Reuses the slice-1 render-to-write executor (scripts/render-harness-nucleus.mjs) verbatim for the
-// safety gate, marker manifest, create-missing-only apply engine, and disposition resolution. This
-// script only adds a new candidate source: the tracked loom-nucleus plugin templates under
+// Reuses the shared renderer seams for the safety gate, marker manifest,
+// create-missing-only apply engine, and disposition resolution. This script only adds a
+// plugin-bridge candidate source: the tracked loom-nucleus plugin templates under
 // adapters/plugin-bridge/, plus three plugin-bridge-specific containment guards layered on top of
 // the engine gate before any write:
 //   - a destination allowlist: appliable writes may only ever land on the personal marketplace catalog
@@ -27,20 +27,28 @@ import {
   applyCandidates,
   loadMarker,
   markerPath,
-  renderAndGate,
-  resolveDisposition,
   resolveHomeRoot,
   saveMarkerIfChanged,
-} from "./render-harness-nucleus.mjs";
+} from "./lib/harness-apply-engine.mjs";
+import { renderAndGate } from "./lib/harness-render-gate.mjs";
+import { readJson, repoPath, resolveDisposition } from "./lib/harness-candidate-model.mjs";
+import {
+  loomNucleusClaudeMarketplacePath,
+  loomNucleusDistributionRoot,
+  nucleusSkillsRoot,
+  pluginBridgeDir,
+  pluginBridgePlanPath,
+  resourceManifestPath,
+} from "./lib/layout.mjs";
 import { asArray, normalizePathText } from "./lib/harness-safety.mjs";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
 
 export const DEFAULTS = {
-  plan: "adapters/plugin-bridge/plan.json",
-  manifest: "docs/harness/resource-manifest.json",
-  bridgeDir: "adapters/plugin-bridge",
+  plan: pluginBridgePlanPath,
+  manifest: resourceManifestPath,
+  bridgeDir: pluginBridgeDir,
 };
 
 // The ONLY home destinations render-plugin-bridge may ever write: the personal marketplace catalog
@@ -101,14 +109,6 @@ export function readArgs(argv) {
   return options;
 }
 
-function repoPath(relative) {
-  return path.isAbsolute(relative) ? relative : path.join(REPO_ROOT, relative);
-}
-
-function readJson(filePath) {
-  return JSON.parse(readFileSync(filePath, "utf8"));
-}
-
 // Local-only destination patterns drawn from the resource manifest (the source of truth for ownership).
 export function localOnlyPatterns(manifest) {
   const patterns = new Set();
@@ -145,16 +145,16 @@ function resolveTemplatePath(bridgeDir, templateRel) {
   }
 
   const normalized = normalizePathText(templateRel);
-  const sourceRoot = normalized.startsWith("nucleus/skills/")
-    ? path.join(REPO_ROOT, "nucleus", "skills")
+  const sourceRoot = normalized.startsWith(`${nucleusSkillsRoot}/`)
+    ? repoPath(nucleusSkillsRoot)
     : bridgeDir;
   const baseReal = realpathSync(sourceRoot);
-  const sourcePath = normalized.startsWith("nucleus/skills/")
+  const sourcePath = normalized.startsWith(`${nucleusSkillsRoot}/`)
     ? path.resolve(REPO_ROOT, normalized)
     : path.resolve(bridgeDir, normalized);
   const real = realpathSync(sourcePath);
   if (real !== baseReal && !real.startsWith(baseReal + path.sep)) {
-    const boundary = normalized.startsWith("nucleus/skills/") ? "nucleus/skills" : "the bridge dir";
+    const boundary = normalized.startsWith(`${nucleusSkillsRoot}/`) ? nucleusSkillsRoot : "the bridge dir";
     throw new Error(`template path escapes ${boundary}: ${templateRel}`);
   }
   return real;
@@ -162,11 +162,11 @@ function resolveTemplatePath(bridgeDir, templateRel) {
 
 function renderedRelPathFor(template) {
   const projectDestination = template.destination?.replace(/^\.\//u, "");
-  if (projectDestination === "distributions/loom-nucleus/.claude-plugin/marketplace.json") {
+  if (projectDestination === loomNucleusClaudeMarketplacePath) {
     return projectDestination;
   }
   if (template.destination?.startsWith(`${PLUGIN_BRIDGE_ROOT}/loom-nucleus/`)) {
-    return path.join("distributions/loom-nucleus", template.destination.slice(`${PLUGIN_BRIDGE_ROOT}/loom-nucleus/`.length));
+    return path.join(loomNucleusDistributionRoot, template.destination.slice(`${PLUGIN_BRIDGE_ROOT}/loom-nucleus/`.length));
   }
   return path.join("distributions", template.template);
 }
@@ -189,7 +189,7 @@ export function expandedPlanTemplates(plan) {
   const templates = [...(plan.templates ?? [])];
   const seen = new Set(templates.map((template) => template.template));
   for (const agent of plan.agents ?? []) {
-    if (!agent.packaged || !agent.packageRoot?.startsWith("nucleus/skills/")) continue;
+    if (!agent.packaged || !agent.packageRoot?.startsWith(`${nucleusSkillsRoot}/`)) continue;
     const packageRoot = repoPath(agent.packageRoot);
     for (const file of listPackageFiles(packageRoot)) {
       const template = `${agent.packageRoot}/${file}`;
@@ -343,7 +343,7 @@ export function gateAndApply(candidates, localOnly, homeRoot, marker) {
     return { refused: true, findings, actions: [], backups: [], markerChanged: false };
   }
   const { actions, backups } = applyCandidates(candidates, homeRoot, marker);
-  const markerChanged = saveMarkerIfChanged(homeRoot, marker);
+  const markerChanged = saveMarkerIfChanged(homeRoot, marker, "render-plugin-bridge");
   return { refused: false, findings: [], actions, backups, markerChanged };
 }
 
@@ -466,7 +466,7 @@ function main() {
   const { candidates, localOnly } = buildPluginCandidates(plan, manifest, options);
   const homeRoot = resolveHomeRoot(options);
   if (!options.write) return runDryRun(plan, candidates, localOnly, options, homeRoot);
-  const marker = loadMarker(homeRoot);
+  const marker = loadMarker(homeRoot, "render-plugin-bridge");
   return runWrite(plan, candidates, localOnly, options, homeRoot, marker);
 }
 

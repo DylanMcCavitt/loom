@@ -5,12 +5,12 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 import { parse as parseToml } from "../scripts/vendor/smol-toml/index.js";
-import { codexTemplatesDir } from "../scripts/lib/layout.mjs";
+import { codexPlanMarkdownPath, codexPlanPath, codexTemplatesDir, ompBuiltinsPortabilityPath, ompBuiltinsSourcePath } from "../scripts/lib/layout.mjs";
 
-const planPath = new URL("../docs/harness/codex-adapter-plan/adapter-plan.json", import.meta.url).pathname;
-const planMdPath = new URL("../docs/harness/codex-adapter-plan.md", import.meta.url).pathname;
-const sourcePath = new URL("../distributions/snapshots/omp-builtins/source.json", import.meta.url).pathname;
-const portabilityPath = new URL("../distributions/snapshots/omp-builtins/portability-matrix.json", import.meta.url).pathname;
+const planPath = new URL(`../${codexPlanPath}`, import.meta.url).pathname;
+const planMdPath = new URL(`../${codexPlanMarkdownPath}`, import.meta.url).pathname;
+const sourcePath = new URL(`../${ompBuiltinsSourcePath}`, import.meta.url).pathname;
+const portabilityPath = new URL(`../${ompBuiltinsPortabilityPath}`, import.meta.url).pathname;
 const templatesDir = new URL(`../${codexTemplatesDir}/`, import.meta.url).pathname;
 const validator = new URL("../scripts/validate-codex-adapter-plan.mjs", import.meta.url).pathname;
 

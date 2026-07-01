@@ -3,12 +3,13 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync } from "nod
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
+import { resourceManifestPath } from "../scripts/lib/layout.mjs";
 
-const manifestPath = new URL("../docs/harness/resource-manifest.json", import.meta.url).pathname;
+const manifestPath = new URL(`../${resourceManifestPath}`, import.meta.url).pathname;
 const baseManifest = JSON.parse(readFileSync(manifestPath, "utf8"));
 
 const harnessSafetyModule = await import("../scripts/lib/harness-safety.mjs").catch((error) => ({ importError: error }));
-const renderModule = await import("../scripts/render-harness-nucleus.mjs").catch((error) => ({ importError: error }));
+const renderModule = await import("../scripts/lib/harness-render-gate.mjs").catch((error) => ({ importError: error }));
 
 async function importRequired(modulePath, exportName) {
   const module = await import(modulePath);
@@ -256,7 +257,7 @@ test("all exported validation entrypoints reject the same unsafe fixture", async
     const gateRenderedOutput = requireFunction(
       renderModule,
       "gateRenderedOutput",
-      "../scripts/render-harness-nucleus.mjs",
+      "../scripts/lib/harness-render-gate.mjs",
     );
     const candidate = {
       id: "codex:unsafe-auth",

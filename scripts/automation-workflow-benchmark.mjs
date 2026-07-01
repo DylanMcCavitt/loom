@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { routeIntent } from "../adapters/omp/source/extensions/workflow-routing.js";
-import { recipeCount } from "../adapters/omp/source/extensions/workflow-recipes.js";
 import { parseFrontmatter } from "./lib/frontmatter.mjs";
+import { nucleusSkillsRoot, ompSourceRoot } from "./lib/layout.mjs";
+
+const { routeIntent } = await import(new URL(`../${ompSourceRoot}/extensions/workflow-routing.js`, import.meta.url));
+const { recipeCount } = await import(new URL(`../${ompSourceRoot}/extensions/workflow-recipes.js`, import.meta.url));
 
 const ROOT = path.resolve(new URL("..", import.meta.url).pathname);
 const ROUTING_FIXTURES = JSON.parse(readFileSync(path.join(ROOT, "tests/fixtures/automation-routing.json"), "utf8"));
@@ -12,7 +14,7 @@ const ROUTING_FIXTURES = JSON.parse(readFileSync(path.join(ROOT, "tests/fixtures
 // obsolete under consolidation; duplicate overlap now means a name that appears twice.
 
 function localSkillNames() {
-  const skillsDir = path.join(ROOT, "nucleus/skills");
+  const skillsDir = path.join(ROOT, nucleusSkillsRoot);
   try {
     return readdirSync(skillsDir, { withFileTypes: true })
       .filter((entry) => entry.isDirectory())
@@ -56,8 +58,8 @@ function routeAccuracyScore() {
 
 function unsafeAutonomyViolations() {
   const sources = [
-    "adapters/omp/source/extensions/workflow-routing.js",
-    "adapters/omp/source/extensions/workflow-recipes.js",
+    path.join(ompSourceRoot, "extensions/workflow-routing.js"),
+    path.join(ompSourceRoot, "extensions/workflow-recipes.js"),
   ].map((relativePath) => readFileSync(path.join(ROOT, relativePath), "utf8"));
   const rawSpawn = /\bBun\.spawn\b|\bspawnSync\b|\bexecFile(?:Sync)?\b|\bexecSync\b|\bchild_process\b/u;
   const mutatingGit = /"(?:push|commit|checkout|switch|reset|rebase|merge|stash|clean|tag)"|"branch",\s*"-[dD]"/u;

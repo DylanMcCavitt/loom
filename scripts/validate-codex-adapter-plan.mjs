@@ -5,13 +5,19 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseToml } from "./vendor/smol-toml/index.js";
-import { codexTemplatesDir } from "./lib/layout.mjs";
+import {
+  codexPlanMarkdownPath,
+  codexPlanPath,
+  codexTemplatesDir,
+  ompBuiltinsPortabilityPath,
+  ompBuiltinsSourcePath,
+} from "./lib/layout.mjs";
 import { scanHarnessSafety } from "./lib/harness-safety.mjs";
 
-const PLAN_PATH = process.env.CODEX_ADAPTER_PLAN_PATH ?? "docs/harness/codex-adapter-plan/adapter-plan.json";
-const SOURCE_PATH = "distributions/snapshots/omp-builtins/source.json";
-const PORTABILITY_PATH = "distributions/snapshots/omp-builtins/portability-matrix.json";
-const PLAN_MD_PATH = "docs/harness/codex-adapter-plan.md";
+const PLAN_PATH = process.env.CODEX_ADAPTER_PLAN_PATH ?? codexPlanPath;
+const SOURCE_PATH = ompBuiltinsSourcePath;
+const PORTABILITY_PATH = ompBuiltinsPortabilityPath;
+const PLAN_MD_PATH = codexPlanMarkdownPath;
 const TEMPLATE_DIR = process.env.CODEX_ADAPTER_PLAN_TEMPLATE_DIR ?? codexTemplatesDir;
 const REQUIRED_DOC_TOPICS = new Set([
   "config",

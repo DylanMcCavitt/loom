@@ -4,10 +4,11 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
+import { dryRunLinkPlanPath, ompSourceRoot } from "../scripts/lib/layout.mjs";
 import { claudeTemplatesDir, codexTemplatesDir } from "../scripts/lib/layout.mjs";
 
 const gate = new URL("../scripts/dry-run-harness-safety-gate.mjs", import.meta.url).pathname;
-const planPath = new URL("../docs/harness/dry-run-link-plan.json", import.meta.url).pathname;
+const planPath = new URL(`../${dryRunLinkPlanPath}`, import.meta.url).pathname;
 const basePlan = JSON.parse(readFileSync(planPath, "utf8"));
 
 function runGate(args = []) {
@@ -60,7 +61,7 @@ test("dry-run safety gate reports checked-in plan without mutation", () => {
 test("tracked source scan accepts tokenized source fixture", () => {
   const temp = withTempSourceRoot({
     "docs/good.md": "Use `~/.omp/agent/workflow-kit/README.md` and `~/.agents/skills/`.\n",
-    "adapters/omp/source/AGENTS.md": "Project-specific skills live in `<repo>/.agents/skills/`.\n",
+    [`${ompSourceRoot}/AGENTS.md`]: "Project-specific skills live in `<repo>/.agents/skills/`.\n",
     "scripts/good.mjs": "const kitRoot = process.env.KIT_ROOT || 'home-relative fallback';\n",
   });
   try {
@@ -110,7 +111,7 @@ test("checked-in dry-run plan covers OMP, Codex, and Claude candidates", () => {
     basePlan.candidateLinks.some((link) => (
       link.mode === "candidate-symlink"
       && link.livePath === "~/.omp/agent/AGENTS.md"
-      && link.proposedTarget === "repo:adapters/omp/source/AGENTS.md"
+      && link.proposedTarget === `repo:${ompSourceRoot}/AGENTS.md`
     )),
     "expected one allowed OMP symlink candidate",
   );

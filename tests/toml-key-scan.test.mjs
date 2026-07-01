@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { configKeys, renderAndGate } from "../scripts/render-harness-nucleus.mjs";
+import { configKeys, renderAndGate } from "../scripts/lib/harness-render-gate.mjs";
 
 const inlineForbidden = new URL("./fixtures/toml-inline-forbidden.toml", import.meta.url);
 const multilineFakeKey = new URL("./fixtures/toml-multiline-fake-key.toml", import.meta.url);

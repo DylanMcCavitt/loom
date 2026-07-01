@@ -15,9 +15,10 @@ import { createHash } from "node:crypto";
 import { homedir, tmpdir } from "node:os";
 import path from "node:path";
 import { parseFrontmatter } from "./lib/frontmatter.mjs";
+import { ompBuiltinsSnapshotRoot } from "./lib/layout.mjs";
 
 const USAGE = "Usage: node scripts/refresh-omp-builtins-snapshot.mjs [--write] [--snapshot-dir <path>]";
-const DEFAULT_SNAPSHOT_DIR = "distributions/snapshots/omp-builtins";
+const DEFAULT_SNAPSHOT_DIR = ompBuiltinsSnapshotRoot;
 const PACKAGE_NAME = "@oh-my-pi/pi-coding-agent";
 const EXPECTED_AGENTS = ["designer", "explore", "librarian", "oracle", "plan", "quick_task", "reviewer", "task"];
 const PORTABILITY_CLASSES = {

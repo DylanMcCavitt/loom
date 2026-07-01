@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from "node:fs";
 import path from "node:path";
+import { compatSkillsRoot, nucleusSkillsRoot } from "./lib/layout.mjs";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
-const sourceRoot = path.join(repoRoot, "nucleus", "skills");
-const compatRoot = path.join(repoRoot, ".agents", "skills");
+const sourceRoot = path.join(repoRoot, nucleusSkillsRoot);
+const compatRoot = path.join(repoRoot, compatSkillsRoot);
 
 function assertRepoPath(target) {
   const resolved = path.resolve(target);
@@ -45,11 +46,11 @@ function clearCompatSurface() {
 }
 
 if (!existsSync(sourceRoot) || !statSync(sourceRoot).isDirectory()) {
-  throw new Error("nucleus/skills must exist before rendering the compatibility surface");
+  throw new Error(`${nucleusSkillsRoot} must exist before rendering the compatibility surface`);
 }
 
 assertRepoPath(sourceRoot);
 assertRepoPath(compatRoot);
 clearCompatSurface();
 copyTree(sourceRoot, compatRoot);
-console.log("Rendered .agents/skills compatibility surface from nucleus/skills");
+console.log(`Rendered ${compatSkillsRoot} compatibility surface from ${nucleusSkillsRoot}`);

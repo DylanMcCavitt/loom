@@ -42,7 +42,7 @@ const PROTECTED_SURFACES = Object.freeze([
     suggestion: "route CI changes through proof and launch review",
   },
   {
-    path: ".agents/skills",
+    path: "nucleus/skills",
     name: "Agent skills",
     suggestion: "pair skill changes with routing/eval proof",
   },

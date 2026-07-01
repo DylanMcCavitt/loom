@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { homedir } from "node:os";
+import { compatSkillsRoot, nucleusSkillsRoot } from "./lib/layout.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseFrontmatter as parseMarkdownFrontmatter } from "./lib/frontmatter.mjs";
 import { scanHarnessSafety } from "./lib/harness-safety.mjs";
 
-const DEFAULT_SKILLS_DIR = "nucleus/skills";
-const DEFAULT_COMPAT_SKILLS_DIR = ".agents/skills";
+const DEFAULT_SKILLS_DIR = nucleusSkillsRoot;
+const DEFAULT_COMPAT_SKILLS_DIR = compatSkillsRoot;
 const USAGE = `Usage: node scripts/validate-skills.mjs [--skills-dir <dir>] [--global-skills-dir <dir>] [--reserved-name <name>]`;
 
 function readArgs(argv) {

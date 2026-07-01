@@ -200,7 +200,7 @@ test("factory scan suggests protected surfaces and redacts secret-looking output
   withTempRepo({
     "package.json": `${JSON.stringify({ scripts: { test: "node test.js" } }, null, 2)}\n`,
     ".github/workflows/ci.yml": "name: ci\n",
-    ".agents/skills/example/SKILL.md": "---\nname: example\ndescription: Example.\n---\n",
+    "nucleus/skills/example/SKILL.md": "---\nname: example\ndescription: Example.\n---\n",
     ".agents/envelope/linear-map.md": "team: Loom\n",
     "docs/decisions/0001-test.md": "# Test ADR\n",
     ".loom.yml": "factory: test\n",
@@ -210,7 +210,7 @@ test("factory scan suggests protected surfaces and redacts secret-looking output
     const result = runScan(root);
 
     assert.match(result.stdout, /\.github\/workflows: route CI changes through proof and launch review/u);
-    assert.match(result.stdout, /\.agents\/skills: pair skill changes with routing\/eval proof/u);
+    assert.match(result.stdout, /nucleus\/skills: pair skill changes with routing\/eval proof/u);
     assert.match(result.stdout, /\.agents\/envelope: keep durable policy separate from scan observations/u);
     assert.match(result.stdout, /\.loom\.yml: treat pointer changes as explicit setup intent/u);
     assert.match(result.stdout, /docs\/decisions: route ADR changes through maintainer review/u);

@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 import { readFileSync } from "node:fs";
+import { resourceManifestPath } from "./lib/layout.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateHarnessManifest as validateManifest } from "./lib/harness-safety.mjs";
 
 const USAGE = "Usage: node scripts/validate-harness-manifest.mjs [--manifest <path>]";
-const DEFAULT_MANIFEST = "docs/harness/resource-manifest.json";
+const DEFAULT_MANIFEST = resourceManifestPath;
 
 function readArgs(argv) {
   const options = { manifest: DEFAULT_MANIFEST };

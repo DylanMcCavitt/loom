@@ -4,9 +4,10 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { scanHarnessSafety } from "./lib/harness-safety.mjs";
+import { ompBuiltinsSnapshotRoot } from "./lib/layout.mjs";
 
 const USAGE = "Usage: node scripts/validate-omp-builtins-snapshot.mjs [--snapshot-dir <path>] [--check-live]";
-const DEFAULT_SNAPSHOT_DIR = "distributions/snapshots/omp-builtins";
+const DEFAULT_SNAPSHOT_DIR = ompBuiltinsSnapshotRoot;
 const EXPECTED_AGENTS = ["designer", "explore", "librarian", "oracle", "plan", "quick_task", "reviewer", "task"];
 const PORTABILITY_CLASSES = new Set([
   "omp-acp-text-and-tui-runtime",

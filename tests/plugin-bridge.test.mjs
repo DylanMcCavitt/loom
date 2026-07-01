@@ -5,7 +5,8 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 
-import { renderAndGate, resolveDisposition } from "../scripts/render-harness-nucleus.mjs";
+import { resolveDisposition } from "../scripts/lib/harness-candidate-model.mjs";
+import { renderAndGate } from "../scripts/lib/harness-render-gate.mjs";
 import {
   buildPluginCandidates,
   containmentFindings,
@@ -15,17 +16,27 @@ import {
   PLUGIN_BRIDGE_ROOT,
   symlinkContainmentFindings,
 } from "../scripts/render-plugin-bridge.mjs";
+import {
+  loomNucleusClaudeMarketplacePath,
+  nucleusSkillsRoot,
+  pluginBridgeDir,
+  pluginBridgePlanPath,
+  resourceManifestPath,
+  ompBuiltinsPortabilityPath,
+  ompBuiltinsSourcePath,
+  sharedAgentContractPath,
+} from "../scripts/lib/layout.mjs";
 
 const repoFile = (rel) => new URL(`../${rel}`, import.meta.url).pathname;
 const renderer = repoFile("scripts/render-plugin-bridge.mjs");
-const bridgeDir = repoFile("adapters/plugin-bridge");
-const repoSkillsDir = repoFile("nucleus/skills");
+const bridgeDir = repoFile(pluginBridgeDir);
+const repoSkillsDir = repoFile(nucleusSkillsRoot);
 
-const plan = JSON.parse(readFileSync(repoFile("adapters/plugin-bridge/plan.json"), "utf8"));
-const manifest = JSON.parse(readFileSync(repoFile("docs/harness/resource-manifest.json"), "utf8"));
-const matrix = JSON.parse(readFileSync(repoFile("distributions/snapshots/omp-builtins/portability-matrix.json"), "utf8"));
-const source = JSON.parse(readFileSync(repoFile("distributions/snapshots/omp-builtins/source.json"), "utf8"));
-const shared = JSON.parse(readFileSync(repoFile("nucleus/agents/shared-nucleus-agents.json"), "utf8"));
+const plan = JSON.parse(readFileSync(repoFile(pluginBridgePlanPath), "utf8"));
+const manifest = JSON.parse(readFileSync(repoFile(resourceManifestPath), "utf8"));
+const matrix = JSON.parse(readFileSync(repoFile(ompBuiltinsPortabilityPath), "utf8"));
+const source = JSON.parse(readFileSync(repoFile(ompBuiltinsSourcePath), "utf8"));
+const shared = JSON.parse(readFileSync(repoFile(sharedAgentContractPath), "utf8"));
 
 function tempDir(prefix) {
   return mkdtempSync(path.join(tmpdir(), prefix));
@@ -237,7 +248,7 @@ test("rendered plugin and marketplace manifests parse and carry required fields"
   assert.ok(claudeEntry, "Claude marketplace must list loom-nucleus");
   assert.ok(typeof claudeEntry.source === "string" && claudeEntry.source.startsWith("./"), "Claude source must be ./-prefixed");
 
-  const committedClaudeMarket = readFileSync(repoFile("./distributions/loom-nucleus/.claude-plugin/marketplace.json"), "utf8");
+  const committedClaudeMarket = readFileSync(repoFile(`./${loomNucleusClaudeMarketplacePath}`), "utf8");
   assert.equal(committedClaudeMarket, byId.get("claude-marketplace").content, "committed Claude marketplace distribution must match the rendered candidate");
 });
 
@@ -281,6 +292,7 @@ test("--write applies create-missing-only and a second run is a clean no-op", ()
   assert.equal(first.manifest.markerChanged, true);
   const marker = JSON.parse(readFileSync(path.join(home, ".loom-harness", "applied-manifest.json"), "utf8"));
   assert.equal(Object.keys(marker.entries).length, expectedAppliable, "marker must record each created target");
+  assert.equal(marker.generatedBy, "render-plugin-bridge");
   assert.ok(Object.keys(marker.entries).every((destination) => destination.startsWith("~/.agents/plugins/")), "marker must not adopt runtime/local-only paths");
 
   // The catalog and co-located plugin source both landed under the personal marketplace root.
