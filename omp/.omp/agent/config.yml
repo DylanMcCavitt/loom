@@ -18,7 +18,7 @@ display:
 task: 
   eager: preferred
   agentModelOverrides: 
-    designer: zai/glm-5.2
+    designer: anthropic/claude-sonnet-5
     explore: google-antigravity/gemini-3.5-flash:high
     librarian: openai-codex/gpt-5.5
     oracle: openai-codex/gpt-5.5:high
@@ -40,7 +40,7 @@ checkpoint:
 modelRoles: 
   plan: openai-codex/gpt-5.5:inherit
   slow: openai-codex/gpt-5.5
-  smol: zai/glm-5.2:xhigh
+  smol: anthropic/claude-sonnet-5
   advisor: anthropic/claude-opus-4-7
   default: openai-codex/gpt-5.5:high
   designer: google-antigravity/claude-opus-4-6
@@ -62,3 +62,5 @@ retry:
       - anthropic/claude-opus-4-6
 codexResets: 
   autoRedeem: "yes"
+recap: 
+  idleSeconds: 60

@@ -5,7 +5,7 @@
   "pluginVersion": "0.1.0",
   "summary": "Cross-harness plugin bridge: install the loom-nucleus OMP skill candidates, canonical shared-agent Vercel-shaped packages, and hook nucleus into the Codex and Claude plugin + marketplace surfaces through portable, co-located dual-manifest plugin source, reusing the render -> gate -> apply executor for every write.",
   "sourceInputs": [
-    "docs/harness/plugin-bridge-design.md",
+    "docs/harness/plugin-bridge/design.md",
     "docs/harness/omp-builtins/portability-matrix.json",
     "docs/harness/omp-builtins/source.json",
     "docs/harness/codex-adapter-plan/adapter-plan.json",

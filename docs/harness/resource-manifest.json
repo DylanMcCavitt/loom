@@ -188,7 +188,7 @@
         "~/.agents/plugins/marketplace.json",
         "~/.agents/plugins/loom-nucleus/"
       ],
-      "discoverySource": "Codex-native personal marketplace root (~/.agents/plugins/) per plugin-bridge-design sections 1.1/2.1; render-plugin-bridge writes the catalog and the co-located loom-nucleus plugin source here create-missing-only via the strict-manual render -> gate -> apply executor.",
+      "discoverySource": "Codex-native personal marketplace root (~/.agents/plugins/) per plugin-bridge design sections 1.1/2.1; render-plugin-bridge writes the catalog and the co-located loom-nucleus plugin source here create-missing-only via the strict-manual render -> gate -> apply executor.",
       "intendedRepoTarget": "docs/harness/plugin-bridge/",
       "disposition": "adapt",
       "migrationNotes": "Personal cross-harness marketplace catalog plus loom-nucleus plugin source (dual .codex-plugin/ + .claude-plugin/ manifests over a shared skills/hooks root with canonical shared-agent packages under skills/{agent-name}/). Written only through the gated, marker-tracked, create-missing-only executor. The plugin cache subtrees (~/.codex/plugins/cache/, ~/.claude/plugins/cache/, ~/.claude/plugins/data/) stay local-only and are never write targets."

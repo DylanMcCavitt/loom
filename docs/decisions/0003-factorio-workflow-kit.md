@@ -13,10 +13,11 @@ plus the bootstrap trio `repo-workflow-bootstrap`, `workflow-kit`, and
 issues/sub-issues, cycles, labels, comments, documents, status updates) is
 available but no skill uses it.
 
-The operator wants a curated, Factorio-themed workflow kit that is Linear-first,
-bridges to GitHub PRs, is purpose-built to adapt to any repo, and bakes in a
-clean-code / minimal-diff doctrine (inspired by, not copied from, the `ponytail`
-skill). The kit must be eval-able before release.
+The operator wants a curated, Factorio-themed workflow kit that can use Linear
+or GitHub Issues per project, bridges tracked work to GitHub PRs, is
+purpose-built to adapt to any repo, and bakes in a clean-code / minimal-diff
+doctrine (inspired by, not copied from, the `ponytail` skill). The kit must be
+eval-able before release.
 
 A second planning convention living beside the existing one is prohibited by the
 repo's own no-second-convention and clean-cutover rules. So the kit cannot be an
@@ -26,13 +27,13 @@ additive family; it must replace the lane it themes.
 
 A Factorio-themed kit becomes loom's single planning/issue/execution lane.
 
-1. **Clean cutover.** The kit replaces the GitHub-default planning lane. Replaced
+1. **Clean cutover.** The kit replaces the previous default planning lane. Replaced
    skills are retired (not aliased, not duplicated) once the kit's MVP is proven.
-2. **System-of-record split.** Linear owns planning (initiatives, projects,
-   milestones, issues/sub-issues, cycles, triage state, docs, status). GitHub
-   owns code delivery (branch/worktree/PR/CI). The two are bridged through
-   Linear's native GitHub integration: the branch name carries the Linear issue
-   id; the PR auto-links and auto-closes the issue on merge.
+2. **Tracker picker split.** A project starts with no tracker selected. The
+   workflow prompts the user to bind Linear or GitHub Issues for that repo;
+   the selected tracker owns ghosts/planning state. GitHub still owns code
+   delivery (branch/worktree/PR/CI). The bridge uses the selected tracker id in
+   the branch/PR closeout text so review, CI, and merge remain on GitHub.
 3. **Naming.** Skills use clean Factorio nouns with no harness/theme prefix
    (`prospect`, `blueprint`, `ghosts`, `roboports`, `rocket-launch`, `assembler`,
    `main-bus`, `space-age`, `research`, `modules`, `quality`, `inserter`).
@@ -80,8 +81,8 @@ A Factorio-themed kit becomes loom's single planning/issue/execution lane.
   test tables are removed/updated in the cleanup phase, gated on the MVP working.
 - New skill names must clear `validate-skills.mjs` collision checks against
   existing loom and global skills before release.
-- The kit depends on the Linear MCP for planning side effects and on Linear's
-  GitHub integration for the bridge; `.agents/envelope/` is the per-repo binding
-  point, with local-state YAML only mirroring it for validation/runtime checks.
+- The kit depends on an explicit tracker binding before tracked work starts;
+  `.agents/envelope/` is the per-repo binding point, with local-state YAML only
+  mirroring it for validation/runtime checks.
 - If loom ever needs a tracker-agnostic planning lane again, this ADR must be
   superseded.

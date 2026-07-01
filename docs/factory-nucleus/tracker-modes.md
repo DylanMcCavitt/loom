@@ -8,20 +8,16 @@ native objects onto that contract. Comment, status-update, and bridge actions
 are planned as **inert data**; the V1 adapters perform no live writes —
 fixtures in, inert plans out.
 
-Two adapters ship in V1:
+Two peer adapters ship in V1:
 
-- **GitHub Issues — the public baseline.** The portable default any repo can
-  use without Linear (`scripts/factory-nucleus/tracker-github.mjs`).
-- **Linear — the preferred/private planning control plane.** The curated loom
-  kit's planning system of record (`scripts/factory-nucleus/tracker-linear.mjs`;
-  see [ADR 0003](../decisions/0003-factorio-workflow-kit.md)).
+- **GitHub Issues** — uses repo issues as ghosts (`scripts/factory-nucleus/tracker-github.mjs`).
+- **Linear** — uses Linear issues/projects/docs as ghosts (`scripts/factory-nucleus/tracker-linear.mjs`).
 
-Both satisfy the same contract, so the planning surface (`plan`, readiness,
-the branch/PR bridge, closeout verification) is identical regardless of which
-tracker is bound. Picking GitHub does not change *what* Factory Nucleus plans —
-only *where* the ghosts live.
+Neither adapter is the default. New envelopes start with `tracker.provider: none`,
+and the workflow must present the tracker picker before tracked work starts. The
+user's project-level selection decides where ghosts live.
 
-## GitHub Issues baseline semantics
+## GitHub Issues semantics
 
 The GitHub adapter maps GitHub Issues onto the neutral contract:
 
@@ -43,9 +39,9 @@ The GitHub adapter maps GitHub Issues onto the neutral contract:
 
 Example input: [`tests/fixtures/adapter-github.json`](../../tests/fixtures/adapter-github.json).
 
-## Linear as the preferred/private planning control plane
+## Linear semantics
 
-Linear is the operator's preferred, private control plane for planning
+Linear can be the operator's preferred planning surface for a project
 (initiatives, projects, milestones, issues/sub-issues, cycles, triage state,
 docs, status). The Linear adapter maps that vocabulary onto the same contract:
 
@@ -60,16 +56,19 @@ docs, status). The Linear adapter maps that vocabulary onto the same contract:
 
 Example input: [`tests/fixtures/adapter-linear.json`](../../tests/fixtures/adapter-linear.json).
 
-The split is intentional: **GitHub Issues is the public baseline** so the kit
-works for anyone, while **Linear is the preferred/private control plane** for
-the curated loom workflow. Neither tracker is the sole planning system — the
-neutral contract supports both, with GitHub as the public default and Linear
-as the private control plane.
+The split is intentional: neither tracker is the sole planning system. The
+neutral contract supports both, and the picker makes the provider a visible
+project decision instead of an implicit repo default.
 
 ## Binding a tracker
 
 A tracker is **inactive until explicitly bound** with `bind-tracker`; scan and
-onboarding never silently pick a provider.
+onboarding never silently pick a provider. Show the picker first:
+
+```
+node scripts/factory-nucleus/factory.mjs choose-tracker [--root <path>] [--json]
+```
+
 
 - **Linear:** binding records the adapter and the project identity
   (`--team`, `--project`).
@@ -91,7 +90,8 @@ The repo-internal CLI is invoked via `npm run factory <command>` (or
 | --- | --- |
 | `scan` | Zero-footprint repo scan: reads local files and Git only, writes nothing by default. |
 | `init-envelope` | Initialize the repo-local envelope (durable workflow policy). |
-| `bind-tracker` | Explicitly bind a tracker provider (see above). |
+| `choose-tracker` | Print the tracker picker prompt/options without binding. |
+| `bind-tracker` | Explicitly bind the user-selected tracker provider (see above). |
 | `plan` | Plan the `ghost-to-launch` recipe for a ready ghost from a tracker fixture. |
 | `radar` | Check-only drift detection and next-route suggestion. |
 

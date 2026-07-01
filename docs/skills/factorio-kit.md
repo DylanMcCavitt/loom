@@ -1,14 +1,12 @@
 # Factorio Workflow Kit Manifest
 
-The curated, Factorio-themed planning/execution lane for loom. Linear is the
-planning system of record; GitHub is code delivery; the two are bridged by
-Linear's native GitHub integration (branch name carries the Linear issue id, the
-PR auto-links and auto-closes the issue on merge). Decisions are recorded in
-[ADR 0003](../decisions/0003-factorio-workflow-kit.md).
+The curated, Factorio-themed planning/execution lane for loom. Each repo chooses
+its tracker explicitly: Linear or GitHub Issues own ghosts/planning state for
+that project; GitHub owns code delivery through branches, PRs, review, CI, and
+merge. Decisions are recorded in [ADR 0003](../decisions/0003-factorio-workflow-kit.md).
 
-Factory Nucleus itself ships a tracker-neutral planning contract: GitHub Issues
-is the public baseline and Linear is the preferred/private control plane. See
-[tracker modes](../factory-nucleus/tracker-modes.md).
+Factory Nucleus ships a tracker-neutral planning contract with a required picker
+before binding. See [tracker modes](../factory-nucleus/tracker-modes.md).
 
 This manifest is the build envelope. Each skill is authored eval-first: write its
 `evals.json` and content-envelope test, then iterate `SKILL.md` until both pass.
@@ -34,8 +32,9 @@ bus-first   the minimal-diff doctrine every code-writing skill cites.
 
 ## Principles
 
-- **Linear-first, bridged.** Planning artifacts are Linear objects. Code lands as
-  GitHub PRs. The bridge is the branch name (`<issue-id>`) + PR magic words.
+- **Tracker-picked, bridged.** Planning artifacts live in the user-selected
+  tracker for that repo. Code lands as GitHub PRs. The bridge is the branch name
+  (`<issue-id>`) + PR magic words.
 - **Clean Factorio nouns, no prefix.** The `description` `Use when ...` line does
   all routing; names are evocative, not load-bearing for activation.
 - **Doctrine, not sprawl.** `bus-first` is cited, never copied, by code-writing
@@ -396,7 +395,7 @@ migration notes explaining the cutover.
 ## Cutover retire/keep map
 
 Cutover completed (2026-06-23): replacement skills reached parity and the
-GitHub-default planning lane was retired in favor of the Linear-first Factorio
+The previous default planning lane was retired in favor of the tracker-picked Factorio
 kit. Retirements were gated on each replacement reaching parity: `inserter`,
 `main-bus`, `roboports`, `rocket-launch`, and `assembler` now own the old lane's
 active responsibilities.

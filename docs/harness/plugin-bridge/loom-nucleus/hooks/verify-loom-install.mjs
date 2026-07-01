@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Read-only Stop-hook verifier for the loom-nucleus plugin install (plugin-bridge-design section 4.1).
+// Read-only Stop-hook verifier for the loom-nucleus plugin install (plugin bridge design section 4.1).
 //
 // What it checks (all without writing anything):
 //   1. The Codex + Claude plugin.json wrappers parse and the loom-nucleus identity is well-formed

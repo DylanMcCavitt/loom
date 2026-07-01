@@ -22,9 +22,10 @@ Guardrail: `saveScanState` writes only the scan-state file under local state; it
 - Eval: `tests/factory-nucleus-scan.test.mjs` — "factory scan --integrated-envelope --save writes only scan state outside the target repo"
 
 ### 3. A tracker is inferred without an explicit bind
-Guardrail: `init-envelope` leaves `tracker.provider: none`, and `bind-tracker` requires an explicit `--provider`; nothing infers a tracker.
+Guardrail: `init-envelope` leaves `tracker.provider: none`; `choose-tracker` presents provider options without binding; `bind-tracker` requires an explicit `--provider`; nothing infers a tracker.
 - Eval: `tests/factory-nucleus-envelope.test.mjs` — "factory bind-tracker without an explicit provider leaves the tracker inactive"
 - Eval: `tests/factory-nucleus-envelope.test.mjs` — "factory init-envelope CLI leaves tracker binding explicit and unset"
+- Eval: `tests/factory-nucleus-tracker-picker.test.mjs` — "tracker picker presents Linear and GitHub without selecting a default"
 
 ### 4. Scan writes to a protected surface
 Guardrail: scan only *suggests* protected surfaces; it never writes them (still zero-footprint).

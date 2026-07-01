@@ -2,6 +2,24 @@
 
 This repo is a single declarative, dry-run-safe nucleus harness for unifying OMP, Codex, and Claude agent configuration. Runtime state stays in `~/.omp`, `~/.codex`, and `~/.claude`; the repo tracks only portable declarative surfaces, plans, validators, fixtures, and documentation.
 
+## Operator quick start
+
+- Daily project workflow: [`docs/operator/daily-workflow.md`](docs/operator/daily-workflow.md)
+- Harness install/update: [`docs/operator/install-update.md`](docs/operator/install-update.md)
+- Factory Nucleus architecture: [`docs/architecture/factory-nucleus.md`](docs/architecture/factory-nucleus.md)
+- Harness bridge architecture: [`docs/architecture/harness-bridge.md`](docs/architecture/harness-bridge.md)
+
+Useful commands:
+
+```sh
+npm run doctor
+npm run factory -- scan --root <repo>
+npm run factory -- init-envelope --root <repo>
+npm run choose-tracker -- --root <repo>
+npm run render-nucleus
+npm run check
+```
+
 ## Tri-Harness Layers
 
 The intended shape is symmetric: OMP, Codex, and Claude are three layers of the same nucleus, each separated into tracked source, adapter plans, reference material, and local-only runtime state.
@@ -54,11 +72,12 @@ Scope a different live HOME with `--home <dir>` (default `$HOME`); see `node scr
 ## Target Directory Layout
 
 - [`omp/.omp/agent/`](omp/.omp/agent/) - tracked OMP mirror layer; declarative agent instructions, rules, config, and extensions; `track`.
-- [`docs/harness/`](docs/harness/) - manifest, dry-run link plan, OMP snapshots, Codex plan, and Claude plan; mixed `track`, `adapt`, `reference-only`, and `local-only` documentation by category.
+- [`docs/operator/`](docs/operator/) - operator-facing daily workflow and install/update flows.
+- [`docs/architecture/`](docs/architecture/) - compact architecture maps for Factory Nucleus and the harness bridge.
+- [`docs/harness/`](docs/harness/) - manifest, dry-run link plan, OMP snapshots, Codex plan, Claude plan, and plugin bridge details; mixed `track`, `adapt`, `reference-only`, and `local-only` documentation by category.
 - [`.agents/skills/`](.agents/skills/) - repo-local shared workflow skills with one `SKILL.md` per skill; `adapt`.
-- [`scripts/`](scripts/) - validators, refreshers, safety gate, inventory, and benchmark commands; `track`.
+- [`scripts/`](scripts/) - validators, refreshers, safety gate, inventory, benchmark, and doctor commands; `track`.
 - [`tests/`](tests/) - Node `node:test` suites and fixtures covering validators, plans, skills, and gates; `track`.
-- [`docs/issues/`](docs/issues/) - issue-shaping and workflow research notes; `reference-only`.
 - [`scripts/autoresearch.sh`](scripts/autoresearch.sh) - full-flow traceability benchmark script; `reference-only`.
 - [`.gitignore`](.gitignore) - excludes runtime state, local overlays, common credential files, logs, databases, sessions, blobs, and caches; `track`.
 
@@ -74,6 +93,8 @@ npm run check
 
 | Area | Command | Purpose |
 | --- | --- | --- |
+| Doctor | `npm run doctor` | Read-only operator status: git state, tracker picker hint, install marker, live-smoke env presence, and key validators. |
+| Tracker picker | `npm run choose-tracker -- --root <repo>` | Prints Linear/GitHub Issues binding options without selecting a tracker. |
 | Manifest | `node scripts/validate-harness-manifest.mjs` | Validates [`docs/harness/resource-manifest.json`](docs/harness/resource-manifest.json), required categories, local-only coverage, and secret/path hygiene in manifest data. |
 | Manifest inventory | `node scripts/dry-run-harness-inventory.mjs` | Prints manifest classifications without mutation. |
 | Manifest inventory live metadata | `node scripts/dry-run-harness-inventory.mjs --check-live` | Adds path-only live existence metadata without reading private contents. |

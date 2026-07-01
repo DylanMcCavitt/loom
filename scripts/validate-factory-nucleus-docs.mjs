@@ -1,14 +1,12 @@
 #!/usr/bin/env node
 // Docs/reference check for the Factory Nucleus tracker-modes doc (FN-42).
 //
-// Confirms the public tracker-modes reference stays in sync with the CLI and
-// the V1 framing: it names every current `factory.mjs` command and states the
-// GitHub-Issues-baseline / Linear-control-plane split, the public-CLI deferral,
-// and the V1 non-goals. Requiring both the "public baseline" and "control
-// plane" framing is what keeps the doc from regressing into a stale
-// single-tracker planning claim. The command list is sourced from factory.mjs
-// (not hardcoded), so a rename the doc misses fails this check. Wired into
-// `npm run validate` / `npm run check` via the scripts/validate-*.mjs glob.
+// Confirms the tracker-modes reference stays in sync with the CLI and the V1
+// framing: it names every current `factory.mjs` command and states the
+// tracker-neutral / no-default picker model, the public-CLI deferral, and the V1
+// non-goals. The command list is sourced from factory.mjs (not hardcoded), so a
+// rename the doc misses fails this check. Wired into `npm run validate` /
+// `npm run check` via the scripts/validate-*.mjs glob.
 
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -28,9 +26,10 @@ export function parseCommands(factorySource) {
 // Framing the public doc MUST state (lowercased substring match).
 const REQUIRED_PHRASES = Object.freeze([
   ["tracker-neutral contract", "tracker-neutral"],
-  ["GitHub Issues public baseline", "public baseline"],
-  ["GitHub baseline semantics section", "baseline semantics"],
-  ["Linear preferred/private control plane", "control plane"],
+  ["GitHub Issues semantics", "github issues semantics"],
+  ["Linear semantics", "linear semantics"],
+  ["No default tracker", "neither adapter is the default"],
+  ["Tracker picker", "choose-tracker"],
   ["public CLI deferral", "public cli deferral"],
   ["V1 non-goals", "v1 non-goals"],
   ["GitHub Projects non-goal", "github projects"],
