@@ -324,14 +324,14 @@ test("direct OMP-prefixed Codex role candidates are marked superseded", () => {
   }
 });
 
-test("contract slice does not claim rendering linters intake automation or live activation", () => {
+test("contract slice records checks without claiming native rendering intake automation or live activation", () => {
   assert.equal(contract.activation.nativeAgentRendering, "future issue");
   assert.match(contract.activation.evalHarness, /scripts\/validate-shared-agent-evals\.mjs/u);
-  assert.equal(contract.activation.lintRules, "future issue when rules are mechanical");
+  assert.match(contract.activation.lintRules, /scripts\/validate-shared-agent-packages\.mjs/u);
   assert.equal(contract.activation.evidenceIntakeAutomation, "future issue");
   assert.equal(contract.activation.liveHomeApply, "forbidden in this contract slice");
   assert.match(markdown, /does not render or activate/u);
-  for (const issue of ["LOO-97", "LOO-98", "LOO-99", "LOO-100", "LOO-101", "LOO-102"]) {
+  for (const issue of ["LOO-97", "LOO-98", "LOO-99", "LOO-100", "LOO-101", "LOO-102", "LOO-103", "LOO-104"]) {
     assert.match(markdown, new RegExp(issue, "u"));
   }
 });
