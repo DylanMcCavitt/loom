@@ -160,7 +160,8 @@ function destinationSafety(candidate) {
   if (path.isAbsolute(destination)) {
     return `${candidate.id}: destination must not be absolute: ${destination}`;
   }
-  if (!destination.startsWith("~/") && !destination.startsWith(".")) {
+  // A bare filename (e.g. CLAUDE.md) is a project-root-relative destination.
+  if (!destination.startsWith("~/") && !destination.startsWith(".") && destination.includes("/")) {
     return `${candidate.id}: destination must be home-relative (~/...) or project-relative: ${destination}`;
   }
   return null;

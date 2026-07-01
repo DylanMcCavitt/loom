@@ -104,6 +104,8 @@ export function printHarnessTextManifest(manifest, findings) {
     lines.push(`  operation: ${entry.operation}`);
     lines.push(`  liveStatus: ${entry.liveStatus}`);
     lines.push(`  ownership: ${entry.ownership}`);
+    lines.push(`  overwriteRisk: ${entry.overwriteRisk}`);
+    lines.push(`  requiredApproval: ${entry.requiredApproval}`);
   }
   lines.push("");
   lines.push("[OMP ownership matrix] (destination -> observed live state / bucket / next owner)");

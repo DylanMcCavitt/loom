@@ -5,11 +5,12 @@ import { mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
-import { codexPlanPath, codexTemplatesDir, ompSourceRoot } from "../scripts/lib/layout.mjs";
+import { claudePlanPath as claudePlanRel, codexPlanPath, codexTemplatesDir, ompSourceRoot } from "../scripts/lib/layout.mjs";
 
 const renderer = new URL("../scripts/render-nucleus.mjs", import.meta.url).pathname;
 const templatesDir = new URL(`../${codexTemplatesDir}`, import.meta.url).pathname;
 const planPath = new URL(`../${codexPlanPath}`, import.meta.url).pathname;
+const claudePlanPath = new URL(`../${claudePlanRel}`, import.meta.url).pathname;
 import { applyCandidates } from "../scripts/lib/harness-apply-engine.mjs";
 import { configKeys, configKindFor, renderAndGate } from "../scripts/lib/harness-render-gate.mjs";
 
@@ -19,6 +20,15 @@ function withTempPlan(addBoundary) {
   const file = path.join(mkdtempSync(path.join(tmpdir(), "render-plan-")), "adapter-plan.json");
   writeFileSync(file, JSON.stringify(plan));
   return file;
+}
+
+function withTempClaudePlan(mutator) {
+  const plan = JSON.parse(readFileSync(claudePlanPath, "utf8"));
+  const root = mkdtempSync(path.join(tmpdir(), "render-claude-plan-"));
+  mutator(plan, root);
+  const file = path.join(root, "adapter-plan.json");
+  writeFileSync(file, JSON.stringify(plan));
+  return { file, root };
 }
 
 const FORBIDDEN_KEY_TOKENS = [
@@ -75,6 +85,76 @@ test("dry-run renders a deterministic manifest and touches no live path", () => 
   const second = runJson(["--home", home]);
   assert.deepEqual(second.manifest.candidates, first.manifest.candidates);
   assert.deepEqual(second.manifest.skippedLocalOnly, first.manifest.skippedLocalOnly);
+
+  rmSync(home, { recursive: true, force: true });
+});
+
+test("dry-run reports Claude instruction and settings candidates without write eligibility", () => {
+  const home = tempDir("render-home-");
+  const { manifest } = runJson(["--home", home]);
+  const claude = manifest.candidates.filter((entry) => entry.harness === "claude");
+  const byDestination = new Map(claude.map((entry) => [entry.destination, entry]));
+
+  assert.deepEqual(
+    claude.map((entry) => entry.destination),
+    [
+      ".claude/CLAUDE.md",
+      ".claude/settings.json",
+      "~/.claude/CLAUDE.md",
+      "~/.claude/settings.json",
+      "CLAUDE.md",
+    ],
+  );
+  for (const entry of claude) {
+    assert.equal(entry.operation, "future-issue-required");
+    assert.equal(entry.appliable, false);
+    assert.equal(entry.requiredApproval, "n/a (reported only)");
+  }
+  assert.equal(byDestination.get("~/.claude/settings.json").disposition, "adapt");
+  assert.equal(byDestination.get("~/.claude/CLAUDE.md").disposition, "reference-only");
+  assert.ok(manifest.skippedLocalOnly.includes("~/.claude/settings.local.json"));
+  assert.ok(manifest.skippedLocalOnly.includes("~/.claude/history.jsonl"));
+  assert.ok(manifest.skippedLocalOnly.includes("~/.claude/projects/"));
+  assert.ok(!claude.some((entry) => entry.destination.includes("/agents/")));
+  assert.ok(!claude.some((entry) => entry.destination.includes("/skills/")));
+  assert.deepEqual(listFiles(home), []);
+
+  rmSync(home, { recursive: true, force: true });
+});
+
+test("dry-run reports existing Claude files as user-owned future issue work", () => {
+  const home = tempDir("render-home-");
+  mkdirSync(path.join(home, ".claude"), { recursive: true });
+  writeFileSync(path.join(home, ".claude", "CLAUDE.md"), "operator instructions\n");
+  writeFileSync(path.join(home, ".claude", "settings.json"), "{\"includeCoAuthoredBy\": true}\n");
+
+  const { manifest } = runJson(["--home", home]);
+  const byDestination = new Map(manifest.candidates.map((entry) => [entry.destination, entry]));
+  for (const destination of ["~/.claude/CLAUDE.md", "~/.claude/settings.json"]) {
+    const entry = byDestination.get(destination);
+    assert.equal(entry.liveStatus, "user-file");
+    assert.equal(entry.ownership, "user-file");
+    assert.equal(entry.operation, "future-issue-required");
+    assert.equal(entry.appliable, false);
+    assert.equal(entry.overwriteRisk, "would not overwrite (existing non-marker file skipped)");
+  }
+  assert.equal(readFileSync(path.join(home, ".claude", "CLAUDE.md"), "utf8"), "operator instructions\n");
+  assert.equal(readFileSync(path.join(home, ".claude", "settings.json"), "utf8"), "{\"includeCoAuthoredBy\": true}\n");
+
+  rmSync(home, { recursive: true, force: true });
+});
+
+test("text dry-run includes overwrite risk for reported Claude candidates", () => {
+  const home = tempDir("render-home-");
+  mkdirSync(path.join(home, ".claude"), { recursive: true });
+  writeFileSync(path.join(home, ".claude", "settings.json"), "{\"includeCoAuthoredBy\": true}\n");
+
+  const result = run(["--home", home]);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /- ~\/\.claude\/settings\.json/u);
+  assert.match(result.stdout, /operation: future-issue-required/u);
+  assert.match(result.stdout, /overwriteRisk: would not overwrite \(existing non-marker file skipped\)/u);
+  assert.match(result.stdout, /requiredApproval: n\/a \(reported only\)/u);
 
   rmSync(home, { recursive: true, force: true });
 });
@@ -379,6 +459,41 @@ test("gate fails a candidate that targets a local-only destination", () => {
 
   rmSync(home, { recursive: true, force: true });
   rmSync(path.dirname(evilPlan), { recursive: true, force: true });
+});
+
+test("gate fails a Claude instruction/settings candidate that targets local-only state", () => {
+  const home = tempDir("render-home-");
+  const { file, root } = withTempClaudePlan((plan) => {
+    const settings = plan.templateBoundaries.find((boundary) => boundary.id === "claude-settings");
+    settings.candidateDestinations = ["~/.claude/settings.local.json"];
+  });
+
+  const result = run(["--home", home, "--claude-plan", file]);
+  assert.equal(result.status, 1, "expected non-zero exit on Claude local-only destination");
+  assert.match(result.stdout + result.stderr, /local-only/u);
+  assert.deepEqual(listFiles(home), []);
+
+  rmSync(home, { recursive: true, force: true });
+  rmSync(root, { recursive: true, force: true });
+});
+
+test("gate fails a Claude settings candidate with forbidden local routing keys", () => {
+  const home = tempDir("render-home-");
+  const { file, root } = withTempClaudePlan((plan, tempRoot) => {
+    const template = path.join(tempRoot, "settings.template.json");
+    writeFileSync(template, `${JSON.stringify({ model: "blocked-default" }, null, 2)}\n`);
+    const settings = plan.templateBoundaries.find((boundary) => boundary.id === "claude-settings");
+    settings.templatePath = template;
+    settings.candidateDestinations = ["~/.claude/settings.json"];
+  });
+
+  const result = run(["--home", home, "--claude-plan", file]);
+  assert.equal(result.status, 1, "expected non-zero exit on forbidden Claude settings key");
+  assert.match(result.stdout + result.stderr, /forbidden key model/u);
+  assert.deepEqual(listFiles(home), []);
+
+  rmSync(home, { recursive: true, force: true });
+  rmSync(root, { recursive: true, force: true });
 });
 
 // --- JSON manifest gating (LOO-8 slice 1) -----------------------------------------------------

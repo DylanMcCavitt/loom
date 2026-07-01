@@ -31,7 +31,8 @@ const USAGE = [
   "  --approve-omp-repo-owned   with --write, explicitly claim repo-mirror OMP symlinks or replace existing OMP files",
   "  --json                     emit a machine-readable manifest instead of text",
   "  --home <dir>               resolve ~ live destinations under <dir> (default: $HOME)",
-  "  --plan <path>              adapter plan json",
+  "  --plan <path>              Codex adapter plan json",
+  "  --claude-plan <path>       Claude adapter plan json",
   "  --manifest <path>          resource manifest json",
   "  --template-dir <path>      codex template directory",
   "  --omp-source <path>        decided OMP source directory",
@@ -49,6 +50,7 @@ export function readArgs(argv) {
   const valueFlags = new Map([
     ["--home", "home"],
     ["--plan", "plan"],
+    ["--claude-plan", "claudePlan"],
     ["--manifest", "manifest"],
     ["--template-dir", "templateDir"],
     ["--omp-source", "ompSource"],
@@ -131,10 +133,11 @@ function runWrite(candidates, localOnly, options, homeRoot, marker, generatedBy)
 export function main(argv = process.argv.slice(2), generatedBy = "render-nucleus") {
   const options = readArgs(argv);
   const plan = readJson(repoPath(options.plan));
+  const claudePlan = readJson(repoPath(options.claudePlan));
   const manifest = readJson(repoPath(options.manifest));
   const homeRoot = resolveHomeRoot(options);
   const marker = loadMarker(homeRoot, generatedBy);
-  const { candidates, localOnly } = buildCandidates(plan, manifest, options);
+  const { candidates, localOnly } = buildCandidates(plan, manifest, options, claudePlan);
   return options.write
     ? runWrite(candidates, localOnly, options, homeRoot, marker, generatedBy)
     : runDryRun(candidates, localOnly, options, homeRoot, marker);

@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  claudePlanPath,
   codexPlanPath,
   codexTemplatesDir,
   ompSourceRoot,
@@ -20,6 +21,7 @@ export const REPO_ROOT = path.resolve(SCRIPT_DIR, "../..");
 
 export const DEFAULT_RENDER_NUCLEUS_OPTIONS = {
   plan: codexPlanPath,
+  claudePlan: claudePlanPath,
   manifest: resourceManifestPath,
   templateDir: codexTemplatesDir,
   ompSource: ompSourceRoot,
@@ -49,15 +51,20 @@ function collectFiles(root, current = root) {
   return files.sort((left, right) => left.localeCompare(right));
 }
 
-export function localOnlyPatterns(manifest, plan) {
+export function localOnlyPatterns(manifest, ...plans) {
   const patterns = new Set();
   for (const resource of manifest.resources ?? []) {
     if (resource.disposition === "local-only") {
       for (const livePath of asArray(resource.currentLivePath)) patterns.add(livePath);
     }
   }
-  for (const surface of plan.localOnlyCodexSurfaces ?? []) {
-    if (surface.pathPattern) patterns.add(surface.pathPattern);
+  for (const plan of plans) {
+    for (const surface of plan.localOnlyCodexSurfaces ?? []) {
+      if (surface.pathPattern) patterns.add(surface.pathPattern);
+    }
+    for (const surface of plan.localOnlyClaudeSurfaces ?? []) {
+      if (surface.pathPattern) patterns.add(surface.pathPattern);
+    }
   }
   return [...patterns].sort();
 }
@@ -94,6 +101,18 @@ function renderedRelForCodex(displayDestination) {
   return path.join("codex", scope, tail);
 }
 
+function renderedRelForClaude(displayDestination) {
+  const scope = displayDestination.startsWith("~/") ? "user" : "project";
+  const tail = displayDestination.startsWith("~/")
+    ? displayDestination.slice(2)
+    : displayDestination.replace(/^\.?\//u, "");
+  return path.join("claude", scope, tail);
+}
+
+function isClaudeInstructionSettingsBoundary(boundary) {
+  return boundary.id === "claude-instructions" || boundary.id === "claude-settings";
+}
+
 function expandDestination(destination, agentName) {
   return destination.includes("*") ? destination.replace("*", agentName) : destination;
 }
@@ -102,8 +121,8 @@ function isHarnessPrefixedAgentTemplate(templateRel) {
   return /^omp-/u.test(path.basename(templateRel, ".toml"));
 }
 
-export function buildCandidates(plan, manifest, options) {
-  const localOnly = localOnlyPatterns(manifest, plan);
+export function buildCandidates(plan, manifest, options, claudePlan = null) {
+  const localOnly = localOnlyPatterns(manifest, plan, claudePlan ?? {});
   const candidates = [];
 
   const agentTemplates = (plan.ompAgentMappings ?? [])
@@ -141,6 +160,29 @@ export function buildCandidates(plan, manifest, options) {
           appliable,
         });
       }
+    }
+  }
+
+  // Claude instruction/settings slice (LOO-94): reported dry-run candidates only. Writes stay
+  // future-issue-required until HITL apply semantics are decided; nothing here is appliable.
+  for (const boundary of (claudePlan?.templateBoundaries ?? []).filter(isClaudeInstructionSettingsBoundary)) {
+    const source = repoPath(boundary.templatePath);
+    const content = readFileSync(source, "utf8");
+    for (const destination of boundary.candidateDestinations ?? []) {
+      const disposition = resolveDisposition(destination, "claude", manifest, localOnly);
+      candidates.push({
+        id: `claude:${boundary.id}:${destination}`,
+        harness: "claude",
+        boundaryId: boundary.id,
+        forbiddenKeys: boundary.forbiddenKeys ?? [],
+        source: path.relative(REPO_ROOT, source),
+        content,
+        renderedRelPath: renderedRelForClaude(destination),
+        destination,
+        disposition,
+        operation: "future-issue-required",
+        appliable: false,
+      });
     }
   }
 
