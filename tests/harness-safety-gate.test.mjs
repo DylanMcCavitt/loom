@@ -59,7 +59,7 @@ test("dry-run safety gate reports checked-in plan without mutation", () => {
 test("tracked source scan accepts tokenized source fixture", () => {
   const temp = withTempSourceRoot({
     "docs/good.md": "Use `~/.omp/agent/workflow-kit/README.md` and `~/.agents/skills/`.\n",
-    "omp/.omp/agent/AGENTS.md": "Project-specific skills live in `<repo>/.agents/skills/`.\n",
+    "adapters/omp/source/AGENTS.md": "Project-specific skills live in `<repo>/.agents/skills/`.\n",
     "scripts/good.mjs": "const kitRoot = process.env.KIT_ROOT || 'home-relative fallback';\n",
   });
   try {
@@ -109,7 +109,7 @@ test("checked-in dry-run plan covers OMP, Codex, and Claude candidates", () => {
     basePlan.candidateLinks.some((link) => (
       link.mode === "candidate-symlink"
       && link.livePath === "~/.omp/agent/AGENTS.md"
-      && link.proposedTarget === "repo:omp/.omp/agent/AGENTS.md"
+      && link.proposedTarget === "repo:adapters/omp/source/AGENTS.md"
     )),
     "expected one allowed OMP symlink candidate",
   );

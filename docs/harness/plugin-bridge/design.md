@@ -40,7 +40,7 @@ documentation. Anything not confirmed by these sources is marked as an
 The OMP nucleus surfaces (bundled agents, skill candidates, config split) are
 grounded in `docs/harness/omp-builtins/source.json`,
 `docs/harness/omp-builtins/portability-matrix.json`, and
-`omp/.omp/agent/` as recorded by the adapter plans and the resource manifest.
+`adapters/omp/source/` as recorded by the adapter plans and the resource manifest.
 
 ---
 
@@ -204,14 +204,14 @@ unrelated installers:
   depend on remote schema validation.
 - **[Assumption]** "Loom nucleus" = the OMP bundled agents (8) and skill
   candidates (6) recorded under `docs/harness/omp-builtins/` plus the portable
-  config base `omp/.omp/agent/config.yml`, exactly as the #41/#42 adapter plans
+  config base `adapters/omp/source/config.yml`, exactly as the #41/#42 adapter plans
   scoped them.
 
 ---
 
 ## 2. Mapping the Loom nucleus onto each plugin schema
 
-Loom's nucleus has three parts: **skills** (6 portable command-derived skill candidates), **shared agent packages** (the canonical shared nucleus model from `docs/harness/shared-nucleus-agents.*`), and **config** (`omp/.omp/agent/` portable base). The mapping respects each harness's component model and treats native agent files as harness-specific adapter format, not canonical behavior source.
+Loom's nucleus has three parts: **skills** (6 portable command-derived skill candidates), **shared agent packages** (the canonical shared nucleus model from `docs/harness/shared-nucleus-agents.*`), and **config** (`adapters/omp/source/` portable base). The mapping respects each harness's component model and treats native agent files as harness-specific adapter format, not canonical behavior source.
 
 | Loom nucleus piece | Source of truth | Codex plugin surface | Claude plugin surface |
 | --- | --- | --- | --- |
@@ -221,7 +221,7 @@ Loom's nucleus has three parts: **skills** (6 portable command-derived skill can
 | Library/API research deps (for shared `science-pack`) | #41/#42 plus `docs/harness/shared-nucleus-agents.*` | plugin `.mcp.json` via `plugin.json#mcpServers` (optional) | plugin `.mcp.json` via `plugin.json#mcpServers` (optional) |
 | Verified-loop check (§4) | this design | plugin `hooks/hooks.json` `Stop` handler (`type:"command"`) | plugin `hooks/hooks.json` `Stop` handler |
 | Plugin identity + catalog | this design | `.codex-plugin/plugin.json` + `~/.agents/plugins/marketplace.json` (or repo `.agents/plugins/marketplace.json`) | `.claude-plugin/plugin.json` + repo `.claude-plugin/marketplace.json` |
-| Config nucleus `omp/.omp/agent/config.yml` (modelRoles, provider routing, skill toggles) | `omp/.omp/agent/`; resource-manifest | **Not plugin-portable** — provider/model/role config is forbidden in rendered manifests (see §3 gate). Stays OMP source; only neutral `interface` metadata is exposed | **Not plugin-portable** — plugin root `settings.json` is limited to `agent`/`subagentStatusLine`; never carries model/provider/auth |
+| Config nucleus `adapters/omp/source/config.yml` (modelRoles, provider routing, skill toggles) | `adapters/omp/source/`; resource-manifest | **Not plugin-portable** — provider/model/role config is forbidden in rendered manifests (see §3 gate). Stays OMP source; only neutral `interface` metadata is exposed | **Not plugin-portable** — plugin root `settings.json` is limited to `agent`/`subagentStatusLine`; never carries model/provider/auth |
 
 ### 2.1 Packaging decision: one "loom-nucleus" plugin, dual manifest
 

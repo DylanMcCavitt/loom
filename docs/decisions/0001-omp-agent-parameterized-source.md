@@ -27,3 +27,11 @@ Treating `omp/.omp/agent/` as a reference-only snapshot is rejected. That would 
 ## Consequences
 
 Future renderers must merge the tracked portable base with an optional local-only overlay before writing live OMP config. Tracked files must not contain personal model picks, local skill-suppression preferences, consent grants, credentials, or private environment values.
+
+## 2026-07-01 Addendum: Source Root Move
+
+Per ADR 0004 and LOO-107, the tracked OMP source root moved from
+`omp/.omp/agent/` to `adapters/omp/source/`. The source/overlay contract is
+unchanged: `config.yml` remains the portable base, `config.local.yml` remains
+the local-only overlay, and `config.example.yml` documents the overlay shape
+without personal values.

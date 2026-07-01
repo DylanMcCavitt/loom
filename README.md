@@ -24,7 +24,7 @@ npm run check
 
 The intended shape is symmetric: OMP, Codex, and Claude are three layers of the same nucleus, each separated into tracked source, adapter plans, reference material, and local-only runtime state.
 
-- OMP is the present hand-mirrored layer under [`omp/.omp/agent/`](omp/.omp/agent/). It carries repo-facing OMP agent instructions, rules, config, and extensions while runtime state remains outside the repo.
+- OMP is the present hand-mirrored layer under [`adapters/omp/source/`](adapters/omp/source/). It carries repo-facing OMP agent instructions, rules, config, and extensions while runtime state remains outside the repo.
 - Codex is plan-stage. [`docs/harness/codex-adapter-plan.md`](docs/harness/codex-adapter-plan.md) defines how the OMP workflow nucleus maps into Codex config templates, custom agents, shared skills, and dry-run-only candidates.
 - Claude is also plan-stage, with the adapter plan merged through issue #42 / PR #50. [`docs/harness/claude-adapter-plan.md`](docs/harness/claude-adapter-plan.md) and [`docs/harness/claude-adapter-plan/`](docs/harness/claude-adapter-plan/) define Claude instruction, settings, agent, skill, and symlink candidates without writing live Claude state.
 
@@ -71,7 +71,7 @@ Scope a different live HOME with `--home <dir>` (default `$HOME`); see `node scr
 
 ## Target Directory Layout
 
-- [`omp/.omp/agent/`](omp/.omp/agent/) - tracked OMP mirror layer; declarative agent instructions, rules, config, and extensions; `track`.
+- [`adapters/omp/source/`](adapters/omp/source/) - tracked OMP mirror layer; declarative agent instructions, rules, config, and extensions; `track`.
 - [`docs/operator/`](docs/operator/) - operator-facing daily workflow and install/update flows.
 - [`docs/architecture/`](docs/architecture/) - compact architecture maps for Factory Nucleus and the harness bridge.
 - [`docs/harness/`](docs/harness/) - manifest, dry-run link plan, OMP snapshots, Codex plan, Claude plan, and plugin bridge details; mixed `track`, `adapt`, `reference-only`, and `local-only` documentation by category.

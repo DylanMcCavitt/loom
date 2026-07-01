@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { routeIntent } from "../omp/.omp/agent/extensions/workflow-routing.js";
+import { routeIntent } from "../adapters/omp/source/extensions/workflow-routing.js";
 
 const fixtures = JSON.parse(readFileSync(new URL("fixtures/automation-routing.json", import.meta.url), "utf8"));
 

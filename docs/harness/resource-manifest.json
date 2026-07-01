@@ -29,15 +29,15 @@
         "~/.omp/agent/RULES.md",
         "~/.omp/agent/config.yml",
         "~/.omp/agent/workflow-kit/",
-        "repo:omp/.omp/agent/AGENTS.md",
-        "repo:omp/.omp/agent/RULES.md",
-        "repo:omp/.omp/agent/config.yml",
-        "repo:omp/.omp/agent/config.example.yml"
+        "repo:adapters/omp/source/AGENTS.md",
+        "repo:adapters/omp/source/RULES.md",
+        "repo:adapters/omp/source/config.yml",
+        "repo:adapters/omp/source/config.example.yml"
       ],
-      "discoverySource": "Repo-tracked OMP config under omp/.omp/agent plus live OMP workflow-kit category under ~/.omp/agent/workflow-kit/.",
-      "intendedRepoTarget": "omp/.omp/agent/ and docs/harness/omp/",
+      "discoverySource": "Repo-tracked OMP config under adapters/omp/source plus live OMP workflow-kit category under ~/.omp/agent/workflow-kit/.",
+      "intendedRepoTarget": "adapters/omp/source/ and docs/harness/omp/",
       "disposition": "track",
-      "migrationNotes": "Track declarative config and workflow-kit guidance only. omp/.omp/agent/config.yml is portable base source; config.example.yml documents the local overlay shape. Personal model role selections, ignored-skill preferences, and autoqa consent live only in gitignored config.local.yml. Do not read, copy, or normalize private runtime artifacts when comparing live and repo resources."
+      "migrationNotes": "Track declarative config and workflow-kit guidance only. adapters/omp/source/config.yml is portable base source; config.example.yml documents the local overlay shape. Personal model role selections, ignored-skill preferences, and autoqa consent live only in gitignored config.local.yml. Do not read, copy, or normalize private runtime artifacts when comparing live and repo resources."
     },
     {
       "id": "omp-personal-local-overrides",

@@ -50,7 +50,7 @@ const DEFAULTS = {
   plan: "docs/harness/codex-adapter-plan/adapter-plan.json",
   manifest: "docs/harness/resource-manifest.json",
   templateDir: "docs/harness/codex-adapter-plan/templates",
-  ompSource: "omp/.omp/agent",
+  ompSource: "adapters/omp/source",
 };
 
 const MARKER_DIR = ".loom-harness";

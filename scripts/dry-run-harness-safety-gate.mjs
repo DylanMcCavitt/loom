@@ -69,7 +69,7 @@ const REQUIRED_HARNESSES = ["omp", "codex", "claude"];
 const SOURCE_SCAN_SCOPES = [
   /^autoresearch\.sh$/u,
   /^docs\//u,
-  /^omp\/\.omp\/agent\//u,
+  /^adapters\/omp\/source\//u,
   /^scripts\//u,
 ];
 const SOURCE_SCAN_PATTERN_DEFINITIONS = new Set([

@@ -18,7 +18,7 @@ Out of scope: porting `skill`-class behavior (covered by the Codex/Claude adapte
 - `docs/harness/resource-manifest.md` / `docs/harness/resource-manifest.json` — dispositions and the `omp-runtime-state` local-only entry.
 - `docs/harness/codex-adapter-plan.md` and `docs/harness/claude-adapter-plan.md` — the established strict-manual approval, dry-run, and forbidden-content conventions this contract reuses.
 - `docs/harness/dry-run-link-plan.json` and `scripts/dry-run-harness-safety-gate.mjs` — the read-only pre-write safety gate this adapter must pass before any live action.
-- `omp/.omp/agent/RULES.md` — never put secrets in tracked files; preserve unrelated user changes.
+- `adapters/omp/source/RULES.md` — never put secrets in tracked files; preserve unrelated user changes.
 
 ## Why a runtime adapter
 
@@ -87,7 +87,7 @@ Boundary rules:
 
 - Transcripts (`/dump`, `/export`, `/share`), provider auth state (`/login`, `/logout`), and memory store contents (`/memory`) are never returned to the calling harness by default. The matrix `openProductDecisions` "Transcript and share privacy" requires an approval-and-redaction policy before any dump/export/share/move/delete of an active session.
 - Read ops return metadata derived at the OMP boundary, not file contents. The adapter reports presence and counts by selector, consistent with the manifest rule that dry runs "may report presence by path pattern, but never copy session, database, blob, terminal, cache, log, or history contents."
-- `omp/.omp/agent/RULES.md` applies: no secrets, tokens, or credentials cross the adapter into tracked or transported output, and unrelated user state is preserved.
+- `adapters/omp/source/RULES.md` applies: no secrets, tokens, or credentials cross the adapter into tracked or transported output, and unrelated user state is preserved.
 
 ## 4. Operation taxonomy and command classification
 

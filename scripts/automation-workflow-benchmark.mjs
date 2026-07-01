@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { routeIntent } from "../omp/.omp/agent/extensions/workflow-routing.js";
-import { recipeCount } from "../omp/.omp/agent/extensions/workflow-recipes.js";
+import { routeIntent } from "../adapters/omp/source/extensions/workflow-routing.js";
+import { recipeCount } from "../adapters/omp/source/extensions/workflow-recipes.js";
 
 const ROOT = path.resolve(new URL("..", import.meta.url).pathname);
 const ROUTING_FIXTURES = JSON.parse(readFileSync(path.join(ROOT, "tests/fixtures/automation-routing.json"), "utf8"));
@@ -62,8 +62,8 @@ function routeAccuracyScore() {
 
 function unsafeAutonomyViolations() {
   const sources = [
-    "omp/.omp/agent/extensions/workflow-routing.js",
-    "omp/.omp/agent/extensions/workflow-recipes.js",
+    "adapters/omp/source/extensions/workflow-routing.js",
+    "adapters/omp/source/extensions/workflow-recipes.js",
   ].map((relativePath) => readFileSync(path.join(ROOT, relativePath), "utf8"));
   const rawSpawn = /\bBun\.spawn\b|\bspawnSync\b|\bexecFile(?:Sync)?\b|\bexecSync\b|\bchild_process\b/u;
   const mutatingGit = /"(?:push|commit|checkout|switch|reset|rebase|merge|stash|clean|tag)"|"branch",\s*"-[dD]"/u;
