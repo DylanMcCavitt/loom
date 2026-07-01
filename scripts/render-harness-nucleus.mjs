@@ -604,6 +604,25 @@ function liveInspect(candidate, homeRoot, marker) {
     }
     return { livePath, status: "user-file", overwriteRisk: "would not overwrite (existing non-marker file skipped)", ownership: "user-file" };
   }
+  if (lstatSync(livePath).isSymbolicLink()) {
+    if (!repoMirrorSymlink(candidate, livePath)) {
+      return {
+        livePath,
+        status: "marker-symlink-retargeted",
+        overwriteRisk: "would not follow retargeted marker-owned symlink",
+        ownership: "marker-owned",
+      };
+    }
+    if (sha256(readFileSync(livePath)) === sha256(candidate.content)) {
+      return { livePath, status: "already-applied", overwriteRisk: "already applied (no change)", ownership: "marker-owned" };
+    }
+    return {
+      livePath,
+      status: "repo-mirror-content-mismatch",
+      overwriteRisk: "would not follow divergent repo-mirror symlink",
+      ownership: "marker-owned",
+    };
+  }
   const current = sha256(readFileSync(livePath));
   if (current === sha256(candidate.content)) {
     return { livePath, status: "already-applied", overwriteRisk: "already applied (no change)", ownership: "marker-owned" };

@@ -143,6 +143,39 @@ test("dry-run reports OMP repo-mirror symlinks separately from marker ownership"
   }
 });
 
+test("dry-run does not follow retargeted marker-owned OMP symlinks", () => {
+  const home = tempDir("render-home-");
+  try {
+    const agentDir = path.join(home, ".omp", "agent");
+    const markerDir = path.join(home, ".loom-harness");
+    const source = new URL("../omp/.omp/agent/AGENTS.md", import.meta.url).pathname;
+    const live = path.join(agentDir, "AGENTS.md");
+    const retarget = path.join(home, "retarget-dir");
+    mkdirSync(agentDir, { recursive: true });
+    mkdirSync(markerDir, { recursive: true });
+    mkdirSync(retarget, { recursive: true });
+    symlinkSync(source, live);
+    writeFileSync(
+      path.join(markerDir, "applied-manifest.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        generatedBy: "test",
+        entries: { "~/.omp/agent/AGENTS.md": { sha256: "claimed", renderedFrom: "test", appliedAt: "2026-07-01T00:00:00.000Z" } },
+      }),
+    );
+    rmSync(live, { force: true });
+    symlinkSync(retarget, live);
+
+    const { result, manifest } = runJson(["--home", home]);
+    assert.equal(result.status, 0, result.stderr);
+    const candidate = manifest.candidates.find((entry) => entry.destination === "~/.omp/agent/AGENTS.md");
+    assert.equal(candidate.liveStatus, "marker-symlink-retargeted");
+    assert.equal(candidate.ownership, "marker-owned");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
 test("gate runs over rendered output: a forbidden provider key in a template fails the render", () => {
   const home = tempDir("render-home-");
   const td = tempDir("render-templates-");
