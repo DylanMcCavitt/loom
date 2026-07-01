@@ -19,13 +19,13 @@ import {
 const repoFile = (rel) => new URL(`../${rel}`, import.meta.url).pathname;
 const renderer = repoFile("scripts/render-plugin-bridge.mjs");
 const bridgeDir = repoFile("adapters/plugin-bridge");
-const repoSkillsDir = repoFile(".agents/skills");
+const repoSkillsDir = repoFile("nucleus/skills");
 
 const plan = JSON.parse(readFileSync(repoFile("adapters/plugin-bridge/plan.json"), "utf8"));
 const manifest = JSON.parse(readFileSync(repoFile("docs/harness/resource-manifest.json"), "utf8"));
 const matrix = JSON.parse(readFileSync(repoFile("distributions/snapshots/omp-builtins/portability-matrix.json"), "utf8"));
 const source = JSON.parse(readFileSync(repoFile("distributions/snapshots/omp-builtins/source.json"), "utf8"));
-const shared = JSON.parse(readFileSync(repoFile("docs/harness/shared-nucleus-agents.json"), "utf8"));
+const shared = JSON.parse(readFileSync(repoFile("nucleus/agents/shared-nucleus-agents.json"), "utf8"));
 
 function tempDir(prefix) {
   return mkdtempSync(path.join(tmpdir(), prefix));
@@ -102,7 +102,7 @@ test("plugin skills include OMP skill candidates and canonical shared agent pack
   const packagedAgentNames = plan.agents.map((agent) => agent.name).sort();
   assert.deepEqual(packagedAgentNames, sharedAgentNames, "plan agents must match the shared nucleus roster");
   assert.ok(plan.agents.every((agent) => agent.packaged === true && agent.consumedBy === "both"), "shared agents must be packaged for both harnesses");
-  assert.ok(plan.agents.every((agent) => agent.packageRoot === `.agents/skills/${agent.name}`), "shared agents must name the repo-local canonical package root");
+  assert.ok(plan.agents.every((agent) => agent.packageRoot === `nucleus/skills/${agent.name}`), "shared agents must name the repo-local canonical package root");
 
   const skillDirs = readdirSync(path.join(bridgeDir, "loom-nucleus", "skills"), { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
@@ -161,7 +161,7 @@ test("activation proof covers OMP-compatible source, Codex, and Claude shared ro
       candidates.some((candidate) =>
         candidate.kind === "shared-agent-package" &&
         candidate.consumedBy === "both" &&
-        candidate.source === `.agents/skills/${agent.name}/SKILL.md` &&
+        candidate.source === `nucleus/skills/${agent.name}/SKILL.md` &&
         candidate.renderedRelPath === `distributions/loom-nucleus/skills/${agent.name}/SKILL.md` &&
         candidate.destination === `~/.agents/plugins/loom-nucleus/skills/${agent.name}/SKILL.md` &&
         candidate.appliable === true),

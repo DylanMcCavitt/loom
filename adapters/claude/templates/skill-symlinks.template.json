@@ -8,7 +8,7 @@
   "candidates": [
     {
       "name": "omp-btw",
-      "sharedSource": ".agents/skills/omp-btw",
+      "sharedSource": "nucleus/skills/omp-btw",
       "candidateDestinations": [
         "~/.claude/skills/omp-btw",
         ".claude/skills/omp-btw"
@@ -18,7 +18,7 @@
     },
     {
       "name": "omp-guided-goal",
-      "sharedSource": ".agents/skills/omp-guided-goal",
+      "sharedSource": "nucleus/skills/omp-guided-goal",
       "candidateDestinations": [
         "~/.claude/skills/omp-guided-goal",
         ".claude/skills/omp-guided-goal"
@@ -28,7 +28,7 @@
     },
     {
       "name": "omp-handoff",
-      "sharedSource": ".agents/skills/omp-handoff",
+      "sharedSource": "nucleus/skills/omp-handoff",
       "candidateDestinations": [
         "~/.claude/skills/omp-handoff",
         ".claude/skills/omp-handoff"
@@ -38,7 +38,7 @@
     },
     {
       "name": "omp-complaint-to-rule",
-      "sharedSource": ".agents/skills/omp-complaint-to-rule",
+      "sharedSource": "nucleus/skills/omp-complaint-to-rule",
       "candidateDestinations": [
         "~/.claude/skills/omp-complaint-to-rule",
         ".claude/skills/omp-complaint-to-rule"
@@ -48,7 +48,7 @@
     },
     {
       "name": "omp-plan",
-      "sharedSource": ".agents/skills/omp-plan",
+      "sharedSource": "nucleus/skills/omp-plan",
       "candidateDestinations": [
         "~/.claude/skills/omp-plan",
         ".claude/skills/omp-plan"
@@ -58,7 +58,7 @@
     },
     {
       "name": "omp-tangent",
-      "sharedSource": ".agents/skills/omp-tangent",
+      "sharedSource": "nucleus/skills/omp-tangent",
       "candidateDestinations": [
         "~/.claude/skills/omp-tangent",
         ".claude/skills/omp-tangent"

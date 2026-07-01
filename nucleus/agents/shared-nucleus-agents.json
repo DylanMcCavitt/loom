@@ -36,7 +36,7 @@
     "rootInstruction": "AGENTS.md tells coding agents when to load the relevant nucleus agent skill package.",
     "mappingDecision": "Vercel documents one repo-local product-design skill. Loom adapts that shape per canonical nucleus agent: every agent gets its own Vercel-shaped skill folder instead of one giant shared super-skill.",
     "perAgentSkillPackage": {
-      "pathTemplate": ".agents/skills/{agent-name}/",
+      "pathTemplate": "nucleus/skills/{agent-name}/",
       "requiredFiles": [
         "AGENTS.md",
         "SKILL.md",
@@ -454,7 +454,7 @@
   },
   "repairPack": {
     "packageShape": {
-      "path": ".agents/skills/repair-pack/",
+      "path": "nucleus/skills/repair-pack/",
       "requiredFiles": [
         "AGENTS.md",
         "SKILL.md",
@@ -1274,12 +1274,12 @@
   "activation": {
     "issue": "LOO-105",
     "nativeAgentRendering": "deferred; shared packages activate as plugin skills, not direct OMP/Codex/Claude role-agent files",
-    "scratchHomeApply": "implemented by scripts/render-plugin-bridge.mjs --write --home <scratch>; renders canonical .agents/skills/{agent-name}/ packages into approved ~/.agents/plugins/marketplace.json and ~/.agents/plugins/loom-nucleus/** candidates",
+    "scratchHomeApply": "implemented by scripts/render-plugin-bridge.mjs --write --home <scratch>; renders canonical nucleus/skills/{agent-name}/ packages into approved ~/.agents/plugins/marketplace.json and ~/.agents/plugins/loom-nucleus/** candidates",
     "markerManifest": "~/.loom-harness/applied-manifest.json",
     "secondApply": "clean no-op: all appliable candidates report already-applied and markerChanged is false",
     "verifier": "adapters/plugin-bridge/loom-nucleus/hooks/verify-loom-install.mjs reports missing components and marker drift without writing",
     "proofSurfaces": {
-      "omp": "canonical repo-local Vercel-shaped package source under .agents/skills/{agent-name}/",
+      "omp": "canonical repo-local Vercel-shaped package source under nucleus/skills/{agent-name}/",
       "codex": "Codex plugin skills surface via adapters/plugin-bridge/loom-nucleus/.codex-plugin/plugin.json#skills",
       "claude": "Claude plugin skills surface via adapters/plugin-bridge/loom-nucleus/.claude-plugin/plugin.json#skills"
     },

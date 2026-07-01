@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-const skill = readFileSync(new URL("../.agents/skills/space-age/SKILL.md", import.meta.url), "utf8");
+const skill = readFileSync(new URL("../nucleus/skills/space-age/SKILL.md", import.meta.url), "utf8");
 
 test("space-age frontmatter name matches the directory", () => {
   assert.match(skill, /^name: space-age$/mu);

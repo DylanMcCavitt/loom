@@ -95,7 +95,7 @@ test("Codex adapter plan treats workflow-kit as the repo workflow nucleus", () =
   assert.equal(plan.repositoryWorkflowNucleus.source, "~/.omp/agent/workflow-kit");
   assert.equal(plan.repositoryWorkflowNucleus.status, "reference-only");
   const policy = plan.repositoryWorkflowNucleus.portablePolicy.join("\n");
-  for (const marker of ["global layer", "project layer", "idempotent", "one issue/worktree/PR", ".agents/skills", "Use when", "GitHub"]) {
+  for (const marker of ["global layer", "project layer", "idempotent", "one issue/worktree/PR", "nucleus/skills", "Use when", "GitHub"]) {
     assert.match(policy, new RegExp(marker.replace("/", "\\/"), "u"));
   }
   const translation = plan.repositoryWorkflowNucleus.codexTranslation.join("\n");
@@ -157,7 +157,7 @@ test("Codex adapter plan marks local-only surfaces and dry-run-only generated ca
     assert.match(localOnly, new RegExp(marker.replace("/", "\\/"), "u"));
   }
   assert.ok(plan.generatedCandidateSurfaces.every(surface => surface.status === "dry-run-only"));
-  assert.ok(plan.generatedCandidateSurfaces.some(surface => surface.surface === ".agents/skills/{agent-name}/"));
+  assert.ok(plan.generatedCandidateSurfaces.some(surface => surface.surface === "nucleus/skills/{agent-name}/"));
   assert.ok(!plan.generatedCandidateSurfaces.some(surface => surface.surface === "~/.codex/agents/*.toml"));
   assert.ok(!plan.generatedCandidateSurfaces.some(surface => surface.surface === ".codex/agents/*.toml"));
   assert.ok(plan.dryRunValidationStrategy.some(step => /temporary directory/u.test(step)));

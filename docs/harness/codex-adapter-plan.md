@@ -29,12 +29,12 @@ Portable policy:
 - Keep a project layer for repo-local instructions, repo config, `docs/agents` guidance, scope ledger, handoffs, issue/PR templates, labels, and project skills.
 - Preserve full-flow traceability from grilled plan to PRD, issues, triage, one issue/worktree/PR implementation, verification evidence, and handoff when blocked.
 - Use an idempotent apply/check model where a marker manifest defines what "applied" means and existing files are not overwritten.
-- Keep project skills exactly one directory below `.agents/skills`, with `SKILL.md` frontmatter and concrete `Use when ...` triggers.
+- Keep project skills exactly one directory below `nucleus/skills`, with `SKILL.md` frontmatter and concrete `Use when ...` triggers.
 - Treat GitHub issue/PR templates and standard workflow labels as repo workflow surfaces when a repo uses GitHub.
 
 Codex translation:
 
-- Project-specific workflow policy belongs in repo-local instruction/config candidates and shared `.agents/skills` where it is useful across harnesses.
+- Project-specific workflow policy belongs in repo-local instruction/config candidates and shared `nucleus/skills` where it is useful across harnesses.
 - General reusable workflow policy belongs in user-level instruction or skill surfaces, such as `~/.agents/skills`; direct OMP bundled-agent role ports are superseded by the shared nucleus per-agent package contract.
 - Codex custom agents are optional harness adapters only. The canonical target model is one Vercel-shaped package per shared nucleus agent with canonical names and no harness prefixes.
 - Future renderers must produce dry-run manifests before writing live `~/.codex` or repo config.
@@ -43,7 +43,7 @@ Codex translation:
 
 The #39 snapshot contains eight bundled OMP agents. This historical mapping now treats
 direct OMP role ports as superseded context, not active Codex renderer targets. The
-canonical target is `docs/harness/shared-nucleus-agents.*`: one Vercel-shaped package
+canonical target is `nucleus/agents/shared-nucleus-agents.*`: one Vercel-shaped package
 per shared nucleus agent, with canonical names and no `omp-`, `codex-`, or `claude-`
 prefix.
 
@@ -117,7 +117,7 @@ These files preserve the earlier adapter rationale as superseded context and val
 fixtures. They are not active renderer inputs, have no candidate `.codex/agents/*.toml`
 or `~/.codex/agents/*.toml` destinations, and must not be presented as the shared agent
 activation target. Future native agent work must start from
-`docs/harness/shared-nucleus-agents.*` and render per-agent Vercel-shaped packages with
+`nucleus/agents/shared-nucleus-agents.*` and render per-agent Vercel-shaped packages with
 canonical names and no harness prefixes.
 
 ### Skill Enable/Disable Template
@@ -148,7 +148,7 @@ Generated candidates are dry-run-only in this issue:
 
 - `.codex/config.toml` from the base template
 - `~/.codex/omp-harness.config.toml` from the profile template
-- future per-agent Vercel-shaped packages from `docs/harness/shared-nucleus-agents.*`
+- future per-agent Vercel-shaped packages from `nucleus/agents/shared-nucleus-agents.*`
 - future `skills.config` entries merged into `~/.codex/config.toml`
 
 Superseded `omp-*` Codex custom-agent templates are not generated candidates.
@@ -164,7 +164,7 @@ Before any live Codex modification is allowed:
 5. Reject rendered content containing absolute private home paths, API key/token-looking text, provider routing keys, auth cache destinations, or default model changes in the base template. The safety gate also scans in-scope tracked source for absolute private home paths and secret-looking values before any future render/write executor can use that source.
 6. Validate official Codex references cover config, profiles, custom agents/subagents, skills, `AGENTS.md`, and auth/local credential boundaries.
 7. Print a dry-run manifest showing active candidate destination paths, required human approvals, and skipped local-only surfaces; the manifest must not list OMP-prefixed custom agents as shared agent activation targets.
-8. Future agent activation must render per-agent Vercel-shaped packages from `docs/harness/shared-nucleus-agents.json` with canonical names and no harness prefixes.
+8. Future agent activation must render per-agent Vercel-shaped packages from `nucleus/agents/shared-nucleus-agents.json` with canonical names and no harness prefixes.
 9. Require a future issue and PR before writing to live `~/.codex`, `.codex/agents`, or `.agents/skills`.
 
 ### Render-to-write executor
@@ -199,7 +199,7 @@ npm run check
 | --- | --- |
 | What replaces adapted OMP agents as Codex activation targets? | Direct OMP-prefixed Codex custom agents are superseded. Future agent activation targets the shared nucleus contract: one Vercel-shaped package per canonical agent name, with no harness prefix. |
 | Should designer, librarian, planner, and reviewer OMP role candidates remain active renderer targets? | No. Keep their rationale only as superseded adapter-plan context; active renderers must not emit `omp-designer`, `omp-librarian`, `omp-planner`, or `omp-reviewer`. |
-| Which skill candidates should be repo-local .agents/skills versus personal ~/.agents/skills? | Use the OMP workflow-kit split: repo workflow and domain skills go in `.agents/skills`; general reusable workflow skills go in `~/.agents/skills`; inspect the active OMP skill roots before final placement. |
+| Which skill candidates should be repo-local nucleus/skills versus personal ~/.agents/skills? | Use the OMP workflow-kit split: repo workflow and domain skills go in `nucleus/skills`; general reusable workflow skills go in `~/.agents/skills`; inspect the active OMP skill roots before final placement. |
 | Should the optional omp-harness profile set sandbox/approval defaults, or should it only document recommended CLI flags? | The optional `omp-harness` profile should set sandbox and approval defaults. |
 | What review/approval policy is required before merging any generated template into live ~/.codex/config.toml? | Default to a strict manual gate: separate issue/PR, dry-run rendered diff, dangerous-key validation, backup of the live file, and explicit human approval before any write. |
 

@@ -164,7 +164,7 @@ test("safety gate rejects wildcard local-only runtime patterns", () => {
         sourceResource: "codex-agents-skills",
         mode: "candidate-symlink",
         livePath: "~/.codex/app-state.json",
-        proposedTarget: "repo:.agents/skills/",
+        proposedTarget: "repo:nucleus/skills/",
         disposition: "adapt",
         notes: "Invalid: matches ~/.codex/*state*.json.",
       },
@@ -220,7 +220,7 @@ test("safety gate rejects dangerous database, blob, auth, cache, and history pat
         sourceResource: "codex-agents-skills",
         mode: "candidate-symlink",
         livePath: "~/.codex/auth.json",
-        proposedTarget: "repo:.agents/skills/",
+        proposedTarget: "repo:nucleus/skills/",
         disposition: "adapt",
         notes: "Invalid auth live path.",
       },
@@ -264,7 +264,7 @@ test("safety gate rejects bulk Claude skill-root symlink plans", () => {
   const temp = withTempPlan((plan) => {
     const claudeRoot = plan.candidateLinks.find((link) => link.id === "claude-user-skills-root");
     claudeRoot.mode = "candidate-symlink";
-    claudeRoot.proposedTarget = "repo:.agents/skills/";
+    claudeRoot.proposedTarget = "repo:nucleus/skills/";
   });
   try {
     const result = runGate(["--plan", temp.path, "--skip-git-tracked-check"]);

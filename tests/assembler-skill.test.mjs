@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-const skill = readFileSync(new URL("../.agents/skills/assembler/SKILL.md", import.meta.url), "utf8");
+const skill = readFileSync(new URL("../nucleus/skills/assembler/SKILL.md", import.meta.url), "utf8");
 
 test("assembler has the required trigger", () => {
   assert.match(skill, /description: Sets a repository up for the Factorio workflow kit or refreshes its envelope/u);

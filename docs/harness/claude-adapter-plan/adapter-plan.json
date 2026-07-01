@@ -54,11 +54,11 @@
       "Keep a project layer for repo-local instructions, repo config, docs/agents guidance, scope ledger, handoffs, issue/PR templates, labels, and project skills.",
       "Use an idempotent apply/check model where a marker manifest defines what applied means and existing files are not overwritten.",
       "Preserve traceability from grilled plan to PRD, issues, triage, one issue/worktree/PR implementation, verification evidence, and handoff when blocked.",
-      "Require project skills to live one directory below .agents/skills with SKILL.md frontmatter and concrete Use when triggers.",
+      "Require project skills to live one directory below nucleus/skills with SKILL.md frontmatter and concrete Use when triggers.",
       "Treat GitHub issue/PR templates and workflow labels as repo workflow surfaces when the repo uses GitHub."
     ],
     "claudeTranslation": [
-      "Project-specific workflow policy belongs in a repo CLAUDE.md bridge plus repo-local .agents/skills where it is useful across harnesses.",
+      "Project-specific workflow policy belongs in a repo CLAUDE.md bridge plus repo-local nucleus/skills where it is useful across harnesses.",
       "General reusable workflow policy belongs in user-level instruction or skill surfaces such as ~/.claude/CLAUDE.md and ~/.agents/skills.",
       "Claude agents are role adapters, not replacements for the workflow-kit issue lifecycle.",
       "Future renderers must produce dry-run manifests before writing any live ~/.claude file."
@@ -108,7 +108,7 @@
         ".claude/skills/*/SKILL.md",
         "~/.claude/skills/*/SKILL.md"
       ],
-      "notes": "Dry-run examples only. Shared workflow source remains .agents/skills or ~/.agents/skills until a future reviewed apply issue."
+      "notes": "Dry-run examples only. Shared workflow source remains nucleus/skills or ~/.agents/skills until a future reviewed apply issue."
     },
     {
       "id": "curated-skill-symlinks",
@@ -119,7 +119,7 @@
         "~/.claude/skills/<name>",
         ".claude/skills/<name>"
       ],
-      "notes": "Curated per-skill symlinks from shared .agents/skills roots. Never symlink the whole ~/.claude directory or whole skill roots."
+      "notes": "Curated per-skill symlinks from shared nucleus/skills roots. Never symlink the whole ~/.claude directory or whole skill roots."
     }
   ],
   "templateBoundaries": [
@@ -303,7 +303,7 @@
       "ompCommand": "btw",
       "claudeSurface": "skill",
       "futureSkillName": "omp-btw",
-      "sharedWorkflowSource": ".agents/skills/omp-btw",
+      "sharedWorkflowSource": "nucleus/skills/omp-btw",
       "generatedClaudeAdapter": null,
       "adapterMode": "future-reviewed-symlink-candidate",
       "recommendation": "adapt",
@@ -313,7 +313,7 @@
       "ompCommand": "guided-goal",
       "claudeSurface": "skill",
       "futureSkillName": "omp-guided-goal",
-      "sharedWorkflowSource": ".agents/skills/omp-guided-goal",
+      "sharedWorkflowSource": "nucleus/skills/omp-guided-goal",
       "generatedClaudeAdapter": null,
       "adapterMode": "future-reviewed-symlink-candidate",
       "recommendation": "adapt",
@@ -323,7 +323,7 @@
       "ompCommand": "handoff",
       "claudeSurface": "skill",
       "futureSkillName": "omp-handoff",
-      "sharedWorkflowSource": ".agents/skills/omp-handoff",
+      "sharedWorkflowSource": "nucleus/skills/omp-handoff",
       "generatedClaudeAdapter": "adapters/claude/templates/skills/omp-handoff/SKILL.md",
       "adapterMode": "dry-run-template-plus-future-reviewed-symlink",
       "recommendation": "adapt",
@@ -333,7 +333,7 @@
       "ompCommand": "omfg",
       "claudeSurface": "skill",
       "futureSkillName": "omp-complaint-to-rule",
-      "sharedWorkflowSource": ".agents/skills/omp-complaint-to-rule",
+      "sharedWorkflowSource": "nucleus/skills/omp-complaint-to-rule",
       "generatedClaudeAdapter": null,
       "adapterMode": "future-reviewed-symlink-candidate",
       "recommendation": "adapt",
@@ -343,7 +343,7 @@
       "ompCommand": "plan",
       "claudeSurface": "skill",
       "futureSkillName": "omp-plan",
-      "sharedWorkflowSource": ".agents/skills/omp-plan",
+      "sharedWorkflowSource": "nucleus/skills/omp-plan",
       "generatedClaudeAdapter": "adapters/claude/templates/skills/omp-plan/SKILL.md",
       "adapterMode": "dry-run-template-plus-future-reviewed-symlink",
       "recommendation": "adapt",
@@ -353,7 +353,7 @@
       "ompCommand": "tan",
       "claudeSurface": "skill",
       "futureSkillName": "omp-tangent",
-      "sharedWorkflowSource": ".agents/skills/omp-tangent",
+      "sharedWorkflowSource": "nucleus/skills/omp-tangent",
       "generatedClaudeAdapter": null,
       "adapterMode": "future-reviewed-symlink-candidate",
       "recommendation": "adapt",
@@ -364,7 +364,7 @@
     {
       "root": "~/.agents/skills",
       "ownership": "user shared",
-      "risk": "Reusable workflow skills may be shared across OMP, Codex, and Claude, but unversioned edits can drift from repo .agents/skills.",
+      "risk": "Reusable workflow skills may be shared across OMP, Codex, and Claude, but unversioned edits can drift from repo nucleus/skills.",
       "issue42Action": "document-only; prefer curated per-skill symlink candidates; forbid-bulk-symlink"
     },
     {
@@ -380,7 +380,7 @@
       "issue42Action": "document-only; do not delete, move, disable, rewrite, or dedupe existing skills"
     },
     {
-      "root": "repo:.agents/skills",
+      "root": "repo:nucleus/skills",
       "ownership": "repo project",
       "risk": "Repo-local project skills can collide by name with personal/global skills at different scopes.",
       "issue42Action": "document-only; keep as project-scoped source of truth for future Claude symlink candidates"
@@ -559,12 +559,12 @@
     "Reject rendered files containing absolute private home paths, API key/token-looking text, credential-cache destinations, MCP/provider/auth keys, hooks, env secrets, or a default model change.",
     "Validate that the instruction bridge imports @AGENTS.md and that the skill symlink template uses curated per-skill candidates only.",
     "Print a dry-run manifest of candidate destination paths, required human approvals, and skipped local-only surfaces before any live ~/.claude modification is allowed.",
-    "Require a separate future issue/PR before writing to live ~/.claude, project .claude, or shared .agents/skills."
+    "Require a separate future issue/PR before writing to live ~/.claude, project .claude, or shared nucleus/skills."
   ],
   "humanDecisionsBeforeImplementation": [
     "Which adapted OMP roles should become project-scoped .claude/agents versus user-scoped ~/.claude/agents?",
     "Should adapted Claude agents pin a model if local Claude docs later expose a stable model field, or should they inherit the parent session model?",
-    "Which skill candidates should be repo-local .agents/skills versus personal ~/.agents/skills, and how should Claude consume them?",
+    "Which skill candidates should be repo-local nucleus/skills versus personal ~/.agents/skills, and how should Claude consume them?",
     "Should Claude instructions duplicate AGENTS.md or bridge to it?",
     "What review/approval policy is required before writing any generated template into live ~/.claude?"
   ],
@@ -578,8 +578,8 @@
       "resolution": "Inherit the parent session model in this slice because the local Claude authoring docs inspected here establish name, description, and tools conventions without requiring a model field."
     },
     {
-      "question": "Which skill candidates should be repo-local .agents/skills versus personal ~/.agents/skills, and how should Claude consume them?",
-      "resolution": "Use the workflow-kit split: repo workflow and domain skills go in .agents/skills; general reusable workflow skills go in ~/.agents/skills; Claude consumes them via curated per-skill symlinks or reviewed adapter templates, never whole-root copies."
+      "question": "Which skill candidates should be repo-local nucleus/skills versus personal ~/.agents/skills, and how should Claude consume them?",
+      "resolution": "Use the workflow-kit split: repo workflow and domain skills go in nucleus/skills; general reusable workflow skills go in ~/.agents/skills; Claude consumes them via curated per-skill symlinks or reviewed adapter templates, never whole-root copies."
     },
     {
       "question": "Should Claude instructions duplicate AGENTS.md or bridge to it?",

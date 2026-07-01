@@ -1,0 +1,45 @@
+{
+  "skill_name": "assembler",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Set up this repo for the kit.",
+      "expected_output": "Reads the repo and generates the repo-local envelope under .agents/envelope/ (linear-map.md, domain.md, commands.md, and templates/ stamped from blueprint's templates), discovering the Linear team/project/label/state mapping and asking only for facts no tool can supply, create-missing-only and without writing secrets. Does not create Linear issues, branches, or PRs.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Refresh the Linear mapping for this repo — we moved to a new team and added a few labels.",
+      "expected_output": "Refreshes linear-map.md in the existing envelope by re-discovering the Linear team/project/labels/states and proposing a confirmed diff rather than clobbering the existing file, leaving the other bindings intact.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "set up this rebo for the factorio kit, dunno what comands or labels it uses yet",
+      "expected_output": "Still activates despite typos: inspects the repo to detect build/test/lint commands, discovers the Linear mapping via the list tools, asks only for the gaps it cannot infer, and stamps the envelope bindings create-missing-only.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Create an issue for the login bug.",
+      "expected_output": "Does NOT activate as setup; routes to ghosts, since assembler maps the tracker but never opens Linear issues.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Write the PRD for offline mode and give me a PR template.",
+      "expected_output": "Does NOT own spec or template content; routes to blueprint, which owns the canonical templates assembler later stamps into the repo envelope.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "While setting up this repo for the kit, also scaffold a repo-specific skill for our recurring nightly data-import workflow.",
+      "expected_output": "As part of repo setup, scaffolds a repo-specific skill under the repo's own .agents/skills/<repo>-<capability>/ (one level deep, concrete Use-when trigger, reads the envelope, cites the generic kit skill it specializes), only because a real recurring workflow justifies it; passes validate-skills. Generic standalone skill authoring is write-a-skill's job; assembler owns repo-specific scaffolding from the envelope during setup/refresh."
+    },
+    {
+      "id": 7,
+      "prompt": "Is this repo kit-ready? Check the envelope.",
+      "expected_output": "Runs the verify checklist: confirms all four bindings exist and agree, every inserter role maps to a real state/label, commands are real, the AGENTS.md/CLAUDE.md agent-skills block points at .agents/envelope/, and reports kit-ready or the exact gaps. Does not overwrite anything."
+    }
+  ]
+}

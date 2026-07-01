@@ -215,8 +215,8 @@ function validateSkillMappings(portability, plan, errors) {
     if (!/^omp-/u.test(mapping.futureSkillName ?? "")) {
       errors.push(`skill mapping: ${mapping.ompCommand} futureSkillName must start with omp-`);
     }
-    if (!mapping.sharedWorkflowSource?.startsWith(".agents/skills/")) {
-      errors.push(`skill mapping: ${mapping.ompCommand} must name sharedWorkflowSource under .agents/skills`);
+    if (!mapping.sharedWorkflowSource?.startsWith("nucleus/skills/")) {
+      errors.push(`skill mapping: ${mapping.ompCommand} must name sharedWorkflowSource under nucleus/skills`);
     }
     if (!mapping.adapterMode?.includes("review")) {
       errors.push(`skill mapping: ${mapping.ompCommand} must require review before adapter/link apply`);
@@ -329,7 +329,7 @@ function validateTemplateBoundaries(plan, templateFiles, errors) {
     if (candidate.sharedSource === "~/.claude" || candidate.sharedSource === "~/.claude/") {
       errors.push(`skill symlink candidate: ${candidate.name} must not use whole Claude home as source`);
     }
-    if (!candidate.sharedSource?.startsWith(".agents/skills/")) {
+    if (!candidate.sharedSource?.startsWith("nucleus/skills/")) {
       errors.push(`skill symlink candidate: ${candidate.name} must use a per-skill shared source`);
     }
     if (candidate.status !== "candidate-only") errors.push(`skill symlink candidate: ${candidate.name} must be candidate-only`);
@@ -410,7 +410,7 @@ function validateWorkflowNucleus(plan, errors) {
     errors.push("workflow nucleus: status must be reference-only");
   }
   const policy = JSON.stringify(nucleus.portablePolicy ?? []);
-  for (const marker of ["global layer", "project layer", "idempotent", "one issue/worktree/PR", ".agents/skills", "Use when", "GitHub"]) {
+  for (const marker of ["global layer", "project layer", "idempotent", "one issue/worktree/PR", "nucleus/skills", "Use when", "GitHub"]) {
     if (!policy.includes(marker)) errors.push(`workflow nucleus: missing ${marker}`);
   }
   const translation = JSON.stringify(nucleus.claudeTranslation ?? []);
@@ -421,7 +421,7 @@ function validateWorkflowNucleus(plan, errors) {
 
 function validateDuplicateRisks(plan, errors) {
   const text = JSON.stringify(plan.duplicateSkillRootRisks ?? []);
-  for (const marker of ["~/.claude/skills", "~/.codex/skills", "~/.agents/skills", "repo:.agents/skills", "document-only", "forbid-bulk-symlink"]) {
+  for (const marker of ["~/.claude/skills", "~/.codex/skills", "~/.agents/skills", "repo:nucleus/skills", "document-only", "forbid-bulk-symlink"]) {
     if (!text.includes(marker)) errors.push(`duplicate risks: missing ${marker}`);
   }
   for (const forbidden of ["delete", "move", "rewrite", "dedupe"]) {

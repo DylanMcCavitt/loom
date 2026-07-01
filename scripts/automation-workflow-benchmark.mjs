@@ -6,7 +6,7 @@ import { recipeCount } from "../adapters/omp/source/extensions/workflow-recipes.
 
 const ROOT = path.resolve(new URL("..", import.meta.url).pathname);
 const ROUTING_FIXTURES = JSON.parse(readFileSync(path.join(ROOT, "tests/fixtures/automation-routing.json"), "utf8"));
-// Single source of truth: the repo .agents/skills IS the canonical skill home for all
+// Single source of truth: the repo nucleus/skills directory is the canonical skill home for all
 // harnesses. The former "do not vendor these global skills into the repo" penalty is
 // obsolete under consolidation; duplicate overlap now means a name that appears twice.
 
@@ -18,7 +18,7 @@ function parseSkillName(content) {
 }
 
 function localSkillNames() {
-  const skillsDir = path.join(ROOT, ".agents/skills");
+  const skillsDir = path.join(ROOT, "nucleus/skills");
   try {
     return readdirSync(skillsDir, { withFileTypes: true })
       .filter((entry) => entry.isDirectory())

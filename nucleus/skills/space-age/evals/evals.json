@@ -1,0 +1,35 @@
+{
+  "skill_name": "space-age",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Set up CI to promote this from staging to prod.",
+      "expected_output": "Activates space-age: reads the repo envelope for the environments and pipeline, defines the staging -> prod promotion path (each environment a planet, the CI/CD pipeline the space platform carrying the artifact), and runs the rocket-launch gates per environment at each hop — never promoting past a red gate.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Roll this change across the three service repos.",
+      "expected_output": "Activates space-age: coordinates the multi-repo change in dependency order so dependents land after the repos they depend on, walking the envelope's dependency graph and shipping each repo through rocket-launch on its own one-issue-one-branch-one-PR bridge.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "promote the build thru stagin then prod but dont let it past a faild gate",
+      "expected_output": "Still activates space-age despite the typos: lays out the staging -> prod promotion path, reuses the rocket-launch gates per environment, and refuses to promote the artifact past any red/failed gate, reporting which planet's gate blocked it.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Ship this one PR.",
+      "expected_output": "Does NOT activate space-age — a single PR ship on one repo/environment is rocket-launch's job. Routes to rocket-launch, not the cross-environment/cross-repo logistics of space-age.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Implement the offline-mode feature.",
+      "expected_output": "Does NOT activate space-age — this is building one feature, not promoting across environments or coordinating multiple repos. Routes to roboports.",
+      "files": []
+    }
+  ]
+}

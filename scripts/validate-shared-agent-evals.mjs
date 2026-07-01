@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
-const contractPath = path.join(repoRoot, "docs/harness/shared-nucleus-agents.json");
+const contractPath = path.join(repoRoot, "nucleus/agents/shared-nucleus-agents.json");
 const fixturesPath = path.join(repoRoot, "tests/fixtures/shared-agent-evals.json");
 
 const contract = JSON.parse(readFileSync(contractPath, "utf8"));

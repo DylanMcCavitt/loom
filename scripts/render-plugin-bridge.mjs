@@ -132,7 +132,7 @@ export function isAllowedPluginDestination(destination) {
 
 // Finding 3: validate a raw template path BEFORE reading it. Plugin-owned templates must stay
 // under the bridge dir; shared-agent package templates are the exception and must come from the
-// repo-local canonical `.agents/skills/` source tree.
+// repo-local canonical `nucleus/skills/` source tree.
 function resolveTemplatePath(bridgeDir, templateRel) {
   if (typeof templateRel !== "string" || templateRel.length === 0) {
     throw new Error(`invalid template path: ${JSON.stringify(templateRel)}`);
@@ -145,16 +145,16 @@ function resolveTemplatePath(bridgeDir, templateRel) {
   }
 
   const normalized = normalizePathText(templateRel);
-  const sourceRoot = normalized.startsWith(".agents/skills/")
-    ? path.join(REPO_ROOT, ".agents", "skills")
+  const sourceRoot = normalized.startsWith("nucleus/skills/")
+    ? path.join(REPO_ROOT, "nucleus", "skills")
     : bridgeDir;
   const baseReal = realpathSync(sourceRoot);
-  const sourcePath = normalized.startsWith(".agents/skills/")
+  const sourcePath = normalized.startsWith("nucleus/skills/")
     ? path.resolve(REPO_ROOT, normalized)
     : path.resolve(bridgeDir, normalized);
   const real = realpathSync(sourcePath);
   if (real !== baseReal && !real.startsWith(baseReal + path.sep)) {
-    const boundary = normalized.startsWith(".agents/skills/") ? ".agents/skills" : "the bridge dir";
+    const boundary = normalized.startsWith("nucleus/skills/") ? "nucleus/skills" : "the bridge dir";
     throw new Error(`template path escapes ${boundary}: ${templateRel}`);
   }
   return real;
@@ -189,7 +189,7 @@ export function expandedPlanTemplates(plan) {
   const templates = [...(plan.templates ?? [])];
   const seen = new Set(templates.map((template) => template.template));
   for (const agent of plan.agents ?? []) {
-    if (!agent.packaged || !agent.packageRoot?.startsWith(".agents/skills/")) continue;
+    if (!agent.packaged || !agent.packageRoot?.startsWith("nucleus/skills/")) continue;
     const packageRoot = repoPath(agent.packageRoot);
     for (const file of listPackageFiles(packageRoot)) {
       const template = `${agent.packageRoot}/${file}`;
@@ -202,7 +202,7 @@ export function expandedPlanTemplates(plan) {
         template,
         destination: `~/.agents/plugins/loom-nucleus/skills/${agent.name}/${file}`,
         dispositionHarness: "codex",
-        notes: "Canonical shared-agent package file sourced from repo .agents/skills and rendered into plugin distribution output.",
+        notes: "Canonical shared-agent package file sourced from repo nucleus/skills and rendered into plugin distribution output.",
       });
     }
   }

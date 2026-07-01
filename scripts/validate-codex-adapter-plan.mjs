@@ -271,7 +271,7 @@ function validateGeneratedSurfaces(plan, errors) {
   for (const surface of [
     ".codex/config.toml",
     "~/.codex/omp-harness.config.toml",
-    ".agents/skills/{agent-name}/",
+    "nucleus/skills/{agent-name}/",
     "~/.codex/config.toml skills.config entries",
   ]) {
     if (!surfaces.has(surface)) errors.push(`generated surfaces: missing ${surface}`);
@@ -300,7 +300,7 @@ function validateWorkflowNucleus(plan, errors) {
     "project layer",
     "idempotent",
     "one issue/worktree/PR",
-    ".agents/skills",
+    "nucleus/skills",
     "Use when",
     "GitHub",
   ]) {
