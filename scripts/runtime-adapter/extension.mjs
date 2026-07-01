@@ -18,7 +18,7 @@
 //
 // VERSION PIN: the Extensions API surface is actively consolidating. This module is written
 // and verified against the omp version pinned by the adapter contract — `omp/16.0.5`
-// (docs/harness/omp-builtins/source.json, cited by LOO-1). Re-verify `omp://extensions.md`
+// (distributions/snapshots/omp-builtins/source.json, cited by LOO-1). Re-verify `omp://extensions.md`
 // and bump OMP_VERSION_PIN before trusting this extension on a newer omp.
 //
 // Loadable in principle via:  omp --extension scripts/runtime-adapter/extension.mjs

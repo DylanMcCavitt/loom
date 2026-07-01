@@ -3,8 +3,8 @@
   "generatedForIssue": 42,
   "sourceInputs": [
     "docs/harness/resource-manifest.json",
-    "docs/harness/omp-builtins/source.json",
-    "docs/harness/omp-builtins/portability-matrix.json",
+    "distributions/snapshots/omp-builtins/source.json",
+    "distributions/snapshots/omp-builtins/portability-matrix.json",
     "docs/harness/codex-adapter-plan/adapter-plan.json",
     "~/.omp/agent/workflow-kit"
   ],
@@ -227,7 +227,7 @@
   "ompAgentMappings": [
     {
       "ompAgent": "designer",
-      "sourceFile": "docs/harness/omp-builtins/agents/designer.md",
+      "sourceFile": "distributions/snapshots/omp-builtins/agents/designer.md",
       "recommendation": "adapt",
       "claudeSurface": "agent",
       "claudeCandidate": "omp-designer",
@@ -236,7 +236,7 @@
     },
     {
       "ompAgent": "explore",
-      "sourceFile": "docs/harness/omp-builtins/agents/explore.md",
+      "sourceFile": "distributions/snapshots/omp-builtins/agents/explore.md",
       "recommendation": "adapt",
       "claudeSurface": "agent",
       "claudeCandidate": "omp-explorer",
@@ -245,7 +245,7 @@
     },
     {
       "ompAgent": "librarian",
-      "sourceFile": "docs/harness/omp-builtins/agents/librarian.md",
+      "sourceFile": "distributions/snapshots/omp-builtins/agents/librarian.md",
       "recommendation": "adapt",
       "claudeSurface": "agent-or-skill",
       "claudeCandidate": "omp-librarian",
@@ -254,7 +254,7 @@
     },
     {
       "ompAgent": "oracle",
-      "sourceFile": "docs/harness/omp-builtins/agents/oracle.md",
+      "sourceFile": "distributions/snapshots/omp-builtins/agents/oracle.md",
       "recommendation": "drop",
       "claudeSurface": "native-main-thread",
       "claudeCandidate": null,
@@ -263,7 +263,7 @@
     },
     {
       "ompAgent": "plan",
-      "sourceFile": "docs/harness/omp-builtins/agents/plan.md",
+      "sourceFile": "distributions/snapshots/omp-builtins/agents/plan.md",
       "recommendation": "adapt",
       "claudeSurface": "agent",
       "claudeCandidate": "omp-planner",
@@ -272,7 +272,7 @@
     },
     {
       "ompAgent": "quick_task",
-      "sourceFile": "docs/harness/omp-builtins/agents/quick_task.md",
+      "sourceFile": "distributions/snapshots/omp-builtins/agents/quick_task.md",
       "recommendation": "keep",
       "claudeSurface": "native-task-delegation",
       "claudeCandidate": "native-quick-delegation",
@@ -281,7 +281,7 @@
     },
     {
       "ompAgent": "reviewer",
-      "sourceFile": "docs/harness/omp-builtins/agents/reviewer.md",
+      "sourceFile": "distributions/snapshots/omp-builtins/agents/reviewer.md",
       "recommendation": "adapt",
       "claudeSurface": "agent",
       "claudeCandidate": "omp-reviewer",
@@ -290,7 +290,7 @@
     },
     {
       "ompAgent": "task",
-      "sourceFile": "docs/harness/omp-builtins/agents/task.md",
+      "sourceFile": "distributions/snapshots/omp-builtins/agents/task.md",
       "recommendation": "keep",
       "claudeSurface": "native-task-delegation",
       "claudeCandidate": "native-task",
@@ -553,8 +553,8 @@
   "dryRunValidationStrategy": [
     "Render templates into a temporary directory, never directly into ~/.claude or project .claude.",
     "Parse every rendered JSON template with JSON.parse and every agent or skill Markdown template's YAML frontmatter.",
-    "Compare OMP agent mapping rows against docs/harness/omp-builtins/source.json and fail when a bundled agent is unmapped or duplicated.",
-    "Compare OMP skill candidate rows against docs/harness/omp-builtins/portability-matrix.json and require sharedWorkflowSource to stay distinct from generatedClaudeAdapter templates.",
+    "Compare OMP agent mapping rows against distributions/snapshots/omp-builtins/source.json and fail when a bundled agent is unmapped or duplicated.",
+    "Compare OMP skill candidate rows against distributions/snapshots/omp-builtins/portability-matrix.json and require sharedWorkflowSource to stay distinct from generatedClaudeAdapter templates.",
     "Validate that the Claude adapter preserves the workflow-kit repo lifecycle as portable policy rather than copying live OMP or Claude runtime files.",
     "Reject rendered files containing absolute private home paths, API key/token-looking text, credential-cache destinations, MCP/provider/auth keys, hooks, env secrets, or a default model change.",
     "Validate that the instruction bridge imports @AGENTS.md and that the skill symlink template uses curated per-skill candidates only.",

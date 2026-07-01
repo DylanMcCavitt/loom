@@ -16,7 +16,7 @@
       "resourceCategory": "built-ins and package resources",
       "currentLivePath": [],
       "discoverySource": "Installed OMP package resource discovery via package-manager and runtime import lookup; command sources are referenced, not copied, in issue #38.",
-      "intendedRepoTarget": "docs/harness/omp-builtins/",
+      "intendedRepoTarget": "distributions/snapshots/omp-builtins/",
       "disposition": "reference-only",
       "migrationNotes": "Issue #39 snapshots portable bundled agents and indexes built-in command, prompt, and rule sources. Runtime-only commands remain reference-only and are not made portable."
     },
@@ -189,19 +189,19 @@
         "~/.agents/plugins/loom-nucleus/"
       ],
       "discoverySource": "Codex-native personal marketplace root (~/.agents/plugins/) per plugin-bridge design sections 1.1/2.1; render-plugin-bridge writes the catalog and the co-located loom-nucleus plugin source here create-missing-only via the strict-manual render -> gate -> apply executor.",
-      "intendedRepoTarget": "docs/harness/plugin-bridge/",
+      "intendedRepoTarget": "adapters/plugin-bridge/ (authored templates) and distributions/loom-nucleus/ (rendered committed output)",
       "disposition": "adapt",
-      "migrationNotes": "Personal cross-harness marketplace catalog plus loom-nucleus plugin source (dual .codex-plugin/ + .claude-plugin/ manifests over a shared skills/hooks root with canonical shared-agent packages under skills/{agent-name}/). Written only through the gated, marker-tracked, create-missing-only executor. The plugin cache subtrees (~/.codex/plugins/cache/, ~/.claude/plugins/cache/, ~/.claude/plugins/data/) stay local-only and are never write targets."
+      "migrationNotes": "Personal cross-harness marketplace catalog plus loom-nucleus plugin source (dual .codex-plugin/ + .claude-plugin/ manifests over a shared skills/hooks root with canonical shared-agent packages derived from .agents/skills/{agent-name}/ at render time). Written only through the gated, marker-tracked, create-missing-only executor. The plugin cache subtrees (~/.codex/plugins/cache/, ~/.claude/plugins/cache/, ~/.claude/plugins/data/) stay local-only and are never write targets."
     },
     {
       "id": "claude-plugin-marketplace",
       "sourceHarness": "claude",
       "resourceCategory": "repo plugin marketplace catalog",
       "currentLivePath": [
-        "repo:docs/harness/plugin-bridge/.claude-plugin/marketplace.json"
+        "repo:distributions/loom-nucleus/.claude-plugin/marketplace.json"
       ],
       "discoverySource": "Claude repo marketplace catalog (.claude-plugin/marketplace.json), also read by Codex as a legacy-compatible repo marketplace; tracked in-repo source rather than a HOME write.",
-      "intendedRepoTarget": "docs/harness/plugin-bridge/.claude-plugin/marketplace.json",
+      "intendedRepoTarget": "distributions/loom-nucleus/.claude-plugin/marketplace.json",
       "disposition": "track",
       "migrationNotes": "Repo-scoped catalog listing the loom-nucleus entry with a relative source path. Rendered, gated, and reported by render-plugin-bridge; project-scoped, so it is never written to a live HOME path."
     }

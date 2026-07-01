@@ -157,8 +157,8 @@ Before any live Claude modification is allowed:
 
 1. Render templates into a temporary directory, never directly into `~/.claude` or project `.claude`.
 2. Parse every rendered JSON template with `JSON.parse` and every agent or skill Markdown template's YAML frontmatter.
-3. Compare OMP agent mapping rows against `docs/harness/omp-builtins/source.json`; fail when a bundled agent is missing or duplicated.
-4. Compare OMP skill candidate rows against `docs/harness/omp-builtins/portability-matrix.json`; require shared workflow source to stay distinct from generated Claude adapter templates.
+3. Compare OMP agent mapping rows against `distributions/snapshots/omp-builtins/source.json`; fail when a bundled agent is missing or duplicated.
+4. Compare OMP skill candidate rows against `distributions/snapshots/omp-builtins/portability-matrix.json`; require shared workflow source to stay distinct from generated Claude adapter templates.
 5. Validate that the Claude adapter preserves the workflow-kit repo lifecycle as portable policy rather than copying live OMP or Claude runtime files.
 6. Reject rendered content containing absolute private home paths, API key/token-looking text, credential-cache destinations, MCP/provider/auth keys, hooks, env secrets, or a default model change.
 7. Validate that the instruction bridge imports `@AGENTS.md` and the skill symlink template uses curated per-skill candidates only.

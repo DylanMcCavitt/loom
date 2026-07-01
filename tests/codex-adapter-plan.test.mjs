@@ -8,8 +8,8 @@ import { parse as parseToml } from "../scripts/vendor/smol-toml/index.js";
 
 const planPath = new URL("../docs/harness/codex-adapter-plan/adapter-plan.json", import.meta.url).pathname;
 const planMdPath = new URL("../docs/harness/codex-adapter-plan.md", import.meta.url).pathname;
-const sourcePath = new URL("../docs/harness/omp-builtins/source.json", import.meta.url).pathname;
-const portabilityPath = new URL("../docs/harness/omp-builtins/portability-matrix.json", import.meta.url).pathname;
+const sourcePath = new URL("../distributions/snapshots/omp-builtins/source.json", import.meta.url).pathname;
+const portabilityPath = new URL("../distributions/snapshots/omp-builtins/portability-matrix.json", import.meta.url).pathname;
 const templatesDir = new URL("../docs/harness/codex-adapter-plan/templates/", import.meta.url).pathname;
 const validator = new URL("../scripts/validate-codex-adapter-plan.mjs", import.meta.url).pathname;
 

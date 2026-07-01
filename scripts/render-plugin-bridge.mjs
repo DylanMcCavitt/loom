@@ -4,7 +4,7 @@
 // Reuses the slice-1 render-to-write executor (scripts/render-harness-nucleus.mjs) verbatim for the
 // safety gate, marker manifest, create-missing-only apply engine, and disposition resolution. This
 // script only adds a new candidate source: the tracked loom-nucleus plugin templates under
-// docs/harness/plugin-bridge/, plus three plugin-bridge-specific containment guards layered on top of
+// adapters/plugin-bridge/, plus three plugin-bridge-specific containment guards layered on top of
 // the engine gate before any write:
 //   - a destination allowlist: appliable writes may only ever land on the personal marketplace catalog
 //     or the co-located loom-nucleus plugin source; any other home track/adapt destination refuses.
@@ -38,9 +38,9 @@ const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
 
 export const DEFAULTS = {
-  plan: "docs/harness/plugin-bridge/plan.json",
+  plan: "adapters/plugin-bridge/plan.json",
   manifest: "docs/harness/resource-manifest.json",
-  bridgeDir: "docs/harness/plugin-bridge",
+  bridgeDir: "adapters/plugin-bridge",
 };
 
 // The ONLY home destinations render-plugin-bridge may ever write: the personal marketplace catalog
@@ -161,10 +161,14 @@ function resolveTemplatePath(bridgeDir, templateRel) {
 }
 
 function renderedRelPathFor(template) {
-  if (template.kind === "shared-agent-package" && template.destination?.startsWith(`${PLUGIN_BRIDGE_ROOT}/`)) {
-    return path.join("plugin-bridge", template.destination.slice(`${PLUGIN_BRIDGE_ROOT}/`.length));
+  const projectDestination = template.destination?.replace(/^\.\//u, "");
+  if (projectDestination === "distributions/loom-nucleus/.claude-plugin/marketplace.json") {
+    return projectDestination;
   }
-  return path.join("plugin-bridge", template.template);
+  if (template.destination?.startsWith(`${PLUGIN_BRIDGE_ROOT}/loom-nucleus/`)) {
+    return path.join("distributions/loom-nucleus", template.destination.slice(`${PLUGIN_BRIDGE_ROOT}/loom-nucleus/`.length));
+  }
+  return path.join("distributions", template.template);
 }
 
 function listPackageFiles(root, current = root, files = []) {
@@ -181,7 +185,7 @@ function listPackageFiles(root, current = root, files = []) {
   return files.sort();
 }
 
-function expandedPlanTemplates(plan) {
+export function expandedPlanTemplates(plan) {
   const templates = [...(plan.templates ?? [])];
   const seen = new Set(templates.map((template) => template.template));
   for (const agent of plan.agents ?? []) {

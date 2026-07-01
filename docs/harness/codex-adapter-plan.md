@@ -159,7 +159,7 @@ Before any live Codex modification is allowed:
 
 1. Render active templates into a temporary directory, never directly into `~/.codex`; superseded OMP-prefixed custom-agent templates are not active renderer inputs.
 2. Parse all rendered TOML with the vendored in-process TOML parser.
-3. Compare OMP agent mapping rows against `docs/harness/omp-builtins/source.json`; fail when a bundled agent is missing or duplicated.
+3. Compare OMP agent mapping rows against `distributions/snapshots/omp-builtins/source.json`; fail when a bundled agent is missing or duplicated.
 4. Validate that the Codex adapter preserves the workflow-kit repo lifecycle as portable policy rather than copying live OMP runtime files.
 5. Reject rendered content containing absolute private home paths, API key/token-looking text, provider routing keys, auth cache destinations, or default model changes in the base template. The safety gate also scans in-scope tracked source for absolute private home paths and secret-looking values before any future render/write executor can use that source.
 6. Validate official Codex references cover config, profiles, custom agents/subagents, skills, `AGENTS.md`, and auth/local credential boundaries.

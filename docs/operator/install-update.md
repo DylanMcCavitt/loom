@@ -236,7 +236,7 @@ Review the JSON:
 SCRATCH_HOME="$(mktemp -d)"
 node scripts/render-plugin-bridge.mjs --home "$SCRATCH_HOME" --write --json
 node scripts/render-plugin-bridge.mjs --home "$SCRATCH_HOME" --write --json
-node docs/harness/plugin-bridge/loom-nucleus/hooks/verify-loom-install.mjs \
+node adapters/plugin-bridge/loom-nucleus/hooks/verify-loom-install.mjs \
   --root "$SCRATCH_HOME/.agents/plugins/loom-nucleus" \
   --home "$SCRATCH_HOME" \
   --marketplace "$SCRATCH_HOME/.agents/plugins/marketplace.json" \
@@ -264,7 +264,7 @@ personal marketplace catalog and co-located plugin source if missing.
 ### Verify
 
 ```sh
-node docs/harness/plugin-bridge/loom-nucleus/hooks/verify-loom-install.mjs \
+node adapters/plugin-bridge/loom-nucleus/hooks/verify-loom-install.mjs \
   --root "$HOME/.agents/plugins/loom-nucleus" \
   --home "$HOME" \
   --marketplace "$HOME/.agents/plugins/marketplace.json" \
@@ -334,7 +334,7 @@ by this plugin bridge apply.
 ```sh
 SCRATCH_HOME="$(mktemp -d)"
 node scripts/render-plugin-bridge.mjs --home "$SCRATCH_HOME" --write --json
-node docs/harness/plugin-bridge/loom-nucleus/hooks/verify-loom-install.mjs \
+node adapters/plugin-bridge/loom-nucleus/hooks/verify-loom-install.mjs \
   --root "$SCRATCH_HOME/.agents/plugins/loom-nucleus" \
   --home "$SCRATCH_HOME" \
   --marketplace "$SCRATCH_HOME/.agents/plugins/marketplace.json" \
@@ -356,7 +356,7 @@ or enable the Stop hook. Those actions require their own reviewed live step.
 ### Verify
 
 ```sh
-node docs/harness/plugin-bridge/loom-nucleus/hooks/verify-loom-install.mjs \
+node adapters/plugin-bridge/loom-nucleus/hooks/verify-loom-install.mjs \
   --root "$HOME/.agents/plugins/loom-nucleus" \
   --home "$HOME" \
   --marketplace "$HOME/.agents/plugins/marketplace.json" \
@@ -365,10 +365,10 @@ node scripts/render-plugin-bridge.mjs --json
 ```
 
 If a later reviewed step chooses to expose the repo marketplace to Claude, use
-the tracked marketplace root under `docs/harness/plugin-bridge/`:
+the tracked marketplace output under `distributions/loom-nucleus/`:
 
 ```sh
-cd docs/harness/plugin-bridge
+cd distributions/loom-nucleus
 claude plugin validate .
 claude plugin marketplace add .
 ```

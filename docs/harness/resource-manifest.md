@@ -14,16 +14,16 @@ The manifest is category-level by design. It records source harness, resource ca
 ## Coverage
 
 - OMP built-ins and installed package resources are represented as `reference-only`.
-- OMP bundled agents, built-in command sources, prompt categories, and built-in default rules are snapshotted under `docs/harness/omp-builtins/` by issue #39.
+- OMP bundled agents, built-in command sources, prompt categories, and built-in default rules are snapshotted under `distributions/snapshots/omp-builtins/` by issue #39.
 - OMP user/project resources and workflow-kit categories are represented as `track`, with personal OMP config overlays separated as `local-only`.
 - Codex config/profile surfaces are `reference-only`, while Codex agents and skill roots are `adapt`; issue #41 documents the Codex-side adapter plan in `docs/harness/codex-adapter-plan.md`.
 - Claude agents, skills, and settings are `adapt`, with local settings and runtime state separated as `local-only`; issue #42 documents the Claude-side adapter plan in `docs/harness/claude-adapter-plan.md`.
 - Duplicate skill roots across shared, Codex, Claude, OMP workflow-kit, and repo-local skill locations are represented at category level for a later audit.
-- Cross-harness plugin and marketplace surfaces are installed through the `loom-nucleus` plugin bridge; issue LOO-8 documents the bridge in `docs/harness/plugin-bridge/` and `scripts/render-plugin-bridge.mjs`. The personal marketplace root `~/.agents/plugins/` is `adapt`/appliable; the repo Claude marketplace is `track`/reported; plugin caches stay `local-only`.
+- Cross-harness plugin and marketplace surfaces are installed through the `loom-nucleus` plugin bridge; issue LOO-8 documents the design in `docs/harness/plugin-bridge/design.md`, the authored inputs in `adapters/plugin-bridge/`, and the renderer in `scripts/render-plugin-bridge.mjs`. The personal marketplace root `~/.agents/plugins/` is `adapt`/appliable; the repo Claude marketplace is `track`/reported; plugin caches stay `local-only`.
 
 ## OMP Built-ins Snapshot
 
-Issue #39 adds a versioned, non-live reference snapshot at `docs/harness/omp-builtins/`:
+Issue #39 adds a versioned, non-live reference snapshot at `distributions/snapshots/omp-builtins/`:
 
 - `agents/`: portable bundled task agents exported with `omp agents unpack --dir <target> --json`.
 - `source.json`: OMP package/version metadata, expected agent names, file hashes, and refresh commands.
@@ -66,11 +66,11 @@ The Claude adapter plan is dry-run-only. It includes parseable templates for fut
 
 ## Plugin Bridge
 
-Issue LOO-8 adds `docs/harness/plugin-bridge/` and `scripts/render-plugin-bridge.mjs`: the cross-harness plugin bridge that installs the `loom-nucleus` skill, canonical shared-agent package, and hook nucleus into the Codex and Claude plugin and marketplace surfaces. The renderer reuses the issue #56 render -> gate -> apply executor verbatim; it adds only a new candidate source (the tracked plugin templates) and never forks the safety gate or marker model.
+Issue LOO-8 adds `adapters/plugin-bridge/` and `scripts/render-plugin-bridge.mjs`: the cross-harness plugin bridge that installs the `loom-nucleus` skill, derived shared-agent package, and hook nucleus into the Codex and Claude plugin and marketplace surfaces. The renderer reuses the issue #56 render -> gate -> apply executor verbatim; it adds only a new candidate source (the tracked plugin templates) and never forks the safety gate or marker model.
 
-- `docs/harness/plugin-bridge/plan.json`: maps each tracked template to its install destination, kind, consuming harness, and disposition harness, and records the resolved packaging decisions.
-- `docs/harness/plugin-bridge/loom-nucleus/`: the dual-manifest plugin component root (`.codex-plugin/plugin.json`, `.claude-plugin/plugin.json`, six OMP command-derived `skills/*/SKILL.md` entries, canonical shared-agent Vercel-shaped packages under `skills/{agent-name}/`, `hooks/hooks.json` Stop handler, and the read-only `hooks/verify-loom-install.mjs`).
-- `docs/harness/plugin-bridge/.agents/plugins/marketplace.json` and `docs/harness/plugin-bridge/.claude-plugin/marketplace.json`: the Codex personal and Claude repo marketplace catalogs.
+- `adapters/plugin-bridge/plan.json`: maps each tracked template to its install destination, kind, consuming harness, and disposition harness, and records the resolved packaging decisions.
+- `adapters/plugin-bridge/loom-nucleus/`: authored plugin component templates (`.codex-plugin/plugin.json`, `.claude-plugin/plugin.json`, six OMP command-derived `skills/*/SKILL.md` entries, `hooks/hooks.json` Stop handler, and the read-only `hooks/verify-loom-install.mjs`). Shared-agent Vercel-shaped packages are derived from `.agents/skills/{agent-name}/` at render time, not committed here.
+- `adapters/plugin-bridge/.agents/plugins/marketplace.json` and `distributions/loom-nucleus/.claude-plugin/marketplace.json`: the Codex personal and Claude repo marketplace catalogs.
 
 Two new manifest rows make the personal marketplace root `~/.agents/plugins/` (catalog plus co-located `loom-nucleus/` plugin source) `adapt`/appliable and the repo Claude marketplace `track`/reported. The plugin caches (`~/.codex/plugins/cache/`, `~/.claude/plugins/cache/`, `~/.claude/plugins/data/`) stay `local-only` and are rejected as write targets by the gate. The Stop verifier ships dormant and requires a one-time `/hooks` trust step before it arms.
 

@@ -38,8 +38,8 @@ documentation. Anything not confirmed by these sources is marked as an
 - Claude Code — Hooks reference: <https://code.claude.com/docs/en/hooks>
 
 The OMP nucleus surfaces (bundled agents, skill candidates, config split) are
-grounded in `docs/harness/omp-builtins/source.json`,
-`docs/harness/omp-builtins/portability-matrix.json`, and
+grounded in `distributions/snapshots/omp-builtins/source.json`,
+`distributions/snapshots/omp-builtins/portability-matrix.json`, and
 `adapters/omp/source/` as recorded by the adapter plans and the resource manifest.
 
 ---
@@ -203,7 +203,7 @@ unrelated installers:
 - **[Open]** Claude marketplace `$schema` URL is referenced but not live; do not
   depend on remote schema validation.
 - **[Assumption]** "Loom nucleus" = the OMP bundled agents (8) and skill
-  candidates (6) recorded under `docs/harness/omp-builtins/` plus the portable
+  candidates (6) recorded under `distributions/snapshots/omp-builtins/` plus the portable
   config base `adapters/omp/source/config.yml`, exactly as the #41/#42 adapter plans
   scoped them.
 
@@ -215,7 +215,7 @@ Loom's nucleus has three parts: **skills** (6 portable command-derived skill can
 
 | Loom nucleus piece | Source of truth | Codex plugin surface | Claude plugin surface |
 | --- | --- | --- | --- |
-| Skill candidates `omp-btw`, `omp-guided-goal`, `omp-handoff`, `omp-complaint-to-rule`, `omp-plan`, `omp-tangent` | `docs/harness/omp-builtins/portability-matrix.json`; shared `.agents/skills/<name>` | plugin `skills/<name>/SKILL.md` via `plugin.json#skills` | plugin `skills/<name>/SKILL.md` via `plugin.json#skills` |
+| Skill candidates `omp-btw`, `omp-guided-goal`, `omp-handoff`, `omp-complaint-to-rule`, `omp-plan`, `omp-tangent` | `distributions/snapshots/omp-builtins/portability-matrix.json`; shared `.agents/skills/<name>` | plugin `skills/<name>/SKILL.md` via `plugin.json#skills` | plugin `skills/<name>/SKILL.md` via `plugin.json#skills` |
 | Shared nucleus agents such as `spidertron`, `science-pack`, `main-bus`, `biters`, `spitters`, `bus-first`, and `lab` | `docs/harness/shared-nucleus-agents.*` | Canonical Vercel-shaped packages under plugin `skills/{agent-name}/`; Codex may load them as plugin skills and must not get direct `omp-*` custom-agent ports. | Canonical Vercel-shaped packages under plugin `skills/{agent-name}/`; LOO-101 supersedes the #42 `agents/omp-*.md` Claude role ports. |
 | Dropped agent `oracle`; kept-native `task`, `quick_task`, (Codex) `explore` | source.json | not packaged | not packaged |
 | Library/API research deps (for shared `science-pack`) | #41/#42 plus `docs/harness/shared-nucleus-agents.*` | plugin `.mcp.json` via `plugin.json#mcpServers` (optional) | plugin `.mcp.json` via `plugin.json#mcpServers` (optional) |
@@ -316,8 +316,8 @@ and skipped.
 LOO-102 turns the follow-on design into the scratch-HOME activation path:
 
 - `scripts/render-plugin-bridge.mjs` is the plugin-bridge candidate source. It imports the shared render/gate/apply primitives from `scripts/render-harness-nucleus.mjs`, so JSON/TOML/YAML/Markdown gating, marker ownership, backup-on-drift, and create-missing-only semantics stay on one bus.
-- Plugin-owned templates under `docs/harness/plugin-bridge/` render the dual `.codex-plugin/plugin.json` and `.claude-plugin/plugin.json` wrappers, both marketplace manifests, the 6 OMP skill candidates, and `hooks/hooks.json` plus `verify-loom-install.mjs`.
-- Shared-agent packages are authored under `.agents/skills/{agent-name}/` and rendered into `docs/harness/plugin-bridge/loom-nucleus/skills/{agent-name}/` for plugin distribution/test output. The bridge tree is not the canonical authoring surface for those packages.
+- Plugin-owned templates under `adapters/plugin-bridge/` render the dual `.codex-plugin/plugin.json` and `.claude-plugin/plugin.json` wrappers, both marketplace manifests, the 6 OMP skill candidates, and `hooks/hooks.json` plus `verify-loom-install.mjs`.
+- Shared-agent packages are authored under `.agents/skills/{agent-name}/` and derived directly into transient `distributions/loom-nucleus/skills/{agent-name}/` render candidates. The committed bridge tree no longer carries byte-copy package output.
 - `docs/harness/resource-manifest.json` marks the personal plugin marketplace/source root as `adapt`, while Codex/Claude plugin caches, auth, sessions, histories, DBs, local settings, and runtime state remain `local-only`.
 - The writer allowlist is deliberately narrow: only `~/.agents/plugins/marketplace.json` and `~/.agents/plugins/loom-nucleus/**` can be appliable. Track/adapt candidates outside that root refuse the whole write, and symlink-escape checks realpath existing ancestors before any file is created.
 - JSON manifests are parsed and forbidden-key scanned by the shared gate. Markdown YAML frontmatter is scanned; frontmatter-less Markdown stays content-only package guidance.
@@ -328,7 +328,7 @@ LOO-102 turns the follow-on design into the scratch-HOME activation path:
 LOO-102 verification is scratch-HOME-only:
 
 1. **Second write readback** — re-run `scripts/render-plugin-bridge.mjs --home <scratch> --write --json`; every appliable candidate must report `already-applied`, `created` must be empty, and `markerChanged` must be `false`.
-2. **Shipped verifier readback** — run `docs/harness/plugin-bridge/loom-nucleus/hooks/verify-loom-install.mjs` from the scratch install root. It reads only the scratch plugin source and scratch `.loom-harness/applied-manifest.json`, exits 0 on a healthy install, and exits non-zero with structured JSON for missing components or marker hash drift.
+2. **Shipped verifier readback** — run `adapters/plugin-bridge/loom-nucleus/hooks/verify-loom-install.mjs` from the scratch install root. It reads only the scratch plugin source and scratch `.loom-harness/applied-manifest.json`, exits 0 on a healthy install, and exits non-zero with structured JSON for missing components or marker hash drift.
 
 Live harness readback is deferred until the live-HOME promotion gate has passed (`dry-run -> review -> explicit apply`). That future proof may check Codex plugin marketplace/cache metadata or Claude plugin validation after explicit approval; it is not part of LOO-102 and must not read operator runtime state during scratch activation.
 
@@ -338,7 +338,7 @@ Live harness readback is deferred until the live-HOME promotion gate has passed 
 - **[Resolved by LOO-102]** `plugin.json` pins explicit version `0.1.0`.
 - **[Verified live — LOO-15, codex-cli 0.142.0]** Codex auto-discovers `~/.agents/plugins/marketplace.json` (no `codex plugin marketplace add` needed) and reports the marketplace root as `$HOME`, resolving `source.path` relative to that root. The plugin source is therefore referenced as `./.agents/plugins/loom-nucleus` (not `./loom-nucleus`). Install with `codex plugin add <plugin>@<marketplace>` (the verb is `add`, not `install`); credential-less local plugin policy fields parsed and installed cleanly in that proof.
 
-- **[Resolved by LOO-105]** Shared-agent package authorship is `.agents/skills/{agent-name}/`; the checked-in `docs/harness/plugin-bridge/loom-nucleus/skills/{agent-name}/` tree is rendered distribution/test output and must match the canonical source files used by `scripts/render-plugin-bridge.mjs`.
+- **[Resolved by LOO-105]** Shared-agent package authorship is `.agents/skills/{agent-name}/`; shared-agent package candidates are derived from `.agents/skills/{agent-name}/` at render/validation time; the former checked-in byte-copy distribution tree is deleted.
 ---
 
 ## 4. Stop-hook verified loop (botched-install detection)
@@ -390,7 +390,7 @@ What the verifier checks (all derivable from already-tracked data):
 1. The rendered marketplace.json + plugin.json parse and the entry for
    `loom-nucleus` is present and well-formed.
 2. The expected skills/agents are loaded — cross-check the loaded component names
-   against the expected sets in `docs/harness/omp-builtins/source.json` (8 agents)
+   against the expected sets in `distributions/snapshots/omp-builtins/source.json` (8 agents)
    and `portability-matrix.json` (6 skills), so a dropped/duplicated/renamed
    component is caught.
 3. The `~/.loom-harness/applied-manifest.json` marker hashes match the live files
@@ -465,8 +465,8 @@ LOO-102's scratch-HOME activation proof is:
 
 1. **Scratch apply only.** `node scripts/render-plugin-bridge.mjs --home <scratch> --write --json` creates only the approved personal marketplace catalog and co-located `loom-nucleus` plugin source under `~/.agents/plugins/`, then records each owned file in `~/.loom-harness/applied-manifest.json`.
 2. **Idempotency.** A second write against the same scratch HOME creates nothing, reports every appliable candidate as `already-applied`, and leaves `markerChanged: false`.
-3. **Verifier.** `docs/harness/plugin-bridge/loom-nucleus/hooks/verify-loom-install.mjs` is read-only and exits non-zero with structured JSON when a package component is missing or a marker hash drifts.
-4. **Harness surfaces.** The shared roster packages are proved once at the OMP-compatible source package surface (`docs/harness/plugin-bridge/loom-nucleus/skills/{agent-name}/`) and through both plugin consumers: Codex `.codex-plugin/plugin.json#skills` and Claude `.claude-plugin/plugin.json#skills`.
+3. **Verifier.** `adapters/plugin-bridge/loom-nucleus/hooks/verify-loom-install.mjs` is read-only and exits non-zero with structured JSON when a package component is missing or a marker hash drifts.
+4. **Harness surfaces.** The shared roster packages are proved once at the OMP-compatible source package surface (`.agents/skills/{agent-name}/`) and through both plugin consumers: Codex `.codex-plugin/plugin.json#skills` and Claude `.claude-plugin/plugin.json#skills`.
 5. **Promotion gate.** Live-HOME promotion remains **dry-run -> review -> explicit apply**. The dry-run manifest, deterministic package checks, eval checks, and scratch apply/verifier proof must pass before a human approves any non-scratch HOME target.
 6. **Governance.** Evidence/decision-log ownership stays with the LOO-103 collector -> judge -> human review loop. Deterministic checks required before apply are `scripts/validate-shared-agent-packages.mjs`, `scripts/validate-shared-agent-evals.mjs`, `scripts/render-plugin-bridge.mjs --json`, and the targeted scratch apply/verifier proof.
 7. **Local-only boundary.** Existing OMP/Codex/Claude auth, sessions, histories, caches, DBs, browser state, local settings, plugin caches, and runtime files are neither read nor copied; they remain represented only by resource-manifest path patterns.

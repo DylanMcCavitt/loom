@@ -1277,11 +1277,11 @@
     "scratchHomeApply": "implemented by scripts/render-plugin-bridge.mjs --write --home <scratch>; renders canonical .agents/skills/{agent-name}/ packages into approved ~/.agents/plugins/marketplace.json and ~/.agents/plugins/loom-nucleus/** candidates",
     "markerManifest": "~/.loom-harness/applied-manifest.json",
     "secondApply": "clean no-op: all appliable candidates report already-applied and markerChanged is false",
-    "verifier": "docs/harness/plugin-bridge/loom-nucleus/hooks/verify-loom-install.mjs reports missing components and marker drift without writing",
+    "verifier": "adapters/plugin-bridge/loom-nucleus/hooks/verify-loom-install.mjs reports missing components and marker drift without writing",
     "proofSurfaces": {
       "omp": "canonical repo-local Vercel-shaped package source under .agents/skills/{agent-name}/",
-      "codex": "Codex plugin skills surface via docs/harness/plugin-bridge/loom-nucleus/.codex-plugin/plugin.json#skills",
-      "claude": "Claude plugin skills surface via docs/harness/plugin-bridge/loom-nucleus/.claude-plugin/plugin.json#skills"
+      "codex": "Codex plugin skills surface via adapters/plugin-bridge/loom-nucleus/.codex-plugin/plugin.json#skills",
+      "claude": "Claude plugin skills surface via adapters/plugin-bridge/loom-nucleus/.claude-plugin/plugin.json#skills"
     },
     "liveHomePromotionGate": "dry-run -> review -> explicit apply",
     "evidenceDecisionOwner": "LOO-103 collector -> judge -> human review decision log",

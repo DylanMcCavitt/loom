@@ -3,8 +3,8 @@
   "generatedForIssue": 41,
   "sourceInputs": [
     "docs/harness/resource-manifest.json",
-    "docs/harness/omp-builtins/source.json",
-    "docs/harness/omp-builtins/portability-matrix.json",
+    "distributions/snapshots/omp-builtins/source.json",
+    "distributions/snapshots/omp-builtins/portability-matrix.json",
     "~/.omp/agent/workflow-kit"
   ],
   "officialCodexDocs": [
@@ -177,7 +177,7 @@
   "ompAgentMappings": [
     {
       "ompAgent": "designer",
-      "sourceFile": "docs/harness/omp-builtins/agents/designer.md",
+      "sourceFile": "distributions/snapshots/omp-builtins/agents/designer.md",
       "recommendation": "superseded",
       "codexSurface": "shared-nucleus-package",
       "codexCandidate": "spidertron",
@@ -186,7 +186,7 @@
     },
     {
       "ompAgent": "explore",
-      "sourceFile": "docs/harness/omp-builtins/agents/explore.md",
+      "sourceFile": "distributions/snapshots/omp-builtins/agents/explore.md",
       "recommendation": "keep",
       "codexSurface": "native-subagent",
       "codexCandidate": "explorer",
@@ -195,7 +195,7 @@
     },
     {
       "ompAgent": "librarian",
-      "sourceFile": "docs/harness/omp-builtins/agents/librarian.md",
+      "sourceFile": "distributions/snapshots/omp-builtins/agents/librarian.md",
       "recommendation": "superseded",
       "codexSurface": "shared-nucleus-package",
       "codexCandidate": "science-pack",
@@ -204,7 +204,7 @@
     },
     {
       "ompAgent": "oracle",
-      "sourceFile": "docs/harness/omp-builtins/agents/oracle.md",
+      "sourceFile": "distributions/snapshots/omp-builtins/agents/oracle.md",
       "recommendation": "drop",
       "codexSurface": "native-default-or-worker",
       "codexCandidate": null,
@@ -213,7 +213,7 @@
     },
     {
       "ompAgent": "plan",
-      "sourceFile": "docs/harness/omp-builtins/agents/plan.md",
+      "sourceFile": "distributions/snapshots/omp-builtins/agents/plan.md",
       "recommendation": "superseded",
       "codexSurface": "shared-nucleus-package",
       "codexCandidate": "main-bus",
@@ -222,7 +222,7 @@
     },
     {
       "ompAgent": "quick_task",
-      "sourceFile": "docs/harness/omp-builtins/agents/quick_task.md",
+      "sourceFile": "distributions/snapshots/omp-builtins/agents/quick_task.md",
       "recommendation": "keep",
       "codexSurface": "native-worker",
       "codexCandidate": "worker",
@@ -231,7 +231,7 @@
     },
     {
       "ompAgent": "reviewer",
-      "sourceFile": "docs/harness/omp-builtins/agents/reviewer.md",
+      "sourceFile": "distributions/snapshots/omp-builtins/agents/reviewer.md",
       "recommendation": "superseded",
       "codexSurface": "shared-nucleus-package",
       "codexCandidate": "spitters",
@@ -240,7 +240,7 @@
     },
     {
       "ompAgent": "task",
-      "sourceFile": "docs/harness/omp-builtins/agents/task.md",
+      "sourceFile": "distributions/snapshots/omp-builtins/agents/task.md",
       "recommendation": "keep",
       "codexSurface": "native-worker",
       "codexCandidate": "worker",
@@ -399,7 +399,7 @@
   "dryRunValidationStrategy": [
     "Render active templates into a temporary directory, never directly into ~/.codex; superseded OMP-prefixed custom-agent templates are not active renderer inputs.",
     "Parse every rendered TOML template with the vendored in-process TOML parser.",
-    "Compare OMP agent mapping rows against docs/harness/omp-builtins/source.json and fail when a bundled agent is unmapped.",
+    "Compare OMP agent mapping rows against distributions/snapshots/omp-builtins/source.json and fail when a bundled agent is unmapped.",
     "Validate that the Codex adapter preserves the workflow-kit repo lifecycle as portable policy rather than copying live OMP runtime files.",
     "Reject rendered files containing absolute private home paths, API key/token-looking text, auth cache names as destinations, provider routing keys, or model default changes in the base template.",
     "Validate that official Codex doc references cover config, profiles, custom agents/subagents, skills, AGENTS.md, and auth/local credential boundaries.",

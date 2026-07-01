@@ -18,13 +18,13 @@ import {
 
 const repoFile = (rel) => new URL(`../${rel}`, import.meta.url).pathname;
 const renderer = repoFile("scripts/render-plugin-bridge.mjs");
-const bridgeDir = repoFile("docs/harness/plugin-bridge");
+const bridgeDir = repoFile("adapters/plugin-bridge");
 const repoSkillsDir = repoFile(".agents/skills");
 
-const plan = JSON.parse(readFileSync(repoFile("docs/harness/plugin-bridge/plan.json"), "utf8"));
+const plan = JSON.parse(readFileSync(repoFile("adapters/plugin-bridge/plan.json"), "utf8"));
 const manifest = JSON.parse(readFileSync(repoFile("docs/harness/resource-manifest.json"), "utf8"));
-const matrix = JSON.parse(readFileSync(repoFile("docs/harness/omp-builtins/portability-matrix.json"), "utf8"));
-const source = JSON.parse(readFileSync(repoFile("docs/harness/omp-builtins/source.json"), "utf8"));
+const matrix = JSON.parse(readFileSync(repoFile("distributions/snapshots/omp-builtins/portability-matrix.json"), "utf8"));
+const source = JSON.parse(readFileSync(repoFile("distributions/snapshots/omp-builtins/source.json"), "utf8"));
 const shared = JSON.parse(readFileSync(repoFile("docs/harness/shared-nucleus-agents.json"), "utf8"));
 
 function tempDir(prefix) {
@@ -108,7 +108,7 @@ test("plugin skills include OMP skill candidates and canonical shared agent pack
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
     .sort();
-  assert.deepEqual(skillDirs, [...planSkillNames, ...sharedAgentNames].sort(), "plugin skills directory must contain OMP skills plus shared agent packages");
+  assert.deepEqual(skillDirs, planSkillNames, "adapter plugin templates must contain only authored OMP skill inputs");
 
   for (const name of planSkillNames) {
     const skillFile = path.join(bridgeDir, "loom-nucleus", "skills", name, "SKILL.md");
@@ -130,18 +130,14 @@ test("canonical shared agent packages have required shape and unprefixed names",
   for (const agent of plan.agents) {
     assert.doesNotMatch(agent.name, /^(omp|codex|claude)-/u, `shared agent must not be harness-prefixed: ${agent.name}`);
     const rootDir = path.join(repoSkillsDir, agent.name);
-    const pluginRootDir = path.join(bridgeDir, "loom-nucleus", "skills", agent.name);
     for (const rel of requiredFiles) {
       const canonical = readFileSync(path.join(rootDir, rel), "utf8");
       assert.ok(canonical.length > 0, `${agent.name} missing ${rel}`);
-      assert.equal(readFileSync(path.join(pluginRootDir, rel), "utf8"), canonical, `${agent.name} plugin distribution ${rel} must match canonical source`);
     }
     assert.equal(frontmatterName(path.join(rootDir, "SKILL.md")), agent.name, `SKILL.md frontmatter name must equal package name (${agent.name})`);
     const exemplar = path.join(rootDir, "exemplars", `pr-${agent.name}.md`);
-    const pluginExemplar = path.join(pluginRootDir, "exemplars", `pr-${agent.name}.md`);
     const exemplarContent = readFileSync(exemplar, "utf8");
     assert.ok(exemplarContent.includes("No accepted PR exemplar"), `${agent.name} exemplar index missing`);
-    assert.equal(readFileSync(pluginExemplar, "utf8"), exemplarContent, `${agent.name} plugin distribution exemplar must match canonical source`);
   }
 
   const agentsDir = path.join(bridgeDir, "loom-nucleus", "agents");
@@ -166,7 +162,7 @@ test("activation proof covers OMP-compatible source, Codex, and Claude shared ro
         candidate.kind === "shared-agent-package" &&
         candidate.consumedBy === "both" &&
         candidate.source === `.agents/skills/${agent.name}/SKILL.md` &&
-        candidate.renderedRelPath === `plugin-bridge/loom-nucleus/skills/${agent.name}/SKILL.md` &&
+        candidate.renderedRelPath === `distributions/loom-nucleus/skills/${agent.name}/SKILL.md` &&
         candidate.destination === `~/.agents/plugins/loom-nucleus/skills/${agent.name}/SKILL.md` &&
         candidate.appliable === true),
       `${agent.name} missing shared package activation candidate`,
@@ -240,6 +236,9 @@ test("rendered plugin and marketplace manifests parse and carry required fields"
   const claudeEntry = claudeMarket.plugins.find((entry) => entry.name === "loom-nucleus");
   assert.ok(claudeEntry, "Claude marketplace must list loom-nucleus");
   assert.ok(typeof claudeEntry.source === "string" && claudeEntry.source.startsWith("./"), "Claude source must be ./-prefixed");
+
+  const committedClaudeMarket = readFileSync(repoFile("./distributions/loom-nucleus/.claude-plugin/marketplace.json"), "utf8");
+  assert.equal(committedClaudeMarket, byId.get("claude-marketplace").content, "committed Claude marketplace distribution must match the rendered candidate");
 });
 
 test("the repo Claude marketplace is project-scoped and reported, not a HOME write", () => {
@@ -247,7 +246,7 @@ test("the repo Claude marketplace is project-scoped and reported, not a HOME wri
   const claudeMarket = candidates.find((candidate) => candidate.id.includes("claude-marketplace"));
   assert.ok(claudeMarket, "claude-marketplace candidate must exist");
   assert.equal(claudeMarket.appliable, false, "project-scoped catalog must not be a HOME write");
-  assert.ok(!claudeMarket.destination.startsWith("~/"), "project-scoped destination must not be home-anchored");
+  assert.equal(claudeMarket.destination, "./distributions/loom-nucleus/.claude-plugin/marketplace.json");
 
   // Every appliable candidate must be a safe home-anchored ~/.agents/plugins target.
   for (const candidate of candidates.filter((entry) => entry.appliable)) {
@@ -428,7 +427,7 @@ test("[finding 4] gate forbidden-key-scans Markdown YAML frontmatter but allows 
     forbiddenKeys: [],
     source: "test/agent.md",
     content,
-    renderedRelPath: "plugin-bridge/loom-nucleus/skills/evil/SKILL.md",
+    renderedRelPath: "distributions/loom-nucleus/skills/evil/SKILL.md",
     destination: "~/.agents/plugins/loom-nucleus/skills/evil/SKILL.md",
     disposition: "adapt",
     operation: "create-file",

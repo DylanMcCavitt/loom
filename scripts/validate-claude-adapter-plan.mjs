@@ -5,8 +5,8 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 const PLAN_PATH = process.env.CLAUDE_ADAPTER_PLAN_PATH ?? "docs/harness/claude-adapter-plan/adapter-plan.json";
-const SOURCE_PATH = "docs/harness/omp-builtins/source.json";
-const PORTABILITY_PATH = "docs/harness/omp-builtins/portability-matrix.json";
+const SOURCE_PATH = "distributions/snapshots/omp-builtins/source.json";
+const PORTABILITY_PATH = "distributions/snapshots/omp-builtins/portability-matrix.json";
 const PLAN_MD_PATH = "docs/harness/claude-adapter-plan.md";
 const DEFAULT_TEMPLATE_DIR = "docs/harness/claude-adapter-plan/templates";
 const TEMPLATE_DIR = process.env.CLAUDE_ADAPTER_PLAN_TEMPLATE_DIR ?? DEFAULT_TEMPLATE_DIR;

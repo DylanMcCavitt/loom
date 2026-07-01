@@ -1,0 +1,621 @@
+{
+  "schemaVersion": 1,
+  "generatedForIssue": 40,
+  "sourceSnapshot": "distributions/snapshots/omp-builtins/commands.json",
+  "portabilityClasses": {
+    "document": "Document as a cross-harness reference or native-harness concept; do not port as an executable command yet.",
+    "skill": "Portable as shared harness instructions or agent workflow guidance without needing live OMP TUI control.",
+    "cli-wrapper": "Portable through a stable top-level OMP CLI invocation with explicit arguments and no active TUI dependency.",
+    "adapter-required": "Requires a runtime control adapter because the command reads or mutates the active OMP session, TUI state, transcript, provider stream, or collaboration state.",
+    "omp-only": "Keep as an OMP-only interaction because the command is a TUI affordance or local OMP UI action with no useful Codex/Claude target."
+  },
+  "targetSurfaceLegend": {
+    "codex": "Recommended Codex surface after this matrix is accepted.",
+    "claude": "Recommended Claude surface after this matrix is accepted.",
+    "omp": "Recommended OMP disposition."
+  },
+  "commands": [
+    {
+      "name": "advisor",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "adapter command",
+      "claudeTarget": "adapter command",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Toggles or inspects the live advisor runtime for the active session; a SKILL.md file cannot attach to that OMP advisor loop."
+    },
+    {
+      "name": "agents",
+      "portabilityClass": "cli-wrapper",
+      "codexTarget": "CLI wrapper for bundled agent export",
+      "claudeTarget": "CLI wrapper for bundled agent export",
+      "ompTarget": "TUI dashboard plus CLI export",
+      "stableCli": "omp agents unpack --dir <target> --json",
+      "runtimeSessionCommand": true,
+      "rationale": "The slash command opens the OMP dashboard, but bundled agent export has a stable CLI path suitable for controlled wrappers."
+    },
+    {
+      "name": "branch",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "adapter command or native thread branch action",
+      "claudeTarget": "adapter command or documented manual workflow",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Creates a branch from a selected previous message, so it needs access to OMP's live message tree and selection state."
+    },
+    {
+      "name": "browser",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "adapter command mapped to browser/session controls",
+      "claudeTarget": "adapter command where browser controls exist",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Changes browser mode inside the active OMP runtime; static skill instructions cannot change that session flag."
+    },
+    {
+      "name": "btw",
+      "portabilityClass": "skill",
+      "codexTarget": "shared skill for side-question handling",
+      "claudeTarget": "shared skill for side-question handling",
+      "ompTarget": "keep slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "The behavior is a prompt pattern for bounded side questions, but a skill port must not claim to create OMP's ephemeral subthread without an adapter."
+    },
+    {
+      "name": "changelog",
+      "portabilityClass": "document",
+      "codexTarget": "harness reference docs",
+      "claudeTarget": "harness reference docs",
+      "ompTarget": "keep slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": false,
+      "rationale": "Mostly exposes OMP release information; other harnesses should reference their own release notes rather than emulate it."
+    },
+    {
+      "name": "collab",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "adapter command if live relay support is added",
+      "claudeTarget": "adapter command if live relay support is added",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Starts, stops, or views live sharing for the current session and relay connection."
+    },
+    {
+      "name": "compact",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "native compaction command or adapter",
+      "claudeTarget": "native compaction command or adapter",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Mutates the current conversation context; a skill can describe compaction but cannot replace the runtime operation."
+    },
+    {
+      "name": "context",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "native context meter or adapter command",
+      "claudeTarget": "native context meter or adapter command",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Reads active session context accounting from the runtime."
+    },
+    {
+      "name": "copy",
+      "portabilityClass": "omp-only",
+      "codexTarget": "none",
+      "claudeTarget": "none",
+      "ompTarget": "TUI picker",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "A clipboard picker over rendered TUI messages is an OMP interface affordance, not a portable harness skill."
+    },
+    {
+      "name": "debug",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "adapter command for runtime diagnostics",
+      "claudeTarget": "adapter command for runtime diagnostics",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Opens live debug selectors and can dump the next request, which depends on runtime internals."
+    },
+    {
+      "name": "drop",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "native thread delete/new action or adapter",
+      "claudeTarget": "documented manual action or adapter",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Deletes the active OMP session and starts a replacement; this must be mediated by runtime control."
+    },
+    {
+      "name": "dump",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "adapter transcript export",
+      "claudeTarget": "adapter transcript export",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Returns the current transcript from live session state."
+    },
+    {
+      "name": "exit",
+      "portabilityClass": "omp-only",
+      "codexTarget": "none",
+      "claudeTarget": "none",
+      "ompTarget": "TUI lifecycle command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Only exits the OMP application process."
+    },
+    {
+      "name": "export",
+      "portabilityClass": "cli-wrapper",
+      "codexTarget": "CLI wrapper requiring explicit session file",
+      "claudeTarget": "CLI wrapper requiring explicit session file",
+      "ompTarget": "slash command or CLI export",
+      "stableCli": "omp --export <session-file>",
+      "runtimeSessionCommand": true,
+      "rationale": "HTML export has a stable CLI when the session file is explicit; exporting the active TUI session still needs runtime selection."
+    },
+    {
+      "name": "extensions",
+      "portabilityClass": "omp-only",
+      "codexTarget": "none",
+      "claudeTarget": "none",
+      "ompTarget": "Extension Control Center dashboard",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "The slash command opens an OMP dashboard over extension runtime state."
+    },
+    {
+      "name": "fast",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "adapter command mapped to model lane selection",
+      "claudeTarget": "adapter command if model lane control exists",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Toggles fast mode for the active session runtime."
+    },
+    {
+      "name": "force",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "adapter command for next-turn tool forcing",
+      "claudeTarget": "adapter command if tool forcing is exposed",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Forces the next turn to use a tool; this is runtime scheduling state, not static instructions."
+    },
+    {
+      "name": "fork",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "native fork thread action or adapter",
+      "claudeTarget": "documented manual action or adapter",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Forks from a selected prior message in the active session tree."
+    },
+    {
+      "name": "fresh",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "adapter command if provider stream reset is needed",
+      "claudeTarget": "adapter command if provider stream reset is needed",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Resets live provider stream state while preserving transcript."
+    },
+    {
+      "name": "goal",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "native goal tool mapping or adapter",
+      "claudeTarget": "skill plus adapter if persistent runtime goals are required",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Maintains persistent autonomous goal state inside the active OMP session."
+    },
+    {
+      "name": "guided-goal",
+      "portabilityClass": "skill",
+      "codexTarget": "shared skill for goal interview",
+      "claudeTarget": "shared skill for goal interview",
+      "ompTarget": "keep slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "The interview pattern can be shared as skill guidance, but the skill does not enable OMP goal mode after the interview."
+    },
+    {
+      "name": "handoff",
+      "portabilityClass": "skill",
+      "codexTarget": "shared handoff skill",
+      "claudeTarget": "shared handoff skill",
+      "ompTarget": "keep slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Handoff writing is portable as instructions, but auto-spawning a new OMP session with live context is not part of the skill port."
+    },
+    {
+      "name": "hotkeys",
+      "portabilityClass": "omp-only",
+      "codexTarget": "none",
+      "claudeTarget": "none",
+      "ompTarget": "TUI help",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Lists OMP keyboard shortcuts for the current TUI."
+    },
+    {
+      "name": "jobs",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "adapter command or native job list",
+      "claudeTarget": "adapter command if background jobs are exposed",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Reads live OMP background job state."
+    },
+    {
+      "name": "join",
+      "portabilityClass": "cli-wrapper",
+      "codexTarget": "CLI wrapper when joining OMP relay sessions is desired",
+      "claudeTarget": "CLI wrapper when joining OMP relay sessions is desired",
+      "ompTarget": "slash command or CLI join",
+      "stableCli": "omp join <link>",
+      "runtimeSessionCommand": true,
+      "rationale": "Joining a relay is exposed as a stable top-level CLI command, though the joined session remains OMP-owned."
+    },
+    {
+      "name": "leave",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "adapter command if collaboration relay support is added",
+      "claudeTarget": "adapter command if collaboration relay support is added",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Leaves the active collaboration session."
+    },
+    {
+      "name": "login",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "adapter command or native provider auth flow",
+      "claudeTarget": "adapter command or native provider auth flow",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Runs provider OAuth flows against OMP auth/runtime state and may handle redirect URLs."
+    },
+    {
+      "name": "logout",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "adapter command or native provider auth flow",
+      "claudeTarget": "adapter command or native provider auth flow",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Mutates OMP provider auth state for the selected provider."
+    },
+    {
+      "name": "loop",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "adapter command if repeated-turn runtime is added",
+      "claudeTarget": "adapter command if repeated-turn runtime is added",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Resubmits future prompts after yields, which is active runtime scheduling."
+    },
+    {
+      "name": "marketplace",
+      "portabilityClass": "cli-wrapper",
+      "codexTarget": "CLI wrapper for OMP plugin marketplace actions",
+      "claudeTarget": "CLI wrapper for OMP plugin marketplace actions",
+      "ompTarget": "slash command or plugin CLI",
+      "stableCli": "omp plugin marketplace|discover|install|uninstall|list|upgrade",
+      "runtimeSessionCommand": false,
+      "rationale": "Marketplace operations map to the stable `omp plugin` CLI with explicit action and target arguments."
+    },
+    {
+      "name": "mcp",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "adapter command or native MCP configuration surface",
+      "claudeTarget": "adapter command or native MCP configuration surface",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "The indexed slash command is an in-session MCP handler, including resources, prompts, notifications, reloads, and reauth; no stable top-level `omp mcp` CLI is present in the checked OMP version."
+    },
+    {
+      "name": "memory",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "adapter command or native memory surface",
+      "claudeTarget": "adapter command or native memory surface",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Manages OMP memory stores and queues through slash handlers; a skill cannot safely read or mutate those stores."
+    },
+    {
+      "name": "model",
+      "portabilityClass": "cli-wrapper",
+      "codexTarget": "CLI wrapper for model catalog lookup; native picker for switching",
+      "claudeTarget": "CLI wrapper for model catalog lookup; native picker for switching",
+      "ompTarget": "slash status plus models CLI",
+      "stableCli": "omp models [ls|find|refresh|canonical|<provider>] --json",
+      "runtimeSessionCommand": false,
+      "rationale": "Model catalog inspection is stable CLI-backed, while changing the active model stays native to each harness."
+    },
+    {
+      "name": "move",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "adapter command if session-file moves are supported",
+      "claudeTarget": "adapter command if session-file moves are supported",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Moves the current OMP session file, which requires live session identity."
+    },
+    {
+      "name": "new",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "native new thread action or adapter",
+      "claudeTarget": "documented manual action or adapter",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Starts a new active OMP session."
+    },
+    {
+      "name": "omfg",
+      "portabilityClass": "skill",
+      "codexTarget": "shared skill for complaint-to-rule drafting",
+      "claudeTarget": "shared skill for complaint-to-rule drafting",
+      "ompTarget": "keep slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "The complaint-to-rule workflow is portable as a drafting skill, but the skill does not install the resulting rule into OMP."
+    },
+    {
+      "name": "plan",
+      "portabilityClass": "skill",
+      "codexTarget": "shared planning skill plus native plan mode where available",
+      "claudeTarget": "shared planning skill",
+      "ompTarget": "keep slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "The plan-before-execute behavior can be shared as instructions, but toggling OMP plan mode is not provided by the skill itself."
+    },
+    {
+      "name": "plan-review",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "adapter command if plan review state is exposed",
+      "claudeTarget": "adapter command if plan review state is exposed",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Reopens the latest OMP plan review from active runtime state."
+    },
+    {
+      "name": "plugins",
+      "portabilityClass": "cli-wrapper",
+      "codexTarget": "CLI wrapper for OMP plugin list/enable/disable",
+      "claudeTarget": "CLI wrapper for OMP plugin list/enable/disable",
+      "ompTarget": "slash command or plugin CLI",
+      "stableCli": "omp plugin list|enable|disable --json",
+      "runtimeSessionCommand": false,
+      "rationale": "Plugin management has a stable top-level `omp plugin` CLI surface with machine-readable output for list operations."
+    },
+    {
+      "name": "quit",
+      "portabilityClass": "omp-only",
+      "codexTarget": "none",
+      "claudeTarget": "none",
+      "ompTarget": "TUI lifecycle command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Only exits the OMP application process."
+    },
+    {
+      "name": "reload-plugins",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "adapter command if live OMP plugin reload is needed",
+      "claudeTarget": "adapter command if live OMP plugin reload is needed",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Reloads plugin state inside the running OMP process."
+    },
+    {
+      "name": "rename",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "native thread title command or adapter",
+      "claudeTarget": "documented manual title action or adapter",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Renames the active session."
+    },
+    {
+      "name": "resume",
+      "portabilityClass": "cli-wrapper",
+      "codexTarget": "CLI wrapper for launching a selected OMP session",
+      "claudeTarget": "CLI wrapper for launching a selected OMP session",
+      "ompTarget": "slash picker or launch CLI",
+      "stableCli": "omp --resume <session-id-or-path>",
+      "runtimeSessionCommand": true,
+      "rationale": "Launching a specific saved OMP session is stable CLI-backed when the session id or path is explicit."
+    },
+    {
+      "name": "retry",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "native retry action or adapter",
+      "claudeTarget": "native retry action or adapter",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Retries the last failed active agent turn."
+    },
+    {
+      "name": "session",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "native thread/session metadata or adapter",
+      "claudeTarget": "adapter command if session metadata is exposed",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Reads or deletes the current OMP session."
+    },
+    {
+      "name": "settings",
+      "portabilityClass": "cli-wrapper",
+      "codexTarget": "CLI wrapper for OMP config inspection/editing",
+      "claudeTarget": "CLI wrapper for OMP config inspection/editing",
+      "ompTarget": "TUI settings plus config CLI",
+      "stableCli": "omp config list|get|set|reset|path|init-xdg --json",
+      "runtimeSessionCommand": true,
+      "rationale": "The slash command opens a TUI menu, but OMP configuration has a stable CLI path for explicit config operations."
+    },
+    {
+      "name": "setup",
+      "portabilityClass": "cli-wrapper",
+      "codexTarget": "CLI wrapper for dependency/provider setup checks",
+      "claudeTarget": "CLI wrapper for dependency/provider setup checks",
+      "ompTarget": "provider setup slash command plus setup CLI",
+      "stableCli": "omp setup [python|speech] --check --json",
+      "runtimeSessionCommand": true,
+      "rationale": "The slash command opens provider setup, while dependency setup/checks are stable CLI-backed."
+    },
+    {
+      "name": "shake",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "adapter command if context pruning is exposed",
+      "claudeTarget": "adapter command if context pruning is exposed",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Removes heavy content from the active conversation context."
+    },
+    {
+      "name": "share",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "adapter command if encrypted share support is added",
+      "claudeTarget": "adapter command if encrypted share support is added",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Creates a share link from the active session transcript and configured sharing backend."
+    },
+    {
+      "name": "ssh",
+      "portabilityClass": "cli-wrapper",
+      "codexTarget": "CLI wrapper for OMP SSH config",
+      "claudeTarget": "CLI wrapper for OMP SSH config",
+      "ompTarget": "slash command or SSH CLI",
+      "stableCli": "omp ssh add|remove|list --json",
+      "runtimeSessionCommand": false,
+      "rationale": "SSH host configuration is exposed as a stable top-level CLI."
+    },
+    {
+      "name": "stats",
+      "portabilityClass": "cli-wrapper",
+      "codexTarget": "CLI wrapper for stats JSON or dashboard launch",
+      "claudeTarget": "CLI wrapper for stats JSON or dashboard launch",
+      "ompTarget": "slash command or stats CLI",
+      "stableCli": "omp stats --json|--summary|--port <port>",
+      "runtimeSessionCommand": false,
+      "rationale": "Usage stats are available through a stable top-level CLI."
+    },
+    {
+      "name": "switch",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "native model switcher or adapter",
+      "claudeTarget": "native model switcher or adapter",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Changes the model for the active OMP session."
+    },
+    {
+      "name": "tan",
+      "portabilityClass": "skill",
+      "codexTarget": "shared subagent delegation skill",
+      "claudeTarget": "shared subagent delegation skill",
+      "ompTarget": "keep slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "The tangential background-work protocol can be expressed as delegation guidance, but the skill does not launch OMP's runtime background agent."
+    },
+    {
+      "name": "todo",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "native todo tool mapping or adapter",
+      "claudeTarget": "adapter command if todo state is exposed",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Manages OMP todo state through the slash handler; other harnesses should use native todo surfaces unless an adapter maps state."
+    },
+    {
+      "name": "tools",
+      "portabilityClass": "document",
+      "codexTarget": "harness capability reference",
+      "claudeTarget": "harness capability reference",
+      "ompTarget": "keep slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": false,
+      "rationale": "Available tools are harness-specific; the portable output is a reference table, not a shared command."
+    },
+    {
+      "name": "tree",
+      "portabilityClass": "adapter-required",
+      "codexTarget": "native thread tree action or adapter",
+      "claudeTarget": "documented manual action or adapter",
+      "ompTarget": "in-session slash command",
+      "stableCli": null,
+      "runtimeSessionCommand": true,
+      "rationale": "Navigates OMP's active session tree and branch selection."
+    },
+    {
+      "name": "usage",
+      "portabilityClass": "cli-wrapper",
+      "codexTarget": "CLI wrapper for provider usage reports",
+      "claudeTarget": "CLI wrapper for provider usage reports",
+      "ompTarget": "slash command or usage CLI",
+      "stableCli": "omp usage --json --redact",
+      "runtimeSessionCommand": false,
+      "rationale": "Provider usage has a stable top-level CLI with JSON and redaction flags."
+    }
+  ],
+  "openProductDecisions": [
+    {
+      "decision": "Runtime adapter command envelope",
+      "question": "Should Codex and Claude call OMP runtime controls through a single adapter command schema, separate per-command tools, or native host actions when available?"
+    },
+    {
+      "decision": "Live session identity",
+      "question": "How should a non-OMP harness select the active OMP session for adapter-required commands without accidentally mutating the wrong TUI session?"
+    },
+    {
+      "decision": "Skill ports versus native features",
+      "question": "For commands such as plan, handoff, tan, and guided-goal, should shared skills be authored as exact OMP behavior clones or as harness-native workflow equivalents?"
+    },
+    {
+      "decision": "CLI wrapper permissions",
+      "question": "Which CLI wrappers are allowed to mutate user/project OMP config, auth, plugins, or SSH hosts, and which should be read-only until reviewed?"
+    },
+    {
+      "decision": "Transcript and share privacy",
+      "question": "What approval and redaction policy is required before adapter commands can dump, export, share, move, or delete active sessions?"
+    }
+  ]
+}

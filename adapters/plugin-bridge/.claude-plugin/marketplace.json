@@ -1,0 +1,11 @@
+{
+  "name": "loom-nucleus-plugins",
+  "owner": { "name": "Loom" },
+  "plugins": [
+    {
+      "name": "loom-nucleus",
+      "source": "./distributions/loom-nucleus",
+      "description": "Loom nucleus: portable OMP skills, adapted agents, and a Stop-hook install verifier."
+    }
+  ]
+}

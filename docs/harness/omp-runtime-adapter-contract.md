@@ -2,19 +2,19 @@
 
 Linear LOO-1 defines the design contract for an OMP runtime control adapter: the surface a non-OMP harness (Codex or Claude) would use to reach into a live OMP session for commands that cannot be ported as plain skills. This slice is a design contract only. It defines the boundary, taxonomy, transport recommendation, and proposed acceptance criteria; it does not implement an adapter, does not open a control endpoint, and does not read or copy any live OMP runtime state.
 
-The canonical machine-readable command source is `docs/harness/omp-builtins/portability-matrix.json`, generated for issue #40 from the issue #39 command snapshot at `docs/harness/omp-builtins/commands.json`. The OMP version behind that snapshot is `omp/16.0.5` (`docs/harness/omp-builtins/source.json`). Every command cited below is a real row in the portability matrix.
+The canonical machine-readable command source is `distributions/snapshots/omp-builtins/portability-matrix.json`, generated for issue #40 from the issue #39 command snapshot at `distributions/snapshots/omp-builtins/commands.json`. The OMP version behind that snapshot is `omp/16.0.5` (`distributions/snapshots/omp-builtins/source.json`). Every command cited below is a real row in the portability matrix.
 
 ## Scope and non-goals
 
-In scope: the contract for commands the portability matrix marks `adapter-required` (and the `runtimeSessionCommand: true` hybrids), because plain `SKILL.md` ports cannot attach to the live OMP TUI/session runtime (`docs/harness/omp-builtins/portability-matrix.md`, "Runtime boundary").
+In scope: the contract for commands the portability matrix marks `adapter-required` (and the `runtimeSessionCommand: true` hybrids), because plain `SKILL.md` ports cannot attach to the live OMP TUI/session runtime (`distributions/snapshots/omp-builtins/portability-matrix.md`, "Runtime boundary").
 
 Out of scope: porting `skill`-class behavior (covered by the Codex/Claude adapter plans), `cli-wrapper`-class commands that already work on explicit arguments, and `omp-only` TUI affordances. This document also does not pick a wire format, write code, or modify `~/.omp`.
 
 ## Grounding references
 
-- `docs/harness/omp-builtins/portability-matrix.json` — per-command `portabilityClass`, `runtimeSessionCommand`, `stableCli`, and `rationale`.
-- `docs/harness/omp-builtins/portability-matrix.md` — runtime-boundary policy, stable CLI-backed set, and `openProductDecisions` summary.
-- `docs/harness/omp-builtins/resource-index.json` — `runtimeOnlySurfaces` and `excludedRuntimeState` (the local-only runtime paths).
+- `distributions/snapshots/omp-builtins/portability-matrix.json` — per-command `portabilityClass`, `runtimeSessionCommand`, `stableCli`, and `rationale`.
+- `distributions/snapshots/omp-builtins/portability-matrix.md` — runtime-boundary policy, stable CLI-backed set, and `openProductDecisions` summary.
+- `distributions/snapshots/omp-builtins/resource-index.json` — `runtimeOnlySurfaces` and `excludedRuntimeState` (the local-only runtime paths).
 - `docs/harness/resource-manifest.md` / `docs/harness/resource-manifest.json` — dispositions and the `omp-runtime-state` local-only entry.
 - `docs/harness/codex-adapter-plan.md` and `docs/harness/claude-adapter-plan.md` — the established strict-manual approval, dry-run, and forbidden-content conventions this contract reuses.
 - `docs/harness/dry-run-link-plan.json` and `scripts/dry-run-harness-safety-gate.mjs` — the read-only pre-write safety gate this adapter must pass before any live action.
@@ -79,7 +79,7 @@ Binding rules:
 
 ### Local-only data boundaries
 
-The adapter MUST NOT expose or copy live runtime state. `docs/harness/resource-manifest.json` (`omp-runtime-state`) and `docs/harness/omp-builtins/resource-index.json` (`excludedRuntimeState`) mark these paths local-only:
+The adapter MUST NOT expose or copy live runtime state. `docs/harness/resource-manifest.json` (`omp-runtime-state`) and `distributions/snapshots/omp-builtins/resource-index.json` (`excludedRuntimeState`) mark these paths local-only:
 
 - `~/.omp/agent/sessions/`, `~/.omp/agent/terminal-sessions/`, `~/.omp/agent/blobs/`, `~/.omp/agent/cache/`, `~/.omp/agent/logs/`, `~/.omp/agent/*.db`, `~/.omp/agent/*.sqlite`.
 
@@ -192,7 +192,7 @@ A future implementation issue should be accepted when:
 3. Tier R read-only operations are implemented first and return derived metadata only; no transcript, auth, or memory contents cross the adapter.
 4. The allow/deny policy is enforced as deny-by-default, with `/login`, `/logout`, `/dump`, live `/export`, `/share`, and `/debug` request-dump denied by default and only reachable through an explicit approved path.
 5. Tier M operations require a selector-bound lightweight confirmation token; Tier D operations require selector-bound HITL confirmation plus redaction for any egress op.
-6. The adapter passes `scripts/dry-run-harness-safety-gate.mjs` and never writes to or reads contents of the `excludedRuntimeState` paths in `docs/harness/omp-builtins/resource-index.json`.
+6. The adapter passes `scripts/dry-run-harness-safety-gate.mjs` and never writes to or reads contents of the `excludedRuntimeState` paths in `distributions/snapshots/omp-builtins/resource-index.json`.
 7. The extension-hook backing for live ops and the `omp` CLI fallback for saved-file ops are wired behind the same MCP schema without changing the caller contract.
 8. `node:test` coverage asserts: selector-required rejection, ambiguous-selector refusal, deny-by-default for the denied set, tier-to-confirmation mapping for each representative command in section 4, and that no local-only path is read or written.
 9. The implementation cites the resolved answers to the six Open questions above, or records the still-open ones, so no behavior is built on a fabricated runtime capability.

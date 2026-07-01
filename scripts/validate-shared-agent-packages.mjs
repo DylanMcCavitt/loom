@@ -2,13 +2,14 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { expandedPlanTemplates } from "./render-plugin-bridge.mjs";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
 const DEFAULTS = Object.freeze({
   contract: "docs/harness/shared-nucleus-agents.json",
-  plan: "docs/harness/plugin-bridge/plan.json",
-  bridgeDir: "docs/harness/plugin-bridge",
+  plan: "adapters/plugin-bridge/plan.json",
+  bridgeDir: "adapters/plugin-bridge",
   skillsDir: ".agents/skills",
 });
 
@@ -149,6 +150,12 @@ function hasLegacyRolePortPath(value) {
   return /(?:^|\/)agents\/(?:omp|codex|claude)-[^/]+(?:\.(?:md|toml))?$/u.test(value);
 }
 
+function compareText(left, right) {
+  if (left < right) return -1;
+  if (left > right) return 1;
+  return 0;
+}
+
 export function validateSharedAgentPackages(options = {}) {
   const contractPath = repoPath(options.contract ?? DEFAULTS.contract);
   const planPath = repoPath(options.plan ?? DEFAULTS.plan);
@@ -163,22 +170,21 @@ export function validateSharedAgentPackages(options = {}) {
   const expectedAgentNames = contract.agents.map((agent) => agent.name).sort();
   const forbiddenPrefixes = contract.namingRules.forbiddenPrefixes ?? [];
   const planAgentNames = (plan.agents ?? []).map((agent) => agent.name).sort();
-  const expectedPluginSkillNames = [...expectedAgentNames, ...(plan.skills ?? []).map((skill) => skill.name)].sort();
-  const pluginSkillsRoot = path.join(bridgeDir, "loom-nucleus", "skills");
-
-  if (JSON.stringify(planAgentNames) !== JSON.stringify(expectedAgentNames)) {
-    failures.push(`plugin-bridge plan agents must match shared contract roster: expected ${expectedAgentNames.join(", ")}, got ${planAgentNames.join(", ")}`);
-  }
-
-  const actualPluginSkillNames = sortedDirectoryNames(pluginSkillsRoot);
-  const unexpectedSkillNames = actualPluginSkillNames.filter((name) => !expectedPluginSkillNames.includes(name));
-  if (unexpectedSkillNames.length > 0) {
-    failures.push(`plugin skills directory has unexpected packages: ${unexpectedSkillNames.join(", ")}`);
-  }
-
-  const actualPluginSharedPackageNames = actualPluginSkillNames.filter((name) => expectedAgentNames.includes(name)).sort();
-  if (JSON.stringify(actualPluginSharedPackageNames) !== JSON.stringify(expectedAgentNames)) {
-    failures.push(`plugin skills directory missing shared packages: expected ${expectedAgentNames.join(", ")}, got ${actualPluginSharedPackageNames.join(", ")}`);
+  const expandedTemplates = expandedPlanTemplates(plan);
+  const derivedSharedTemplates = expandedTemplates
+    .filter((template) => template.kind === "shared-agent-package")
+    .sort((left, right) => compareText(left.template, right.template));
+  const derivedSharedTemplatesByAgent = new Map();
+  for (const template of derivedSharedTemplates) {
+    const match = template.template.match(/^\.agents\/skills\/([^/]+)\/(.+)$/u);
+    if (!match) {
+      failures.push(`${template.id}: derived shared-agent package template must source from .agents/skills`);
+      continue;
+    }
+    const [, agentName, relativeFile] = match;
+    const entries = derivedSharedTemplatesByAgent.get(agentName) ?? [];
+    entries.push({ ...template, relativeFile });
+    derivedSharedTemplatesByAgent.set(agentName, entries);
   }
 
   const actualCanonicalPackageNames = sortedDirectoryNames(canonicalSkillsRoot).filter((name) => expectedAgentNames.includes(name)).sort();
@@ -193,8 +199,11 @@ export function validateSharedAgentPackages(options = {}) {
   }
 
   for (const template of plan.templates ?? []) {
-    if (template.kind === "shared-agent-package" && !template.template?.startsWith(".agents/skills/")) {
-      failures.push(`${template.id}: shared-agent package template must source from .agents/skills`);
+    if (template.kind === "shared-agent-package") {
+      failures.push(`${template.id}: shared-agent package templates are derived from plan.agents; remove the hand-maintained entry`);
+      if (!template.template?.startsWith(".agents/skills/")) {
+        failures.push(`${template.id}: shared-agent package template must source from .agents/skills`);
+      }
     }
   }
 
@@ -204,50 +213,49 @@ export function validateSharedAgentPackages(options = {}) {
     }
 
     const packageDir = path.join(canonicalSkillsRoot, name);
-    const pluginPackageDir = path.join(pluginSkillsRoot, name);
     if (!isDirectory(packageDir)) {
       failures.push(`${name}: missing canonical package directory`);
       continue;
-    }
-    if (!isDirectory(pluginPackageDir)) {
-      failures.push(`${name}: missing plugin distribution package directory`);
     }
 
     for (const requiredDir of packageSpec.requiredDirectories ?? []) {
       const dirPath = path.join(packageDir, requiredDir);
       if (!isDirectory(dirPath)) failures.push(`${name}: missing required directory ${requiredDir}`);
-      const pluginDirPath = path.join(pluginPackageDir, requiredDir);
-      if (!isDirectory(pluginDirPath)) failures.push(`${name}: plugin distribution missing required directory ${requiredDir}`);
     }
 
     for (const requiredFile of packageSpec.requiredFiles ?? []) {
       const filePath = path.join(packageDir, requiredFile);
       if (!isNonEmptyFile(filePath)) failures.push(`${name}: missing or empty ${requiredFile}`);
-      const pluginFilePath = path.join(pluginPackageDir, requiredFile);
-      if (!isNonEmptyFile(pluginFilePath)) failures.push(`${name}: plugin distribution missing or empty ${requiredFile}`);
-      if (existsSync(filePath) && existsSync(pluginFilePath) && readFileSync(filePath, "utf8") !== readFileSync(pluginFilePath, "utf8")) {
-        failures.push(`${name}: plugin distribution ${requiredFile} must match canonical .agents/skills source`);
-      }
     }
 
     const exemplarPath = path.join(packageDir, "exemplars", `pr-${name}.md`);
-    const pluginExemplarPath = path.join(pluginPackageDir, "exemplars", `pr-${name}.md`);
     if (!isNonEmptyFile(exemplarPath)) failures.push(`${name}: missing or empty exemplars/pr-${name}.md`);
-    if (!isNonEmptyFile(pluginExemplarPath)) failures.push(`${name}: plugin distribution missing or empty exemplars/pr-${name}.md`);
-    if (existsSync(exemplarPath) && existsSync(pluginExemplarPath) && readFileSync(exemplarPath, "utf8") !== readFileSync(pluginExemplarPath, "utf8")) {
-      failures.push(`${name}: plugin distribution exemplars/pr-${name}.md must match canonical .agents/skills source`);
-    }
 
     const canonicalFiles = listRelativeFiles(packageDir);
-    const pluginFiles = listRelativeFiles(pluginPackageDir);
-    if (JSON.stringify(pluginFiles) !== JSON.stringify(canonicalFiles)) {
-      failures.push(`${name}: plugin distribution file list must match canonical .agents/skills source`);
+    const derivedTemplates = (derivedSharedTemplatesByAgent.get(name) ?? []).sort((left, right) => compareText(left.relativeFile, right.relativeFile));
+    const derivedFiles = derivedTemplates.map((template) => template.relativeFile);
+    if (JSON.stringify(derivedFiles) !== JSON.stringify(canonicalFiles)) {
+      failures.push(`${name}: derived plugin package candidate file list must match canonical .agents/skills source`);
     }
+    const derivedByFile = new Map(derivedTemplates.map((template) => [template.relativeFile, template]));
     for (const relativeFile of canonicalFiles) {
       const filePath = path.join(packageDir, relativeFile);
-      const pluginFilePath = path.join(pluginPackageDir, relativeFile);
-      if (existsSync(pluginFilePath) && readFileSync(filePath, "utf8") !== readFileSync(pluginFilePath, "utf8")) {
-        failures.push(`${name}: plugin distribution ${relativeFile} must match canonical .agents/skills source`);
+      const derivedTemplate = derivedByFile.get(relativeFile);
+      if (!derivedTemplate) continue;
+      const expectedTemplatePath = `.agents/skills/${name}/${relativeFile}`;
+      const expectedDestination = `~/.agents/plugins/loom-nucleus/skills/${name}/${relativeFile}`;
+      if (derivedTemplate.template !== expectedTemplatePath) {
+        failures.push(`${name}: derived plugin package template for ${relativeFile} must be ${expectedTemplatePath}`);
+      }
+      if (derivedTemplate.destination !== expectedDestination) {
+        failures.push(`${name}: derived plugin package destination for ${relativeFile} must be ${expectedDestination}`);
+      }
+      if (derivedTemplate.consumedBy !== "both") {
+        failures.push(`${name}: derived plugin package ${relativeFile} must be consumed by both harnesses`);
+      }
+      const derivedPath = repoPath(derivedTemplate.template);
+      if (existsSync(derivedPath) && readFileSync(filePath, "utf8") !== readFileSync(derivedPath, "utf8")) {
+        failures.push(`${name}: derived plugin package ${relativeFile} must match canonical .agents/skills source`);
       }
     }
 

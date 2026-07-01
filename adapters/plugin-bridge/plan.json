@@ -1,0 +1,869 @@
+{
+  "schemaVersion": 1,
+  "generatedForIssue": "LOO-105",
+  "pluginName": "loom-nucleus",
+  "pluginVersion": "0.1.0",
+  "summary": "Cross-harness plugin bridge: install the loom-nucleus OMP skill candidates, canonical shared-agent Vercel-shaped packages, and hook nucleus into the Codex and Claude plugin + marketplace surfaces through portable, co-located dual-manifest plugin source, reusing the render -> gate -> apply executor for every write.",
+  "sourceInputs": [
+    "docs/harness/plugin-bridge/design.md",
+    "distributions/snapshots/omp-builtins/portability-matrix.json",
+    "distributions/snapshots/omp-builtins/source.json",
+    "docs/harness/codex-adapter-plan/adapter-plan.json",
+    "docs/harness/claude-adapter-plan.md",
+    "docs/harness/resource-manifest.json",
+    "docs/harness/shared-nucleus-agents.md",
+    "docs/harness/shared-nucleus-agents.json"
+  ],
+  "officialDocs": [
+    {
+      "harness": "codex",
+      "topic": "Build plugins",
+      "url": "https://developers.openai.com/codex/plugins/build"
+    },
+    {
+      "harness": "codex",
+      "topic": "Plugins",
+      "url": "https://developers.openai.com/codex/plugins"
+    },
+    {
+      "harness": "codex",
+      "topic": "Hooks",
+      "url": "https://developers.openai.com/codex/hooks"
+    },
+    {
+      "harness": "claude",
+      "topic": "Create plugins",
+      "url": "https://code.claude.com/docs/en/plugins"
+    },
+    {
+      "harness": "claude",
+      "topic": "Plugin marketplaces",
+      "url": "https://code.claude.com/docs/en/plugin-marketplaces"
+    },
+    {
+      "harness": "claude",
+      "topic": "Hooks reference",
+      "url": "https://code.claude.com/docs/en/hooks"
+    }
+  ],
+  "decisions": {
+    "dualManifest": "YES. One component root (loom-nucleus/) carries sibling .codex-plugin/plugin.json and .claude-plugin/plugin.json over shared skills/ and hooks/. Canonical shared agents render as Vercel-shaped skill packages consumed by both Codex and Claude; legacy Claude agents/*.md role ports are superseded.",
+    "writeBoth": "Write BOTH the marketplace catalog AND the loom-nucleus plugin distribution copy to a live home path through the strict-manual gate; canonical shared-agent packages are authored under repo .agents/skills/{agent-name}/ and rendered to ~/.agents/plugins/loom-nucleus/skills/{agent-name}/.",
+    "marketplaceRoot": "~/.agents/plugins (marketplace.json lives here; Codex auto-discovers it and reports the marketplace ROOT as $HOME)",
+    "pluginSourceRoot": "~/.agents/plugins/loom-nucleus",
+    "sourcePathReconciliation": "VERIFIED LIVE (LOO-15, codex-cli 0.142.0): Codex auto-discovers ~/.agents/plugins/marketplace.json with marketplace ROOT = $HOME and resolves source.path relative to that root, so source.path is './.agents/plugins/loom-nucleus' (./-prefixed, inside the $HOME root), NOT './loom-nucleus'. Install with `codex plugin add loom-nucleus@loom-nucleus-plugins` (the verb is `add`, not `install`); no `marketplace add` is needed (auto-discovered). policy.installation=AVAILABLE, authentication=ON_INSTALL, category=Productivity all parse and install+enable cleanly.",
+    "claudeMarketplace": "Repo-scoped .claude-plugin/marketplace.json is rendered to distributions/loom-nucleus/.claude-plugin/marketplace.json (also read by Codex as a legacy-compatible repo marketplace) and is rendered + gated + reported, never written to HOME.",
+    "versionPinning": "Pin an explicit plugin version (0.1.0) rather than relying on commit-SHA versioning (resolved open question 7).",
+    "stopHookTrust": "Ship the Stop verifier dormant. Document a one-time manual /hooks trust step; AFK auto-arming of the verifier is deferred (resolved open questions 8: option (a)).",
+    "stopHookSemantics": "The Stop verifier reports (non-zero exit + structured reason) and does not block turn completion (design 4.3 default).",
+    "neverWrite": [
+      "~/.codex/plugins/cache/",
+      "~/.claude/plugins/cache/",
+      "~/.claude/plugins/data/",
+      "~/.codex/auth.json",
+      "~/.claude/settings.local.json"
+    ],
+    "canonicalSharedAgentPackages": "LOO-105 makes .agents/skills/{agent-name}/ the canonical repo-local Vercel-shaped shared-agent package source: AGENTS.md, SKILL.md, references/*, and exemplars/* per agent. The plugin bridge derives shared-agent package candidates directly from that source at render/validation time; committed byte-copy plugin package output is intentionally absent."
+  },
+  "componentRoot": "loom-nucleus",
+  "templates": [
+    {
+      "id": "codex-plugin-manifest",
+      "kind": "plugin-manifest",
+      "consumedBy": "codex",
+      "template": "loom-nucleus/.codex-plugin/plugin.json",
+      "destination": "~/.agents/plugins/loom-nucleus/.codex-plugin/plugin.json",
+      "dispositionHarness": "codex",
+      "notes": "Codex identity. No agents pointer: Codex custom agents are TOML config, not plugin components (design 1.1)."
+    },
+    {
+      "id": "claude-plugin-manifest",
+      "kind": "plugin-manifest",
+      "consumedBy": "claude",
+      "template": "loom-nucleus/.claude-plugin/plugin.json",
+      "destination": "~/.agents/plugins/loom-nucleus/.claude-plugin/plugin.json",
+      "dispositionHarness": "codex",
+      "notes": "Claude identity. Uses canonical shared-agent packages through the skills pointer; legacy agents/*.md role ports are superseded."
+    },
+    {
+      "id": "codex-marketplace",
+      "kind": "marketplace",
+      "consumedBy": "codex",
+      "template": ".agents/plugins/marketplace.json",
+      "destination": "~/.agents/plugins/marketplace.json",
+      "dispositionHarness": "codex",
+      "notes": "Codex-native personal marketplace, auto-discovered at root $HOME. source.path './.agents/plugins/loom-nucleus' resolves relative to that root (verified live, LOO-15)."
+    },
+    {
+      "id": "claude-marketplace",
+      "kind": "marketplace",
+      "consumedBy": "claude",
+      "template": ".claude-plugin/marketplace.json",
+      "destination": "./distributions/loom-nucleus/.claude-plugin/marketplace.json",
+      "dispositionHarness": "claude",
+      "notes": "Repo-scoped Claude marketplace (also read by Codex). Rendered + gated + reported; not a HOME write."
+    },
+    {
+      "id": "skill-omp-btw",
+      "kind": "skill",
+      "consumedBy": "both",
+      "template": "loom-nucleus/skills/omp-btw/SKILL.md",
+      "destination": "~/.agents/plugins/loom-nucleus/skills/omp-btw/SKILL.md",
+      "dispositionHarness": "codex"
+    },
+    {
+      "id": "skill-omp-complaint-to-rule",
+      "kind": "skill",
+      "consumedBy": "both",
+      "template": "loom-nucleus/skills/omp-complaint-to-rule/SKILL.md",
+      "destination": "~/.agents/plugins/loom-nucleus/skills/omp-complaint-to-rule/SKILL.md",
+      "dispositionHarness": "codex"
+    },
+    {
+      "id": "skill-omp-guided-goal",
+      "kind": "skill",
+      "consumedBy": "both",
+      "template": "loom-nucleus/skills/omp-guided-goal/SKILL.md",
+      "destination": "~/.agents/plugins/loom-nucleus/skills/omp-guided-goal/SKILL.md",
+      "dispositionHarness": "codex"
+    },
+    {
+      "id": "skill-omp-handoff",
+      "kind": "skill",
+      "consumedBy": "both",
+      "template": "loom-nucleus/skills/omp-handoff/SKILL.md",
+      "destination": "~/.agents/plugins/loom-nucleus/skills/omp-handoff/SKILL.md",
+      "dispositionHarness": "codex"
+    },
+    {
+      "id": "skill-omp-plan",
+      "kind": "skill",
+      "consumedBy": "both",
+      "template": "loom-nucleus/skills/omp-plan/SKILL.md",
+      "destination": "~/.agents/plugins/loom-nucleus/skills/omp-plan/SKILL.md",
+      "dispositionHarness": "codex"
+    },
+    {
+      "id": "skill-omp-tangent",
+      "kind": "skill",
+      "consumedBy": "both",
+      "template": "loom-nucleus/skills/omp-tangent/SKILL.md",
+      "destination": "~/.agents/plugins/loom-nucleus/skills/omp-tangent/SKILL.md",
+      "dispositionHarness": "codex"
+    },
+    {
+      "id": "hooks",
+      "kind": "hook",
+      "consumedBy": "both",
+      "template": "loom-nucleus/hooks/hooks.json",
+      "destination": "~/.agents/plugins/loom-nucleus/hooks/hooks.json",
+      "dispositionHarness": "codex"
+    },
+    {
+      "id": "verifier",
+      "kind": "verifier",
+      "consumedBy": "both",
+      "template": "loom-nucleus/hooks/verify-loom-install.mjs",
+      "destination": "~/.agents/plugins/loom-nucleus/hooks/verify-loom-install.mjs",
+      "dispositionHarness": "codex"
+    }
+  ],
+  "skills": [
+    {
+      "name": "omp-btw",
+      "ompCommand": "btw",
+      "recommendation": "adapt"
+    },
+    {
+      "name": "omp-guided-goal",
+      "ompCommand": "guided-goal",
+      "recommendation": "adapt"
+    },
+    {
+      "name": "omp-handoff",
+      "ompCommand": "handoff",
+      "recommendation": "adapt"
+    },
+    {
+      "name": "omp-complaint-to-rule",
+      "ompCommand": "omfg",
+      "recommendation": "adapt"
+    },
+    {
+      "name": "omp-plan",
+      "ompCommand": "plan",
+      "recommendation": "adapt"
+    },
+    {
+      "name": "omp-tangent",
+      "ompCommand": "tan",
+      "recommendation": "adapt"
+    }
+  ],
+  "agents": [
+    {
+      "name": "blueprint",
+      "role": "Spec synthesizer",
+      "purpose": "Turns current context into a PRD/spec with acceptance criteria, non-goals, proof plan, and explicit open decisions.",
+      "modes": [
+        "shape"
+      ],
+      "references": [
+        "agent-judgment",
+        "patterns",
+        "coverage-gaps"
+      ],
+      "canDelegate": false,
+      "preferredChildren": [],
+      "nonGoals": [
+        "Do not implement code",
+        "Do not create issues",
+        "Do not live-apply to real HOME",
+        "Do not invent unsupported standards"
+      ],
+      "inputPacket": [
+        "goal",
+        "source context",
+        "constraints",
+        "known evidence",
+        "open questions"
+      ],
+      "outputPacket": [
+        "spec",
+        "acceptance criteria",
+        "non-goals",
+        "proof plan",
+        "coverage gaps"
+      ],
+      "packaged": true,
+      "packageRoot": ".agents/skills/blueprint",
+      "consumedBy": "both"
+    },
+    {
+      "name": "ghosts",
+      "role": "Issue decomposer",
+      "purpose": "Splits an accepted plan/spec into dependency-ordered Linear issues and sub-issues with narrow acceptance criteria.",
+      "modes": [
+        "shape"
+      ],
+      "references": [
+        "patterns",
+        "rules",
+        "coverage-gaps"
+      ],
+      "canDelegate": false,
+      "preferredChildren": [],
+      "nonGoals": [
+        "Do not implement code",
+        "Do not change parent scope",
+        "Do not live-apply to real HOME",
+        "Do not stamp issues from thin context"
+      ],
+      "inputPacket": [
+        "approved plan",
+        "parent issue",
+        "dependency constraints",
+        "labels/states"
+      ],
+      "outputPacket": [
+        "created issue ids",
+        "dependency graph",
+        "acceptance criteria",
+        "blockers"
+      ],
+      "packaged": true,
+      "packageRoot": ".agents/skills/ghosts",
+      "consumedBy": "both"
+    },
+    {
+      "name": "inserter",
+      "role": "Triage router",
+      "purpose": "Classifies, prioritizes, labels, and routes incoming tracker work without building it.",
+      "modes": [
+        "shape",
+        "review"
+      ],
+      "references": [
+        "rules",
+        "glossary"
+      ],
+      "canDelegate": false,
+      "preferredChildren": [],
+      "nonGoals": [
+        "Do not implement code",
+        "Do not create broad plans",
+        "Do not live-apply to real HOME",
+        "Do not close issues silently"
+      ],
+      "inputPacket": [
+        "issue",
+        "tracker state",
+        "labels",
+        "domain terms"
+      ],
+      "outputPacket": [
+        "classification",
+        "priority",
+        "routing",
+        "needed info"
+      ],
+      "packaged": true,
+      "packageRoot": ".agents/skills/inserter",
+      "consumedBy": "both"
+    },
+    {
+      "name": "roboports",
+      "role": "Issue delivery coordinator",
+      "purpose": "Runs one tracked issue through branch/worktree, implementation, proof, review, and PR readiness.",
+      "modes": [
+        "implement"
+      ],
+      "references": [
+        "delegation-dag",
+        "review-and-proof",
+        "rules"
+      ],
+      "canDelegate": true,
+      "preferredChildren": [
+        "lab",
+        "biters",
+        "spitters",
+        "spidertron",
+        "bus-first",
+        "repair-pack"
+      ],
+      "nonGoals": [
+        "Do not merge PRs",
+        "Do not close issues",
+        "Do not live-apply to real HOME",
+        "Do not widen beyond the issue"
+      ],
+      "inputPacket": [
+        "issue id",
+        "acceptance criteria",
+        "branch/worktree",
+        "allowed files",
+        "proof plan"
+      ],
+      "outputPacket": [
+        "PR url",
+        "changed files",
+        "proof",
+        "review findings",
+        "residual risks"
+      ],
+      "packaged": true,
+      "packageRoot": ".agents/skills/roboports",
+      "consumedBy": "both"
+    },
+    {
+      "name": "radar",
+      "role": "Drift scanner",
+      "purpose": "Checks repo/tracker/proof drift and recommends the next route without mutating state.",
+      "modes": [
+        "review",
+        "prove"
+      ],
+      "references": [
+        "harness-surfaces",
+        "coverage-gaps"
+      ],
+      "canDelegate": false,
+      "preferredChildren": [],
+      "nonGoals": [
+        "Do not implement code",
+        "Do not mutate trackers",
+        "Do not live-apply to real HOME",
+        "Do not rewrite plans"
+      ],
+      "inputPacket": [
+        "issue or plan",
+        "repo state",
+        "tracker state",
+        "proof artifacts"
+      ],
+      "outputPacket": [
+        "drift class",
+        "evidence",
+        "recommended route",
+        "blockers"
+      ],
+      "packaged": true,
+      "packageRoot": ".agents/skills/radar",
+      "consumedBy": "both"
+    },
+    {
+      "name": "lab",
+      "role": "Proof specialist",
+      "purpose": "Runs proof-only validation and records behavior evidence without expanding scope.",
+      "modes": [
+        "prove"
+      ],
+      "references": [
+        "review-and-proof"
+      ],
+      "canDelegate": false,
+      "preferredChildren": [],
+      "nonGoals": [
+        "Do not implement fixes",
+        "Do not mock behavior",
+        "Do not live-apply to real HOME",
+        "Do not claim untested coverage"
+      ],
+      "inputPacket": [
+        "behavior claim",
+        "commands/scenarios",
+        "environment",
+        "expected evidence"
+      ],
+      "outputPacket": [
+        "commands run",
+        "observed result",
+        "artifacts",
+        "untested branches"
+      ],
+      "packaged": true,
+      "packageRoot": ".agents/skills/lab",
+      "consumedBy": "both"
+    },
+    {
+      "name": "biters",
+      "role": "General adversarial reviewer",
+      "purpose": "Attacks correctness, regression, maintainability, scope, and missing-test risks before merge.",
+      "modes": [
+        "review"
+      ],
+      "references": [
+        "review-and-proof",
+        "rules"
+      ],
+      "canDelegate": false,
+      "preferredChildren": [],
+      "nonGoals": [
+        "Do not edit code",
+        "Do not nitpick style",
+        "Do not live-apply to real HOME",
+        "Do not weaken guards"
+      ],
+      "inputPacket": [
+        "diff",
+        "acceptance criteria",
+        "risk focus",
+        "proof already run"
+      ],
+      "outputPacket": [
+        "findings by severity",
+        "file/line",
+        "user consequence",
+        "smallest fix"
+      ],
+      "packaged": true,
+      "packageRoot": ".agents/skills/biters",
+      "consumedBy": "both"
+    },
+    {
+      "name": "spitters",
+      "role": "Security attacker",
+      "purpose": "Runs AppSec/adversarial security review across trust boundaries and abuse paths.",
+      "modes": [
+        "review"
+      ],
+      "references": [
+        "review-and-proof",
+        "harness-surfaces"
+      ],
+      "canDelegate": false,
+      "preferredChildren": [],
+      "nonGoals": [
+        "Do not edit code",
+        "Do not exfiltrate secrets",
+        "Do not live-apply to real HOME",
+        "Do not broaden into general review"
+      ],
+      "inputPacket": [
+        "target surface",
+        "trust boundaries",
+        "diff",
+        "known assets"
+      ],
+      "outputPacket": [
+        "attack paths",
+        "severity",
+        "reproduction",
+        "mitigation"
+      ],
+      "packaged": true,
+      "packageRoot": ".agents/skills/spitters",
+      "consumedBy": "both"
+    },
+    {
+      "name": "spidertron",
+      "role": "UI workflow tester",
+      "purpose": "Drives browser/desktop UI workflows and captures user-visible proof.",
+      "modes": [
+        "prove",
+        "review"
+      ],
+      "references": [
+        "review-and-proof",
+        "harness-surfaces"
+      ],
+      "canDelegate": false,
+      "preferredChildren": [],
+      "nonGoals": [
+        "Do not redesign UI",
+        "Do not rely on source-only proof",
+        "Do not live-apply to real HOME",
+        "Do not skip accessibility-visible state"
+      ],
+      "inputPacket": [
+        "route/window",
+        "user job",
+        "states",
+        "proof targets"
+      ],
+      "outputPacket": [
+        "screenshots/observations",
+        "state coverage",
+        "accessibility notes",
+        "gaps"
+      ],
+      "packaged": true,
+      "packageRoot": ".agents/skills/spidertron",
+      "consumedBy": "both"
+    },
+    {
+      "name": "bus-first",
+      "role": "Minimal-diff tightener",
+      "purpose": "Applies reuse-before-build doctrine and flags needless abstraction or scope creep.",
+      "modes": [
+        "review"
+      ],
+      "references": [
+        "rules",
+        "patterns"
+      ],
+      "canDelegate": false,
+      "preferredChildren": [],
+      "nonGoals": [
+        "Do not cut validation",
+        "Do not cut security",
+        "Do not live-apply to real HOME",
+        "Do not rewrite for taste"
+      ],
+      "inputPacket": [
+        "diff",
+        "issue scope",
+        "existing seams",
+        "guards"
+      ],
+      "outputPacket": [
+        "cuts requested",
+        "rung rationale",
+        "guards preserved",
+        "no-cut statement"
+      ],
+      "packaged": true,
+      "packageRoot": ".agents/skills/bus-first",
+      "consumedBy": "both"
+    },
+    {
+      "name": "repair-pack",
+      "role": "Narrow finding fixer",
+      "purpose": "Fixes exactly one concrete review/proof finding from a fresh compact packet.",
+      "modes": [
+        "repair"
+      ],
+      "references": [
+        "repair-pack",
+        "rules",
+        "coverage-gaps",
+        "review-and-proof"
+      ],
+      "canDelegate": true,
+      "preferredChildren": [
+        "lab"
+      ],
+      "nonGoals": [
+        "Do not accept broad work",
+        "Do not fix adjacent cleanup",
+        "Do not live-apply to real HOME",
+        "Do not spawn broad agents",
+        "Do not implement native agent files or eval harnesses"
+      ],
+      "inputPacket": [
+        "file",
+        "symbol",
+        "scope",
+        "concrete risk",
+        "minimal expected fix",
+        "proof check",
+        "rule/source id",
+        "non-goals",
+        "allowed files"
+      ],
+      "outputPacket": [
+        "changed files",
+        "proof rerun",
+        "bus-first recheck need",
+        "remaining risk",
+        "blocked reason"
+      ],
+      "packaged": true,
+      "packageRoot": ".agents/skills/repair-pack",
+      "consumedBy": "both"
+    },
+    {
+      "name": "main-bus",
+      "role": "Architecture seam planner",
+      "purpose": "Plans shared lanes/seams so features plug into existing structure instead of parallel spaghetti.",
+      "modes": [
+        "shape",
+        "review"
+      ],
+      "references": [
+        "agent-judgment",
+        "patterns"
+      ],
+      "canDelegate": false,
+      "preferredChildren": [],
+      "nonGoals": [
+        "Do not implement code",
+        "Do not over-abstract",
+        "Do not live-apply to real HOME",
+        "Do not replace accepted issue scope"
+      ],
+      "inputPacket": [
+        "architecture problem",
+        "current seams",
+        "future callers",
+        "constraints"
+      ],
+      "outputPacket": [
+        "minimal restructure",
+        "tradeoffs",
+        "ADR/doc target",
+        "risks"
+      ],
+      "packaged": true,
+      "packageRoot": ".agents/skills/main-bus",
+      "consumedBy": "both"
+    },
+    {
+      "name": "science-pack",
+      "role": "Research spike",
+      "purpose": "Resolves one open unknown with source-grounded findings before build.",
+      "modes": [
+        "shape",
+        "review"
+      ],
+      "references": [
+        "coverage-gaps",
+        "patterns"
+      ],
+      "canDelegate": false,
+      "preferredChildren": [],
+      "nonGoals": [
+        "Do not implement code",
+        "Do not treat unverified sources as policy",
+        "Do not live-apply to real HOME",
+        "Do not broaden the question"
+      ],
+      "inputPacket": [
+        "unknown",
+        "decision needed",
+        "source constraints",
+        "timebox"
+      ],
+      "outputPacket": [
+        "findings",
+        "sources",
+        "recommendation",
+        "open questions"
+      ],
+      "packaged": true,
+      "packageRoot": ".agents/skills/science-pack",
+      "consumedBy": "both"
+    },
+    {
+      "name": "belt",
+      "role": "Handoff carrier",
+      "purpose": "Moves durable context between agents/threads with concise state, proof, risks, and next actions.",
+      "modes": [
+        "shape",
+        "review"
+      ],
+      "references": [
+        "rules",
+        "glossary"
+      ],
+      "canDelegate": false,
+      "preferredChildren": [],
+      "nonGoals": [
+        "Do not implement code",
+        "Do not include transcripts by default",
+        "Do not live-apply to real HOME",
+        "Do not omit blockers"
+      ],
+      "inputPacket": [
+        "current state",
+        "changed files",
+        "proof",
+        "risks",
+        "next action"
+      ],
+      "outputPacket": [
+        "handoff",
+        "proof summary",
+        "blockers",
+        "resume command/context"
+      ],
+      "packaged": true,
+      "packageRoot": ".agents/skills/belt",
+      "consumedBy": "both"
+    },
+    {
+      "name": "recycler",
+      "role": "Behavior-preserving refactorer",
+      "purpose": "Deletes, consolidates, or clarifies existing code without changing behavior.",
+      "modes": [
+        "implement"
+      ],
+      "references": [
+        "rules",
+        "patterns"
+      ],
+      "canDelegate": false,
+      "preferredChildren": [],
+      "nonGoals": [
+        "Do not change behavior",
+        "Do not add features",
+        "Do not live-apply to real HOME",
+        "Do not remove load-bearing guards"
+      ],
+      "inputPacket": [
+        "target code",
+        "behavior proof",
+        "dup/dead code evidence",
+        "allowed scope"
+      ],
+      "outputPacket": [
+        "diff",
+        "behavior proof",
+        "removed code",
+        "risks"
+      ],
+      "packaged": true,
+      "packageRoot": ".agents/skills/recycler",
+      "consumedBy": "both"
+    },
+    {
+      "name": "modules",
+      "role": "Measured performance optimizer",
+      "purpose": "Optimizes a proven bottleneck with before/after measurement and stops when returns diminish.",
+      "modes": [
+        "implement",
+        "prove"
+      ],
+      "references": [
+        "review-and-proof",
+        "patterns"
+      ],
+      "canDelegate": false,
+      "preferredChildren": [],
+      "nonGoals": [
+        "Do not optimize without measurement",
+        "Do not trade correctness for speed",
+        "Do not live-apply to real HOME",
+        "Do not rewrite unrelated code"
+      ],
+      "inputPacket": [
+        "bottleneck evidence",
+        "benchmark",
+        "constraints",
+        "acceptable tradeoffs"
+      ],
+      "outputPacket": [
+        "before/after",
+        "diff",
+        "remaining bottleneck",
+        "stop reason"
+      ],
+      "packaged": true,
+      "packageRoot": ".agents/skills/modules",
+      "consumedBy": "both"
+    },
+    {
+      "name": "rocket-launch",
+      "role": "Launch gatekeeper",
+      "purpose": "Records launch-gate readiness only after review/proof/CI gates and tracker bridge evidence are satisfied.",
+      "modes": [
+        "launch"
+      ],
+      "references": [
+        "review-and-proof",
+        "rules"
+      ],
+      "canDelegate": false,
+      "preferredChildren": [],
+      "nonGoals": [
+        "Do not merge PRs in this contract slice",
+        "Do not close issues by hand to fake bridge closeout",
+        "Do not live-apply to real HOME",
+        "Do not widen scope at launch"
+      ],
+      "inputPacket": [
+        "PR",
+        "issue",
+        "gates",
+        "proof",
+        "tracker bridge evidence"
+      ],
+      "outputPacket": [
+        "gate record",
+        "tracker bridge evidence",
+        "follow-ups"
+      ],
+      "packaged": true,
+      "packageRoot": ".agents/skills/rocket-launch",
+      "consumedBy": "both"
+    }
+  ],
+  "expectedBundledAgents": [
+    "designer",
+    "explore",
+    "librarian",
+    "oracle",
+    "plan",
+    "quick_task",
+    "reviewer",
+    "task"
+  ],
+  "supersededOmpAgentPorts": [
+    {
+      "name": "omp-designer",
+      "consumedBy": "claude",
+      "decision": "superseded-by-shared-agent-packages"
+    },
+    {
+      "name": "omp-explorer",
+      "consumedBy": "claude",
+      "decision": "superseded-by-shared-agent-packages"
+    },
+    {
+      "name": "omp-librarian",
+      "consumedBy": "claude",
+      "decision": "superseded-by-shared-agent-packages"
+    },
+    {
+      "name": "omp-planner",
+      "consumedBy": "claude",
+      "decision": "superseded-by-shared-agent-packages"
+    },
+    {
+      "name": "omp-reviewer",
+      "consumedBy": "claude",
+      "decision": "superseded-by-shared-agent-packages"
+    }
+  ]
+}

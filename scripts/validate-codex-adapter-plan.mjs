@@ -6,8 +6,8 @@ import path from "node:path";
 import { parse as parseToml } from "./vendor/smol-toml/index.js";
 
 const PLAN_PATH = process.env.CODEX_ADAPTER_PLAN_PATH ?? "docs/harness/codex-adapter-plan/adapter-plan.json";
-const SOURCE_PATH = "docs/harness/omp-builtins/source.json";
-const PORTABILITY_PATH = "docs/harness/omp-builtins/portability-matrix.json";
+const SOURCE_PATH = "distributions/snapshots/omp-builtins/source.json";
+const PORTABILITY_PATH = "distributions/snapshots/omp-builtins/portability-matrix.json";
 const PLAN_MD_PATH = "docs/harness/codex-adapter-plan.md";
 const TEMPLATE_DIR = process.env.CODEX_ADAPTER_PLAN_TEMPLATE_DIR ?? "docs/harness/codex-adapter-plan/templates";
 const REQUIRED_DOC_TOPICS = new Set([

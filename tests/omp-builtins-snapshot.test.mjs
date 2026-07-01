@@ -4,11 +4,11 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
 
-const snapshotDir = new URL("../docs/harness/omp-builtins/", import.meta.url).pathname;
-const sourcePath = new URL("../docs/harness/omp-builtins/source.json", import.meta.url).pathname;
-const commandsPath = new URL("../docs/harness/omp-builtins/commands.json", import.meta.url).pathname;
-const portabilityMatrixPath = new URL("../docs/harness/omp-builtins/portability-matrix.json", import.meta.url).pathname;
-const resourceIndexPath = new URL("../docs/harness/omp-builtins/resource-index.json", import.meta.url).pathname;
+const snapshotDir = new URL("../distributions/snapshots/omp-builtins/", import.meta.url).pathname;
+const sourcePath = new URL("../distributions/snapshots/omp-builtins/source.json", import.meta.url).pathname;
+const commandsPath = new URL("../distributions/snapshots/omp-builtins/commands.json", import.meta.url).pathname;
+const portabilityMatrixPath = new URL("../distributions/snapshots/omp-builtins/portability-matrix.json", import.meta.url).pathname;
+const resourceIndexPath = new URL("../distributions/snapshots/omp-builtins/resource-index.json", import.meta.url).pathname;
 const validator = new URL("../scripts/validate-omp-builtins-snapshot.mjs", import.meta.url).pathname;
 const refresh = new URL("../scripts/refresh-omp-builtins-snapshot.mjs", import.meta.url).pathname;
 
