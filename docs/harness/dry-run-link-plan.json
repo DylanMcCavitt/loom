@@ -13,7 +13,7 @@
       "sourceResource": "omp-user-project-resources",
       "mode": "candidate-symlink",
       "livePath": "~/.omp/agent/AGENTS.md",
-      "proposedTarget": "repo:omp/.omp/agent/AGENTS.md",
+      "proposedTarget": "repo:adapters/omp/source/AGENTS.md",
       "disposition": "track",
       "notes": "Report the existing live path and planned repo-owned source only. Do not mutate the link in this issue."
     },
@@ -23,7 +23,7 @@
       "sourceResource": "omp-user-project-resources",
       "mode": "candidate-symlink",
       "livePath": "~/.omp/agent/RULES.md",
-      "proposedTarget": "repo:omp/.omp/agent/RULES.md",
+      "proposedTarget": "repo:adapters/omp/source/RULES.md",
       "disposition": "track",
       "notes": "Report the existing live path and planned repo-owned source only. Do not mutate the link in this issue."
     },
@@ -33,7 +33,7 @@
       "sourceResource": "omp-user-project-resources",
       "mode": "candidate-symlink",
       "livePath": "~/.omp/agent/config.yml",
-      "proposedTarget": "repo:omp/.omp/agent/config.yml",
+      "proposedTarget": "repo:adapters/omp/source/config.yml",
       "disposition": "track",
       "notes": "Report the existing live path and planned repo-owned source only. Do not mutate the link in this issue."
     },

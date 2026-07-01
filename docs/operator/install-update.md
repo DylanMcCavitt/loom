@@ -37,7 +37,7 @@ The important operator distinction:
 
 - Already effective:
   - `~/.agents/skills` is a symlink to this repo's `.agents/skills`.
-  - OMP mirror files are already live as symlinks into `omp/.omp/agent/`.
+  - OMP mirror files are already live as symlinks into `adapters/omp/source/`.
   - `~/.claude/skills` is already a symlink to the shared `.agents/skills` root.
 - Planned or gated:
   - generated Codex config/profile fragments;
@@ -86,7 +86,7 @@ manifests, and write nothing to live HOME.
 Owner chain:
 
 - Parent lane: LOO-35 (`FN-M03: Scan and onboarding`).
-- OMP mirror/config split: `omp/.omp/agent/` and
+- OMP mirror/config split: `adapters/omp/source/` and
   `docs/harness/resource-manifest.*`.
 - Live apply runbook: LOO-91.
 

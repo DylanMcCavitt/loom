@@ -4,7 +4,7 @@ Loom tracks declarative harness surfaces and keeps runtime state local-only.
 
 ## Layers
 
-- `omp/.omp/agent/` — tracked OMP mirror source.
+- `adapters/omp/source/` — tracked OMP adapter source.
 - `docs/harness/resource-manifest.{md,json}` — resource ownership and disposition.
 - `docs/harness/*-adapter-plan.md` — Codex and Claude adapter boundaries.
 - `docs/harness/plugin-bridge/` — packaged plugin bridge templates.
