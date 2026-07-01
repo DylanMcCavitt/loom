@@ -134,6 +134,21 @@ unmarked files with `reason: "exists"`, backs up marker-owned drift as
 `*.loom-bak-<timestamp>`, and records ownership in
 `~/.loom-harness/applied-manifest.json`.
 
+The OMP repo-owned transition has an additional explicit gate. If the reviewed
+dry-run shows `~/.omp/agent/AGENTS.md`, `RULES.md`, or `config.yml` as
+`repo-mirror-symlink` or `existing-user-file`, a plain `--write` must skip those
+paths with `reason: "omp-approval-required"`. To intentionally claim a reviewed
+repo-mirror symlink as marker-owned, or to replace a reviewed existing OMP user
+file with the repo mirror content after backup, pass:
+
+```sh
+node scripts/render-harness-nucleus.mjs --write --approve-omp-repo-owned --json
+```
+
+This flag is only for the three OMP mirror destinations above. It does not make
+local-only OMP overlays, sessions, caches, logs, databases, or runtime state
+readable or writable.
+
 ### Verify
 
 ```sh
@@ -157,6 +172,19 @@ rm -- "<created-live-path-from-actions>"
 ```
 
 For a marker-owned file updated with a backup:
+
+```sh
+cp -- "<backup-path-from-actions>" "<live-path-from-actions>"
+```
+
+For an OMP repo-mirror symlink that was only claimed with
+`claimed-repo-mirror-symlink`, the live symlink target was not changed. Rollback
+is a marker-only decision: keep the marker as audit evidence unless the reviewed
+rollback explicitly removes that destination from
+`~/.loom-harness/applied-manifest.json`.
+
+For an existing OMP file replaced by `--approve-omp-repo-owned`, use the backup
+path in the apply JSON exactly like marker-owned drift:
 
 ```sh
 cp -- "<backup-path-from-actions>" "<live-path-from-actions>"

@@ -59,6 +59,12 @@ const MARKER_SCHEMA_VERSION = 1;
 
 const APPROVAL_POLICY =
   "strict-manual (separate issue/PR, dry-run rendered diff, dangerous-key validation, live-file backup, explicit human approval before any write)";
+const OMP_REPO_OWNED_DESTINATIONS = new Set([
+  "~/.omp/agent/AGENTS.md",
+  "~/.omp/agent/RULES.md",
+  "~/.omp/agent/config.yml",
+]);
+
 
 // Provider/model/auth/telemetry/profile-routing keys that must never appear in ANY rendered or
 // written config (TOML or YAML), on top of each template boundary's own forbiddenKeys.
@@ -81,20 +87,22 @@ export const FORBIDDEN_GLOBAL_KEYS = [
 
 const USAGE = [
   "Usage: node scripts/render-harness-nucleus.mjs [options]",
-  "  --write                 apply appliable candidates (strict-manual, create-missing-only)",
-  "  --json                  emit a machine-readable manifest instead of text",
-  "  --home <dir>            resolve ~ live destinations under <dir> (default: $HOME)",
-  "  --plan <path>           adapter plan json",
-  "  --manifest <path>       resource manifest json",
-  "  --template-dir <path>   codex template directory",
-  "  --omp-source <path>     decided OMP source directory",
-  "  -h, --help              show this help",
+  "  --write                    apply appliable candidates (strict-manual, create-missing-only)",
+  "  --approve-omp-repo-owned   with --write, explicitly claim repo-mirror OMP symlinks or replace existing OMP files",
+  "  --json                     emit a machine-readable manifest instead of text",
+  "  --home <dir>               resolve ~ live destinations under <dir> (default: $HOME)",
+  "  --plan <path>              adapter plan json",
+  "  --manifest <path>          resource manifest json",
+  "  --template-dir <path>      codex template directory",
+  "  --omp-source <path>        decided OMP source directory",
+  "  -h, --help                 show this help",
 ].join("\n");
 
 function readArgs(argv) {
   const options = {
     write: false,
     json: false,
+    approveOmpRepoOwned: false,
     home: null,
     plan: DEFAULTS.plan,
     manifest: DEFAULTS.manifest,
@@ -120,6 +128,10 @@ function readArgs(argv) {
     }
     if (arg === "--json") {
       options.json = true;
+      continue;
+    }
+    if (arg === "--approve-omp-repo-owned") {
+      options.approveOmpRepoOwned = true;
       continue;
     }
     const key = valueFlags.get(arg);
@@ -592,12 +604,55 @@ function liveInspect(candidate, homeRoot, marker) {
     }
     return { livePath, status: "user-file", overwriteRisk: "would not overwrite (existing non-marker file skipped)", ownership: "user-file" };
   }
+  if (lstatSync(livePath).isSymbolicLink()) {
+    if (!repoMirrorSymlink(candidate, livePath)) {
+      return {
+        livePath,
+        status: "marker-symlink-retargeted",
+        overwriteRisk: "would not follow retargeted marker-owned symlink",
+        ownership: "marker-owned",
+      };
+    }
+    if (sha256(readFileSync(livePath)) === sha256(candidate.content)) {
+      return { livePath, status: "already-applied", overwriteRisk: "already applied (no change)", ownership: "marker-owned" };
+    }
+    return {
+      livePath,
+      status: "repo-mirror-content-mismatch",
+      overwriteRisk: "would not follow divergent repo-mirror symlink",
+      ownership: "marker-owned",
+    };
+  }
   const current = sha256(readFileSync(livePath));
   if (current === sha256(candidate.content)) {
     return { livePath, status: "already-applied", overwriteRisk: "already applied (no change)", ownership: "marker-owned" };
   }
   return { livePath, status: "marker-outdated", overwriteRisk: "would update kit-owned marker (backup taken)", ownership: "marker-owned" };
 }
+
+function recordMarker(marker, candidate, wantHash) {
+  marker.entries[candidate.destination] = {
+    sha256: wantHash,
+    renderedFrom: candidate.source,
+    appliedAt: new Date().toISOString(),
+  };
+}
+
+function requiresOmpRepoOwnedApproval(candidate) {
+  return candidate.harness === "omp" && OMP_REPO_OWNED_DESTINATIONS.has(candidate.destination);
+}
+
+function requiredApproval(candidate, live) {
+  if (!candidate.appliable) return "n/a (reported only)";
+  if (
+    requiresOmpRepoOwnedApproval(candidate) &&
+    (live.ownership === "repo-mirror" || live.ownership === "user-file")
+  ) {
+    return "strict-manual + --approve-omp-repo-owned";
+  }
+  return "strict-manual";
+}
+
 
 // --- marker manifest -------------------------------------------------------------------------
 
@@ -686,7 +741,7 @@ function buildManifest(candidates, localOnly, homeRoot, marker, mode) {
       liveStatus: live.status,
       ownership: live.ownership,
       overwriteRisk: live.overwriteRisk,
-      requiredApproval: candidate.appliable ? "strict-manual" : "n/a (reported only)",
+      requiredApproval: requiredApproval(candidate, live),
     });
   }
   const ownershipMatrix = ompOwnershipMatrix(reported, localOnly);
@@ -783,9 +838,10 @@ function runDryRun(candidates, localOnly, options, homeRoot, marker) {
 // --- apply engine (create-missing-only / backup-on-drift / marker idempotency) ---------------
 
 // Pure apply loop shared by --write: creates missing live files, skips existing non-marker user
-// files, backs up + updates a drifted kit-owned marker, and records the marker. Mutates
-// `marker.entries`; persisting the marker is the caller's job. Returns { actions, backups }.
-export function applyCandidates(candidates, homeRoot, marker) {
+// files unless the narrow OMP repo-owned approval gate is set, backs up + updates drifted
+// kit-owned markers, and records the marker. Mutates `marker.entries`; persisting the marker is
+// the caller's job. Returns { actions, backups }.
+export function applyCandidates(candidates, homeRoot, marker, options = {}) {
   const actions = [];
   const backups = [];
   for (const candidate of candidates) {
@@ -799,17 +855,51 @@ export function applyCandidates(candidates, homeRoot, marker) {
     if (!pathExists(livePath)) {
       mkdirSync(path.dirname(livePath), { recursive: true });
       writeFileSync(livePath, candidate.content);
-      marker.entries[candidate.destination] = {
-        sha256: wantHash,
-        renderedFrom: candidate.source,
-        appliedAt: new Date().toISOString(),
-      };
+      recordMarker(marker, candidate, wantHash);
       actions.push({ destination: candidate.destination, action: "created", livePath });
       continue;
     }
     const marked = Boolean(marker.entries[candidate.destination]);
     if (!marked) {
+      if (requiresOmpRepoOwnedApproval(candidate)) {
+        if (!options.approveOmpRepoOwned) {
+          actions.push({ destination: candidate.destination, action: "skipped", reason: "omp-approval-required", livePath });
+          continue;
+        }
+        if (repoMirrorSymlink(candidate, livePath)) {
+          if (sha256(readFileSync(livePath)) !== wantHash) {
+            actions.push({ destination: candidate.destination, action: "skipped", reason: "repo-mirror-content-mismatch", livePath });
+            continue;
+          }
+          recordMarker(marker, candidate, wantHash);
+          actions.push({ destination: candidate.destination, action: "claimed-repo-mirror-symlink", livePath });
+          continue;
+        }
+        if (lstatSync(livePath).isSymbolicLink()) {
+          actions.push({ destination: candidate.destination, action: "skipped", reason: "not-repo-mirror-symlink", livePath });
+          continue;
+        }
+        const backup = `${livePath}.loom-bak-${backupTimestamp()}`;
+        copyFileSync(livePath, backup);
+        writeFileSync(livePath, candidate.content);
+        recordMarker(marker, candidate, wantHash);
+        backups.push(backup);
+        actions.push({ destination: candidate.destination, action: "replaced-existing-omp", livePath, backup });
+        continue;
+      }
       actions.push({ destination: candidate.destination, action: "skipped", reason: "exists", livePath });
+      continue;
+    }
+    if (lstatSync(livePath).isSymbolicLink()) {
+      if (!repoMirrorSymlink(candidate, livePath)) {
+        actions.push({ destination: candidate.destination, action: "skipped", reason: "not-repo-mirror-symlink", livePath });
+        continue;
+      }
+      if (sha256(readFileSync(livePath)) !== wantHash) {
+        actions.push({ destination: candidate.destination, action: "skipped", reason: "repo-mirror-content-mismatch", livePath });
+        continue;
+      }
+      actions.push({ destination: candidate.destination, action: "already-applied", livePath });
       continue;
     }
     if (sha256(readFileSync(livePath)) === wantHash) {
@@ -820,11 +910,7 @@ export function applyCandidates(candidates, homeRoot, marker) {
     const backup = `${livePath}.loom-bak-${backupTimestamp()}`;
     copyFileSync(livePath, backup);
     writeFileSync(livePath, candidate.content);
-    marker.entries[candidate.destination] = {
-      sha256: wantHash,
-      renderedFrom: candidate.source,
-      appliedAt: new Date().toISOString(),
-    };
+    recordMarker(marker, candidate, wantHash);
     backups.push(backup);
     actions.push({ destination: candidate.destination, action: "updated", livePath, backup });
   }
@@ -839,8 +925,8 @@ function runWrite(candidates, localOnly, options, homeRoot, marker) {
     return 1;
   }
 
-  // 2. Apply appliable candidates create-missing-only against the live HOME.
-  const { actions, backups } = applyCandidates(candidates, homeRoot, marker);
+  // 2. Apply appliable candidates against the live HOME.
+  const { actions, backups } = applyCandidates(candidates, homeRoot, marker, options);
   const markerChanged = saveMarkerIfChanged(homeRoot, marker);
 
   if (options.json) {
