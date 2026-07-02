@@ -119,6 +119,15 @@ const CLAUDE_REPORTABLE_BOUNDARIES = new Set([
   "claude-skill",
 ]);
 
+// Code-owned allowlist for the strict-manual apply gate (LOO-151). Only these boundaries may
+// ever become appliable under --approve-claude-apply; claude-instructions is deliberately
+// excluded so a manifest-only reclassification can never make ~/.claude/CLAUDE.md writable.
+const CLAUDE_GATE_APPLIABLE_BOUNDARIES = new Set([
+  "claude-settings",
+  "claude-agent",
+  "claude-skill",
+]);
+
 // Resolves one boundary to concrete { templatePath, expandName } entries. Agent and skill
 // boundaries fan out over the plan's curated mappings; expandName fills the destination `*`.
 function claudeBoundaryEntries(boundary, claudePlan) {
@@ -193,8 +202,8 @@ export function buildCandidates(plan, manifest, options, claudePlan = null) {
 
   // Claude slices (LOO-94 instruction/settings, LOO-95 agents/skills): reported dry-run
   // candidates by default. Under the strict-manual gate (LOO-151), --approve-claude-apply makes
-  // home-scoped adapt-disposition candidates eligible for create-missing-only apply; everything
-  // else (reference-only, project-scoped) stays reported and is never written.
+  // home-scoped adapt-disposition candidates from the code-owned boundary allowlist eligible for
+  // create-missing-only apply; everything else stays reported and is never written.
   for (const boundary of (claudePlan?.templateBoundaries ?? []).filter((entry) =>
     CLAUDE_REPORTABLE_BOUNDARIES.has(entry.id),
   )) {
@@ -205,7 +214,10 @@ export function buildCandidates(plan, manifest, options, claudePlan = null) {
         const destination = expandDestination(rawDestination, expandName);
         const disposition = resolveDisposition(destination, "claude", manifest, localOnly);
         const gatedAppliable =
-          Boolean(options.approveClaudeApply) && disposition === "adapt" && destination.startsWith("~/");
+          Boolean(options.approveClaudeApply) &&
+          CLAUDE_GATE_APPLIABLE_BOUNDARIES.has(boundary.id) &&
+          disposition === "adapt" &&
+          destination.startsWith("~/");
         candidates.push({
           id: `claude:${boundary.id}:${destination}`,
           harness: "claude",
