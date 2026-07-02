@@ -76,5 +76,5 @@ cycleOrder:
   - default
   - slow
 defaultThinkingLevel: auto
-snapcompact: 
+snapcompact:
   toolResults: true
