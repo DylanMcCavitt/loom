@@ -127,7 +127,7 @@ function claudeBoundaryEntries(boundary, claudePlan) {
       .filter((mapping) => mapping.claudeCandidate && mapping.candidateTemplate)
       .map((mapping) => ({
         templatePath: mapping.candidateTemplate,
-        expandName: path.basename(mapping.candidateTemplate, ".md"),
+        expandName: mapping.claudeCandidate,
       }));
   }
   if (boundary.id === "claude-skill") {
