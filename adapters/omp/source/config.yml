@@ -21,11 +21,11 @@ task:
     designer: anthropic/claude-fable-5:high
     explore: openai-codex/gpt-5.5:low
     librarian: openai-codex/gpt-5.5
-    oracle: openai-codex/gpt-5.5:high
     plan: anthropic/claude-fable-5:xhigh
-    quick_task: openai-codex/gpt-5.5:low
-    reviewer: openai-codex/gpt-5.5:high
+    reviewer: openai-codex/gpt-5.5:xhigh
+    sonic: openai-codex/gpt-5.5:low
     task: openai-codex/gpt-5.5:medium
+    Tester: openai-codex/gpt-5.5:medium
 mcp: 
   discoveryMode: true
 advisor: 
@@ -38,15 +38,15 @@ inspect_image:
 checkpoint: 
   enabled: true
 modelRoles: 
-  smol: openai-codex/gpt-5.5:low
+  smol: openai-codex/gpt-5.5:xhigh
   tiny: openai-codex/gpt-5.5:low
   default: anthropic/claude-fable-5
   plan: anthropic/claude-fable-5:xhigh
   designer: anthropic/claude-fable-5:high
   vision: openai-codex/gpt-5.5:high
-  slow: anthropic/claude-fable-5:xhigh
+  slow: openai-codex/gpt-5.5:xhigh
   task: openai-codex/gpt-5.5:medium
-  advisor: openai-codex/gpt-5.5:medium
+  advisor: openai-codex/gpt-5.5:off
   commit: openai-codex/gpt-5.5:low
 dev: 
   autoqa: 
