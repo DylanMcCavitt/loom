@@ -191,9 +191,10 @@ export function buildCandidates(plan, manifest, options, claudePlan = null) {
     }
   }
 
-  // Claude reportable slices (LOO-94 instruction/settings, LOO-95 agents/skills): reported
-  // dry-run candidates only. Writes stay future-issue-required until HITL apply semantics are
-  // decided; nothing here is appliable.
+  // Claude slices (LOO-94 instruction/settings, LOO-95 agents/skills): reported dry-run
+  // candidates by default. Under the strict-manual gate (LOO-151), --approve-claude-apply makes
+  // home-scoped adapt-disposition candidates eligible for create-missing-only apply; everything
+  // else (reference-only, project-scoped) stays reported and is never written.
   for (const boundary of (claudePlan?.templateBoundaries ?? []).filter((entry) =>
     CLAUDE_REPORTABLE_BOUNDARIES.has(entry.id),
   )) {
@@ -203,6 +204,8 @@ export function buildCandidates(plan, manifest, options, claudePlan = null) {
       for (const rawDestination of boundary.candidateDestinations ?? []) {
         const destination = expandDestination(rawDestination, expandName);
         const disposition = resolveDisposition(destination, "claude", manifest, localOnly);
+        const gatedAppliable =
+          Boolean(options.approveClaudeApply) && disposition === "adapt" && destination.startsWith("~/");
         candidates.push({
           id: `claude:${boundary.id}:${destination}`,
           harness: "claude",
@@ -213,8 +216,8 @@ export function buildCandidates(plan, manifest, options, claudePlan = null) {
           renderedRelPath: renderedRelForClaude(destination),
           destination,
           disposition,
-          operation: "future-issue-required",
-          appliable: false,
+          operation: gatedAppliable ? "create-file" : "future-issue-required",
+          appliable: gatedAppliable,
         });
       }
     }

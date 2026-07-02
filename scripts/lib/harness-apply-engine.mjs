@@ -201,6 +201,10 @@ export function requiredApproval(candidate, live) {
   ) {
     return "strict-manual + --approve-omp-repo-owned";
   }
+  // A Claude candidate is only ever appliable through the explicit strict-manual gate.
+  if (candidate.harness === "claude") {
+    return "strict-manual + --approve-claude-apply";
+  }
   return "strict-manual";
 }
 

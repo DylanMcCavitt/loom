@@ -207,6 +207,180 @@ test("text dry-run includes overwrite risk for reported Claude candidates", () =
   rmSync(home, { recursive: true, force: true });
 });
 
+// --- Claude strict-manual apply gate (LOO-151) -----------------------------------------------
+
+const LOO_151_CLAUDE_APPLY_CANDIDATES = [
+  {
+    destination: "~/.claude/settings.json",
+    liveRel: ".claude/settings.json",
+    source: "adapters/claude/templates/settings.template.json",
+  },
+  {
+    destination: "~/.claude/agents/omp-designer.md",
+    liveRel: ".claude/agents/omp-designer.md",
+    source: "adapters/claude/templates/agents/omp-designer.md",
+  },
+  {
+    destination: "~/.claude/agents/omp-explorer.md",
+    liveRel: ".claude/agents/omp-explorer.md",
+    source: "adapters/claude/templates/agents/omp-explorer.md",
+  },
+  {
+    destination: "~/.claude/agents/omp-librarian.md",
+    liveRel: ".claude/agents/omp-librarian.md",
+    source: "adapters/claude/templates/agents/omp-librarian.md",
+  },
+  {
+    destination: "~/.claude/agents/omp-planner.md",
+    liveRel: ".claude/agents/omp-planner.md",
+    source: "adapters/claude/templates/agents/omp-planner.md",
+  },
+  {
+    destination: "~/.claude/agents/omp-reviewer.md",
+    liveRel: ".claude/agents/omp-reviewer.md",
+    source: "adapters/claude/templates/agents/omp-reviewer.md",
+  },
+  {
+    destination: "~/.claude/skills/omp-handoff/SKILL.md",
+    liveRel: ".claude/skills/omp-handoff/SKILL.md",
+    source: "adapters/claude/templates/skills/omp-handoff/SKILL.md",
+  },
+  {
+    destination: "~/.claude/skills/omp-plan/SKILL.md",
+    liveRel: ".claude/skills/omp-plan/SKILL.md",
+    source: "adapters/claude/templates/skills/omp-plan/SKILL.md",
+  },
+];
+
+const LOO_151_CLAUDE_APPLY_DESTINATIONS = LOO_151_CLAUDE_APPLY_CANDIDATES.map((entry) => entry.destination);
+
+function repoFixture(rel) {
+  return new URL(`../${rel}`, import.meta.url).pathname;
+}
+
+test("dry-run with --approve-claude-apply makes only home-scoped adapt Claude candidates appliable", () => {
+  const home = tempDir("render-home-");
+  const { result, manifest } = runJson(["--home", home, "--approve-claude-apply"]);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(manifest.result, "pass");
+
+  const claude = manifest.candidates.filter((entry) => entry.harness === "claude");
+  const appliable = claude.filter((entry) => entry.appliable);
+  assert.deepEqual(
+    appliable.map((entry) => entry.destination).sort(),
+    LOO_151_CLAUDE_APPLY_DESTINATIONS.toSorted(),
+  );
+
+  for (const destination of LOO_151_CLAUDE_APPLY_DESTINATIONS) {
+    const entry = claude.find((candidate) => candidate.destination === destination);
+    assert.equal(entry?.disposition, "adapt", `${destination} must stay an adapt-disposition candidate`);
+    assert.equal(entry?.operation, "create-file", `${destination} must be create-file under explicit approval`);
+    assert.equal(entry?.requiredApproval, "strict-manual + --approve-claude-apply");
+  }
+
+  const reportedClaude = claude.filter(
+    (entry) => entry.destination === "~/.claude/CLAUDE.md" || !entry.destination.startsWith("~/"),
+  );
+  assert.ok(reportedClaude.length > 0, "expected reference-only and project-scoped Claude candidates");
+  for (const entry of reportedClaude) {
+    assert.equal(entry.operation, "future-issue-required", `${entry.destination} must remain reported-only`);
+    assert.equal(entry.appliable, false, `${entry.destination} must not be appliable`);
+    assert.equal(entry.requiredApproval, "n/a (reported only)", `${entry.destination} must not require apply approval`);
+  }
+
+  assert.deepEqual(listFiles(home), []);
+
+  rmSync(home, { recursive: true, force: true });
+});
+
+test("--write without --approve-claude-apply leaves Claude home paths untouched", () => {
+  const home = tempDir("render-home-");
+  const { result, manifest } = runJson(["--write", "--home", home]);
+  assert.equal(result.status, 0, result.stderr);
+
+  assert.ok(
+    !manifest.actions.some((entry) => entry.destination.startsWith("~/.claude/")),
+    "Claude candidates must not enter the write action set without explicit approval",
+  );
+  assert.ok(
+    !listFiles(home).some((rel) => rel.startsWith(".claude/")),
+    "default --write must not create files under the scoped Claude home",
+  );
+
+  rmSync(home, { recursive: true, force: true });
+});
+
+test("--write with --approve-claude-apply creates the gated Claude files and is idempotent", () => {
+  const home = tempDir("render-home-");
+  const first = runJson(["--write", "--approve-claude-apply", "--home", home]);
+  assert.equal(first.result.status, 0, first.result.stderr);
+
+  const createdClaude = first.manifest.actions
+    .filter((entry) => entry.action === "created" && entry.destination.startsWith("~/.claude/"))
+    .map((entry) => entry.destination);
+  assert.deepEqual(createdClaude.sort(), LOO_151_CLAUDE_APPLY_DESTINATIONS.toSorted());
+  assert.ok(
+    first.manifest.actions.some((entry) => entry.action === "created" && entry.destination.startsWith("~/.omp/agent/")),
+    "approved Claude apply must still write the normal OMP files",
+  );
+
+  const markerFile = path.join(home, ".loom-harness", "applied-manifest.json");
+  const marker = JSON.parse(readFileSync(markerFile, "utf8"));
+  for (const { destination, liveRel, source } of LOO_151_CLAUDE_APPLY_CANDIDATES) {
+    assert.equal(readFileSync(path.join(home, liveRel), "utf8"), readFileSync(repoFixture(source), "utf8"));
+    assert.equal(marker.entries[destination]?.renderedFrom, source, `${destination} must be recorded in the marker`);
+  }
+
+  const before = listFiles(home).map((rel) => [rel, readFileSync(path.join(home, rel), "utf8")]);
+  const second = runJson(["--write", "--approve-claude-apply", "--home", home]);
+  assert.equal(second.result.status, 0, second.result.stderr);
+  assert.ok(second.manifest.actions.every((entry) => entry.action === "already-applied"));
+  assert.deepEqual(second.manifest.backups, []);
+  const after = listFiles(home).map((rel) => [rel, readFileSync(path.join(home, rel), "utf8")]);
+  assert.deepEqual(after, before);
+
+  rmSync(home, { recursive: true, force: true });
+});
+
+test("--write with --approve-claude-apply skips pre-existing user Claude settings", () => {
+  const home = tempDir("render-home-");
+  const settingsFile = path.join(home, ".claude", "settings.json");
+  const userSettings = "{\"includeCoAuthoredBy\": false, \"operator\": \"keep\"}\n";
+  mkdirSync(path.dirname(settingsFile), { recursive: true });
+  writeFileSync(settingsFile, userSettings);
+
+  const { result, manifest } = runJson(["--write", "--approve-claude-apply", "--home", home]);
+  assert.equal(result.status, 0, result.stderr);
+  const settingsAction = manifest.actions.find((entry) => entry.destination === "~/.claude/settings.json");
+  assert.equal(settingsAction?.action, "skipped");
+  assert.equal(settingsAction?.reason, "exists");
+  assert.equal(readFileSync(settingsFile, "utf8"), userSettings);
+
+  const marker = JSON.parse(readFileSync(path.join(home, ".loom-harness", "applied-manifest.json"), "utf8"));
+  assert.ok(!("~/.claude/settings.json" in marker.entries));
+
+  rmSync(home, { recursive: true, force: true });
+});
+
+test("--write with --approve-claude-apply refuses dirty Claude settings before writing", () => {
+  const home = tempDir("render-home-");
+  const { file, root } = withTempClaudePlan((plan, tempRoot) => {
+    const template = path.join(tempRoot, "settings.template.json");
+    writeFileSync(template, `${JSON.stringify({ model: "blocked-default" }, null, 2)}\n`);
+    const settings = plan.templateBoundaries.find((boundary) => boundary.id === "claude-settings");
+    settings.templatePath = template;
+    settings.candidateDestinations = ["~/.claude/settings.json"];
+  });
+
+  const result = run(["--write", "--approve-claude-apply", "--home", home, "--claude-plan", file]);
+  assert.equal(result.status, 1, "expected non-zero exit on forbidden Claude settings key");
+  assert.match(result.stdout + result.stderr, /forbidden key model/u);
+  assert.deepEqual(listFiles(home), []);
+
+  rmSync(home, { recursive: true, force: true });
+  rmSync(root, { recursive: true, force: true });
+});
+
 test("dry-run resolves dispositions: track/adapt appliable, reference-only and local-only reported/skipped", () => {
   const home = tempDir("render-home-");
   const { manifest } = runJson(["--home", home]);
