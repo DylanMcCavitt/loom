@@ -48,6 +48,7 @@ export function buildHarnessManifest(candidates, localOnly, homeRoot, marker, mo
     reported.push({
       id: candidate.id,
       harness: candidate.harness,
+      boundaryId: candidate.boundaryId,
       source: candidate.source,
       destination: candidate.destination,
       disposition: candidate.disposition,

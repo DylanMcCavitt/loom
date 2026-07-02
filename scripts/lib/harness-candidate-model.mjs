@@ -109,8 +109,36 @@ function renderedRelForClaude(displayDestination) {
   return path.join("claude", scope, tail);
 }
 
-function isClaudeInstructionSettingsBoundary(boundary) {
-  return boundary.id === "claude-instructions" || boundary.id === "claude-settings";
+// Reportable Claude boundaries: instruction/settings (LOO-94) plus generated agent and skill
+// candidates (LOO-95). The skill-symlink-candidates boundary stays excluded — no whole-root or
+// per-skill symlink is ever rendered as a candidate.
+const CLAUDE_REPORTABLE_BOUNDARIES = new Set([
+  "claude-instructions",
+  "claude-settings",
+  "claude-agent",
+  "claude-skill",
+]);
+
+// Resolves one boundary to concrete { templatePath, expandName } entries. Agent and skill
+// boundaries fan out over the plan's curated mappings; expandName fills the destination `*`.
+function claudeBoundaryEntries(boundary, claudePlan) {
+  if (boundary.id === "claude-agent") {
+    return (claudePlan.ompAgentMappings ?? [])
+      .filter((mapping) => mapping.claudeCandidate && mapping.candidateTemplate)
+      .map((mapping) => ({
+        templatePath: mapping.candidateTemplate,
+        expandName: mapping.claudeCandidate,
+      }));
+  }
+  if (boundary.id === "claude-skill") {
+    return (claudePlan.skillCandidateMappings ?? [])
+      .filter((mapping) => mapping.generatedClaudeAdapter && mapping.futureSkillName)
+      .map((mapping) => ({
+        templatePath: mapping.generatedClaudeAdapter,
+        expandName: mapping.futureSkillName,
+      }));
+  }
+  return [{ templatePath: boundary.templatePath, expandName: null }];
 }
 
 function expandDestination(destination, agentName) {
@@ -163,26 +191,32 @@ export function buildCandidates(plan, manifest, options, claudePlan = null) {
     }
   }
 
-  // Claude instruction/settings slice (LOO-94): reported dry-run candidates only. Writes stay
-  // future-issue-required until HITL apply semantics are decided; nothing here is appliable.
-  for (const boundary of (claudePlan?.templateBoundaries ?? []).filter(isClaudeInstructionSettingsBoundary)) {
-    const source = repoPath(boundary.templatePath);
-    const content = readFileSync(source, "utf8");
-    for (const destination of boundary.candidateDestinations ?? []) {
-      const disposition = resolveDisposition(destination, "claude", manifest, localOnly);
-      candidates.push({
-        id: `claude:${boundary.id}:${destination}`,
-        harness: "claude",
-        boundaryId: boundary.id,
-        forbiddenKeys: boundary.forbiddenKeys ?? [],
-        source: path.relative(REPO_ROOT, source),
-        content,
-        renderedRelPath: renderedRelForClaude(destination),
-        destination,
-        disposition,
-        operation: "future-issue-required",
-        appliable: false,
-      });
+  // Claude reportable slices (LOO-94 instruction/settings, LOO-95 agents/skills): reported
+  // dry-run candidates only. Writes stay future-issue-required until HITL apply semantics are
+  // decided; nothing here is appliable.
+  for (const boundary of (claudePlan?.templateBoundaries ?? []).filter((entry) =>
+    CLAUDE_REPORTABLE_BOUNDARIES.has(entry.id),
+  )) {
+    for (const { templatePath, expandName } of claudeBoundaryEntries(boundary, claudePlan)) {
+      const source = repoPath(templatePath);
+      const content = readFileSync(source, "utf8");
+      for (const rawDestination of boundary.candidateDestinations ?? []) {
+        const destination = expandDestination(rawDestination, expandName);
+        const disposition = resolveDisposition(destination, "claude", manifest, localOnly);
+        candidates.push({
+          id: `claude:${boundary.id}:${destination}`,
+          harness: "claude",
+          boundaryId: boundary.id,
+          forbiddenKeys: boundary.forbiddenKeys ?? [],
+          source: path.relative(REPO_ROOT, source),
+          content,
+          renderedRelPath: renderedRelForClaude(destination),
+          destination,
+          disposition,
+          operation: "future-issue-required",
+          appliable: false,
+        });
+      }
     }
   }
 

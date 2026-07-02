@@ -95,8 +95,11 @@ test("dry-run reports Claude instruction and settings candidates without write e
   const claude = manifest.candidates.filter((entry) => entry.harness === "claude");
   const byDestination = new Map(claude.map((entry) => [entry.destination, entry]));
 
+  const instructionSettings = claude.filter((entry) =>
+    entry.boundaryId === "claude-instructions" || entry.boundaryId === "claude-settings",
+  );
   assert.deepEqual(
-    claude.map((entry) => entry.destination),
+    instructionSettings.map((entry) => entry.destination),
     [
       ".claude/CLAUDE.md",
       ".claude/settings.json",
@@ -115,8 +118,53 @@ test("dry-run reports Claude instruction and settings candidates without write e
   assert.ok(manifest.skippedLocalOnly.includes("~/.claude/settings.local.json"));
   assert.ok(manifest.skippedLocalOnly.includes("~/.claude/history.jsonl"));
   assert.ok(manifest.skippedLocalOnly.includes("~/.claude/projects/"));
-  assert.ok(!claude.some((entry) => entry.destination.includes("/agents/")));
-  assert.ok(!claude.some((entry) => entry.destination.includes("/skills/")));
+  assert.deepEqual(listFiles(home), []);
+
+  rmSync(home, { recursive: true, force: true });
+});
+
+test("dry-run reports generated Claude agent and skill candidates with disposition and overwrite risk", () => {
+  const home = tempDir("render-home-");
+  const { manifest } = runJson(["--home", home]);
+  const agents = manifest.candidates.filter((entry) => entry.boundaryId === "claude-agent");
+  const skills = manifest.candidates.filter((entry) => entry.boundaryId === "claude-skill");
+
+  const agentNames = ["omp-designer", "omp-explorer", "omp-librarian", "omp-planner", "omp-reviewer"];
+  assert.deepEqual(
+    agents.map((entry) => entry.destination).sort(),
+    agentNames.flatMap((name) => [`.claude/agents/${name}.md`, `~/.claude/agents/${name}.md`]).sort(),
+  );
+  const skillNames = ["omp-handoff", "omp-plan"];
+  assert.deepEqual(
+    skills.map((entry) => entry.destination).sort(),
+    skillNames.flatMap((name) => [`.claude/skills/${name}/SKILL.md`, `~/.claude/skills/${name}/SKILL.md`]).sort(),
+  );
+
+  for (const entry of [...agents, ...skills]) {
+    // Live ~/.claude surfaces are adapt per the manifest; project-scoped copies are reference-only.
+    assert.equal(entry.disposition, entry.destination.startsWith("~/") ? "adapt" : "reference-only");
+    // HITL write semantics are undecided, so every generated candidate stays reported-only.
+    assert.equal(entry.operation, "future-issue-required");
+    assert.equal(entry.appliable, false);
+    assert.equal(typeof entry.overwriteRisk, "string");
+    assert.equal(entry.requiredApproval, "n/a (reported only)");
+  }
+  assert.deepEqual(listFiles(home), []);
+
+  rmSync(home, { recursive: true, force: true });
+});
+
+test("no whole-root or symlink-manifest Claude skill candidate is rendered", () => {
+  const home = tempDir("render-home-");
+  const { manifest } = runJson(["--home", home]);
+  const claude = manifest.candidates.filter((entry) => entry.harness === "claude");
+
+  assert.ok(!claude.some((entry) => entry.boundaryId === "skill-symlink-candidates"));
+  assert.ok(!claude.some((entry) => entry.destination.includes("<name>")));
+  // Every rendered skill candidate is a curated per-skill file, never a skills-root target.
+  for (const entry of claude.filter((candidate) => candidate.destination.includes("/skills/"))) {
+    assert.match(entry.destination, /\/skills\/[^/]+\/SKILL\.md$/u);
+  }
   assert.deepEqual(listFiles(home), []);
 
   rmSync(home, { recursive: true, force: true });
@@ -489,6 +537,58 @@ test("gate fails a Claude settings candidate with forbidden local routing keys",
 
   const result = run(["--home", home, "--claude-plan", file]);
   assert.equal(result.status, 1, "expected non-zero exit on forbidden Claude settings key");
+  assert.match(result.stdout + result.stderr, /forbidden key model/u);
+  assert.deepEqual(listFiles(home), []);
+
+  rmSync(home, { recursive: true, force: true });
+  rmSync(root, { recursive: true, force: true });
+});
+
+test("gate fails a Claude agent candidate that targets local-only state", () => {
+  const home = tempDir("render-home-");
+  const { file, root } = withTempClaudePlan((plan) => {
+    const agents = plan.templateBoundaries.find((boundary) => boundary.id === "claude-agent");
+    agents.candidateDestinations = ["~/.claude/sessions/*.md"];
+  });
+
+  const result = run(["--home", home, "--claude-plan", file]);
+  assert.equal(result.status, 1, "expected non-zero exit on Claude agent local-only destination");
+  assert.match(result.stdout + result.stderr, /local-only/u);
+  assert.deepEqual(listFiles(home), []);
+
+  rmSync(home, { recursive: true, force: true });
+  rmSync(root, { recursive: true, force: true });
+});
+
+test("gate fails a Claude agent candidate with a forbidden frontmatter key", () => {
+  const home = tempDir("render-home-");
+  const { file, root } = withTempClaudePlan((plan, tempRoot) => {
+    const template = path.join(tempRoot, "omp-reviewer.md");
+    writeFileSync(template, "---\nname: omp-reviewer\nmcpServers: smuggled\n---\n# Reviewer\n");
+    const mapping = plan.ompAgentMappings.find((entry) => entry.claudeCandidate === "omp-reviewer");
+    mapping.candidateTemplate = template;
+  });
+
+  const result = run(["--home", home, "--claude-plan", file]);
+  assert.equal(result.status, 1, "expected non-zero exit on forbidden Claude agent key");
+  assert.match(result.stdout + result.stderr, /forbidden key mcpServers/u);
+  assert.deepEqual(listFiles(home), []);
+
+  rmSync(home, { recursive: true, force: true });
+  rmSync(root, { recursive: true, force: true });
+});
+
+test("gate fails a Claude skill candidate with a forbidden frontmatter key", () => {
+  const home = tempDir("render-home-");
+  const { file, root } = withTempClaudePlan((plan, tempRoot) => {
+    const template = path.join(tempRoot, "SKILL.md");
+    writeFileSync(template, "---\nname: omp-plan\nmodel: blocked-default\n---\n# Plan\n");
+    const mapping = plan.skillCandidateMappings.find((entry) => entry.futureSkillName === "omp-plan");
+    mapping.generatedClaudeAdapter = template;
+  });
+
+  const result = run(["--home", home, "--claude-plan", file]);
+  assert.equal(result.status, 1, "expected non-zero exit on forbidden Claude skill key");
   assert.match(result.stdout + result.stderr, /forbidden key model/u);
   assert.deepEqual(listFiles(home), []);
 
