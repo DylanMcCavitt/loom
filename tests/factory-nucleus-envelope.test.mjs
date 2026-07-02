@@ -301,6 +301,34 @@ test("envelope export/import round-trips a clean durable policy", () => {
   assert.deepEqual(importEnvelope(yaml), SAMPLE_ENVELOPE);
 });
 
+test("envelope export/import preserves quoted, escaped, and multiline strings", () => {
+  const hostileString = "quoted \"value\" with slash \\ and newline\nnext line";
+  const hostileEnvelope = {
+    ...SAMPLE_ENVELOPE,
+    tracker: { ...SAMPLE_ENVELOPE.tracker, team: hostileString },
+    proof: { commands: [hostileString] },
+    circuits: [{ ...SAMPLE_ENVELOPE.circuits[0], reason: hostileString }],
+  };
+  const { yaml, envelope } = exportEnvelope(hostileEnvelope);
+
+  assert.deepEqual(envelope, hostileEnvelope);
+  assert.equal(validateEnvelopeYaml(yaml).ok, true);
+  assert.deepEqual(importEnvelope(yaml), hostileEnvelope);
+
+  const withSecret = {
+    ...hostileEnvelope,
+    proof: {
+      commands: [...hostileEnvelope.proof.commands, "deploy --key sk-livesecret0123456789 \"quoted\""],
+    },
+  };
+  const { yaml: redactedYaml } = exportEnvelope(withSecret);
+
+  assert.doesNotMatch(redactedYaml, /livesecret0123456789/u);
+  assert.match(redactedYaml, /\[REDACTED\]/u);
+  assert.equal(validateEnvelopeYaml(redactedYaml).ok, true);
+  assert.deepEqual(importEnvelope(redactedYaml), redactEnvelope(withSecret));
+});
+
 test("envelope export redacts secret-looking values and still validates", () => {
   const withSecret = {
     ...SAMPLE_ENVELOPE,

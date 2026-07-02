@@ -355,7 +355,19 @@ function isArrayMappingItem(text) {
 
 function parseScalar(raw) {
   if (raw === "") return undefined;
-  if ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))) return raw.slice(1, -1);
+  if (raw.length >= 2 && raw.startsWith('"') && raw.endsWith('"')) {
+    // Double-quoted scalars are written by JSON.stringify; decode symmetrically
+    // so `"`, `\`, and newline escapes round-trip instead of surviving as raw text.
+    try {
+      return JSON.parse(raw);
+    } catch {
+      throw new Error(`YAML parse error: invalid double-quoted scalar ${raw}`);
+    }
+  }
+  if (raw.length >= 2 && raw.startsWith("'") && raw.endsWith("'")) {
+    // YAML single-quoted style: the only escape is '' for a literal quote.
+    return raw.slice(1, -1).replace(/''/gu, "'");
+  }
   if (raw === "true") return true;
   if (raw === "false") return false;
   if (raw === "null") return null;

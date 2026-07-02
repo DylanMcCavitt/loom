@@ -8,6 +8,7 @@ import {
   CIRCUIT_OUTCOMES,
   GHOST_STATES,
   artifactMetadata,
+  parseYaml,
   resolveFactoryStatePaths,
   validateAdapterGhost,
   validateArtifactMetadata,
@@ -53,6 +54,21 @@ circuits:
 test("valid minimal envelope YAML validates through the schema", () => {
   const result = validateEnvelopeYaml(validEnvelopeYaml);
   assert.equal(result.ok, true, result.errors.join("\n"));
+});
+
+test("parseYaml decodes JSON escapes in double-quoted scalars", () => {
+  assert.deepEqual(
+    parseYaml('key: "quote: \\" slash: \\\\ newline: \\n tab: \\t"\n'),
+    { key: "quote: \" slash: \\ newline: \n tab: \t" },
+  );
+});
+
+test("parseYaml decodes YAML single-quoted scalar quote escapes", () => {
+  assert.deepEqual(parseYaml("key: 'it''s'\n"), { key: "it's" });
+});
+
+test("parseYaml rejects malformed double-quoted scalars", () => {
+  assert.throws(() => parseYaml('key: "a" tail"\n'), /invalid double-quoted scalar/u);
 });
 
 test("envelope YAML keeps colon-bearing list scalars and nested array item mappings intact", () => {
