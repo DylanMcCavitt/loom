@@ -18,12 +18,12 @@ display:
 task: 
   eager: preferred
   agentModelOverrides: 
-    designer: anthropic/claude-sonnet-5
-    explore: google-antigravity/gemini-3.5-flash:high
+    designer: anthropic/claude-fable-5:high
+    explore: openai-codex/gpt-5.5:low
     librarian: openai-codex/gpt-5.5
     oracle: openai-codex/gpt-5.5:high
-    plan: openai-codex/gpt-5.5:high
-    quick_task: google-antigravity/gemini-3.5-flash:high
+    plan: anthropic/claude-fable-5:xhigh
+    quick_task: openai-codex/gpt-5.5:low
     reviewer: openai-codex/gpt-5.5:high
     task: openai-codex/gpt-5.5:medium
 mcp: 
@@ -38,16 +38,16 @@ inspect_image:
 checkpoint: 
   enabled: true
 modelRoles: 
-  default: openai-codex/gpt-5.5:high
   smol: openai-codex/gpt-5.5:low
-  task: openai-codex/gpt-5.5:medium
   tiny: openai-codex/gpt-5.5:low
-  commit: openai-codex/gpt-5.5:low
+  default: anthropic/claude-fable-5
   plan: anthropic/claude-fable-5:xhigh
+  designer: anthropic/claude-fable-5:high
+  vision: openai-codex/gpt-5.5:high
   slow: anthropic/claude-fable-5:xhigh
-  designer: anthropic/claude-fable-5:xhigh
-  vision: anthropic/claude-fable-5:high
-  advisor: anthropic/claude-fable-5:medium
+  task: openai-codex/gpt-5.5:medium
+  advisor: openai-codex/gpt-5.5:medium
+  commit: openai-codex/gpt-5.5:low
 dev: 
   autoqa: 
     consent: denied
@@ -61,9 +61,9 @@ readLineNumbers: true
 retry: 
   fallbackChains: 
     openai-codex/gpt-5.5: 
-      - anthropic/claude-opus-4-6
-    anthropic/claude-opus-4-8: 
-      - anthropic/claude-opus-4-6
+      - anthropic/claude-fable-5
+    anthropic/claude-fable-5: 
+      - openai-codex/gpt-5.5
 codexResets: 
   autoRedeem: "yes"
 recap: 
@@ -75,4 +75,4 @@ cycleOrder:
   - smol
   - default
   - slow
-defaultThinkingLevel: high
+defaultThinkingLevel: auto
