@@ -11,11 +11,11 @@ test("roboports frontmatter name matches the directory", () => {
 test("roboports has the required trigger", () => {
   assert.match(
     skill,
-    /description: Runs one tracked Linear issue end-to-end as code/u,
+    /description: The implement coordinator\. Runs one tracked Linear issue end-to-end as code/u,
   );
   assert.match(
     skill,
-    /Use when the user asks to start, continue, or ship one tracked Linear issue end-to-end \(implement, test, and open or update the PR\)\./u,
+    /Use when the user asks to start, continue, or ship one tracked issue, refactor without changing behavior, or optimize a proven bottleneck\./u,
   );
 });
 
@@ -30,10 +30,13 @@ test("roboports keeps the localized-fanout discipline", () => {
   assert.match(skill, /never a universal backbone/u);
 });
 
-test("roboports cites bus-first and routes to specialists", () => {
-  for (const route of ["bus-first", "tdd", "diagnose", "inserter", "radar", "proof-pass", "rocket-launch"]) {
+test("roboports cites the minimal-diff doctrine and routes to specialists", () => {
+  for (const route of ["tdd", "diagnose", "lab", "rocket-launch"]) {
     assert.ok(skill.includes(`\`${route}\``), `${route} citation missing`);
   }
+  assert.match(skill, /biters\s+minimal-diff lens/u);
+  assert.match(skill, /biters drift lens/u);
+  assert.match(skill, /blueprint's triage lens/u);
 });
 
 test("roboports implements only the acceptance criteria", () => {

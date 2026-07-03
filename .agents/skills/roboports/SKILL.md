@@ -1,15 +1,40 @@
 ---
 name: roboports
-description: Runs one tracked Linear issue end-to-end as code — one issue to one branch/worktree to one PR — with localized subagent fanout and a minimal diff. Use when the user asks to start, continue, or ship one tracked Linear issue end-to-end (implement, test, and open or update the PR).
+description: The implement coordinator. Runs one tracked Linear issue end-to-end as code — one issue to one branch/worktree to one PR — with localized subagent fanout and a minimal diff, and covers behavior-preserving refactors and measured performance work through lenses. Use when the user asks to start, continue, or ship one tracked issue, refactor without changing behavior, or optimize a proven bottleneck.
 ---
 
 # Roboports
 
-Build the ghosts. `ghosts` stamps the planned work; `roboports` coordinates the
-bounded build network that turns one *ready* Linear issue into landed code: one
-issue → one branch/worktree → one PR, no more. The main agent is the roboport hub
-— it owns intake, integration, and handing the PR to `rocket-launch`; subagents do
-bounded, disjoint, localized work.
+Build the planned work. Blueprint's issue-decomposition lens stamps the planned
+work; `roboports` coordinates the bounded build network that turns one *ready*
+Linear issue into landed code: one issue → one branch/worktree → one PR, no
+more. Through lenses it also runs behavior-preserving refactors and measured
+performance work. The main agent is the roboport hub — it owns intake,
+integration, and handing the PR to `rocket-launch`; subagents do bounded,
+disjoint, localized work.
+
+## Lenses
+
+The input packet's `lens` field selects which variant guidance loads:
+
+- A named lens loads `references/lens-<name>.md` (e.g. `lens: refactor` loads
+  `references/lens-refactor.md`).
+- When `lens` is absent, load the default lens
+  `references/lens-issue-delivery.md`.
+- Only the named lens references load; unnamed lens references stay unloaded.
+- Lenses select guidance only; they never widen packet scope, change the
+  implement-mode boundary, or grant extra delegation authority.
+
+Available lenses:
+
+- `issue-delivery` (default) — one ready issue through branch, implementation,
+  proof, review, and PR readiness.
+- `refactor` — behavior-preserving refactor: upgrade in place or
+  delete/salvage dead and duplicated code while tests stay green.
+- `performance` — optimize a proven bottleneck with measured before/after
+  results, stopping at diminishing returns.
+
+The rest of this entrypoint describes the default issue-delivery lens.
 
 This skill does not create branches, worktrees, or PRs while being validated.
 During real work it owns one issue from context-gathering to a review-ready PR.
@@ -52,16 +77,19 @@ write scope** and a single lens.
 
 ## Doctrine and specialist routing
 
-- Cite `bus-first` for the implementation: reuse before you write, ship the
+- Apply the minimal-diff doctrine for the implementation (the biters
+  minimal-diff lens reviews against it): reuse before you write, ship the
   minimum that works, never cut validation/security/error-handling/accessibility.
 - Use `tdd` when the work is test-first / red-green-refactor.
 - Use `diagnose` when the issue is a bug, failing check, exception, or regression.
-- Use `inserter` to triage — classify, prioritize, or route incoming work.
-  `roboports` only builds an already-tracked, ready issue; it does not triage.
-- Use `radar` before or after implementation when repo/tracker/proof drift could
-  change the route; radar checks only and does not mutate state.
-- Use `proof-pass` to collect targeted evidence for the implemented behavior
-  before launch gates rely on it.
+- Route triage — classifying, prioritizing, or routing incoming work — to
+  blueprint's triage lens. `roboports` only builds an already-tracked, ready
+  issue; it does not triage.
+- Use the biters drift lens before or after implementation when
+  repo/tracker/proof drift could change the route; it checks only and does not
+  mutate state.
+- Use `lab` to collect targeted proof for the implemented behavior (the lab
+  ui-proof lens for user-visible flows) before launch gates rely on it.
 - Hand the finished PR to `rocket-launch`. `roboports` does not own closeout.
 
 ## Flow

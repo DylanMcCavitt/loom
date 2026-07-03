@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from "node:fs";
 import path from "node:path";
-import { compatSkillsRoot, nucleusSkillsRoot } from "./lib/layout.mjs";
+import { compatSkillsRoot, nucleusSkillsRoot, nucleusUtilitiesRoot } from "./lib/layout.mjs";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const sourceRoot = path.join(repoRoot, nucleusSkillsRoot);
+const utilitiesRoot = path.join(repoRoot, nucleusUtilitiesRoot);
 const compatRoot = path.join(repoRoot, compatSkillsRoot);
 
 function assertRepoPath(target) {
@@ -53,4 +54,8 @@ assertRepoPath(sourceRoot);
 assertRepoPath(compatRoot);
 clearCompatSurface();
 copyTree(sourceRoot, compatRoot);
-console.log(`Rendered ${compatSkillsRoot} compatibility surface from ${nucleusSkillsRoot}`);
+if (existsSync(utilitiesRoot) && statSync(utilitiesRoot).isDirectory()) {
+  assertRepoPath(utilitiesRoot);
+  copyTree(utilitiesRoot, compatRoot);
+}
+console.log(`Rendered ${compatSkillsRoot} compatibility surface from ${nucleusSkillsRoot} and ${nucleusUtilitiesRoot}`);

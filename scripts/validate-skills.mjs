@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { homedir } from "node:os";
-import { compatSkillsRoot, nucleusSkillsRoot } from "./lib/layout.mjs";
+import { compatSkillsRoot, nucleusSkillsRoot, nucleusUtilitiesRoot } from "./lib/layout.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseFrontmatter as parseMarkdownFrontmatter } from "./lib/frontmatter.mjs";
@@ -14,6 +14,7 @@ const USAGE = `Usage: node scripts/validate-skills.mjs [--skills-dir <dir>] [--g
 function readArgs(argv) {
   const options = {
     skillsDir: DEFAULT_SKILLS_DIR,
+    extraSkillsDirs: [nucleusUtilitiesRoot],
     compatSkillsDir: DEFAULT_COMPAT_SKILLS_DIR,
     checkCompat: true,
     globalSkillsDirs: [],
@@ -32,6 +33,7 @@ function readArgs(argv) {
     }
     if (arg === "--skills-dir") {
       options.skillsDir = next;
+      options.extraSkillsDirs = [];
       options.checkCompat = false;
     } else if (arg === "--global-skills-dir") {
       options.globalSkillsDirs.push(next);
@@ -70,7 +72,7 @@ function readFrontmatterData(filePath, content, errors) {
 
 
 function containsConcreteUseWhen(description) {
-  return /\bUse when\b\s+\S+/u.test(description);
+  return /\bUse (?:when|for)\b\s+\S+/u.test(description);
 }
 
 function scanSecrets(filePath, content, errors) {
@@ -162,39 +164,43 @@ function collectRelativeFiles(root, current = root, files = []) {
   return files.sort();
 }
 
-function validateCompatSurface(skillsRoot, compatRoot, errors) {
+function validateCompatSurface(skillsRoots, compatRoot, errors) {
   if (!existsSync(compatRoot) || !statSync(compatRoot).isDirectory()) {
     errors.push(`${path.relative(process.cwd(), compatRoot)}: expected rendered compatibility surface`);
     return;
   }
-  const canonicalFiles = collectRelativeFiles(skillsRoot);
+  const canonicalSources = new Map();
+  for (const root of skillsRoots) {
+    if (!existsSync(root)) continue;
+    for (const relativeFile of collectRelativeFiles(root)) {
+      canonicalSources.set(relativeFile, root);
+    }
+  }
+  const canonicalFiles = [...canonicalSources.keys()].sort();
   const compatFiles = collectRelativeFiles(compatRoot);
+  const rootLabels = skillsRoots.map((root) => path.relative(process.cwd(), root)).join(" and ");
   if (JSON.stringify(canonicalFiles) !== JSON.stringify(compatFiles)) {
-    errors.push(`${path.relative(process.cwd(), compatRoot)}: rendered compatibility surface must contain exactly the files in ${path.relative(process.cwd(), skillsRoot)}`);
+    errors.push(`${path.relative(process.cwd(), compatRoot)}: rendered compatibility surface must contain exactly the files in ${rootLabels}`);
     return;
   }
   for (const relativeFile of canonicalFiles) {
-    const canonical = readFileSync(path.join(skillsRoot, relativeFile));
+    const sourceRoot = canonicalSources.get(relativeFile);
+    const canonical = readFileSync(path.join(sourceRoot, relativeFile));
     const compat = readFileSync(path.join(compatRoot, relativeFile));
     if (!canonical.equals(compat)) {
-      errors.push(`${path.join(path.relative(process.cwd(), compatRoot), relativeFile)}: rendered compatibility file differs from ${path.join(path.relative(process.cwd(), skillsRoot), relativeFile)}`);
+      errors.push(`${path.join(path.relative(process.cwd(), compatRoot), relativeFile)}: rendered compatibility file differs from ${path.join(path.relative(process.cwd(), sourceRoot), relativeFile)}`);
     }
   }
 }
 
-export function validateSkills(options) {
-  const skillsRoot = path.resolve(options.skillsDir);
-  const errors = [];
-  const seenNames = new Map();
-  const globalNames = collectGlobalSkillNames(options.globalSkillsDirs, skillsRoot);
-  for (const reserved of options.reservedNames) globalNames.add(reserved);
-
+function validateSkillsRoot(skillsDir, { errors, seenNames, globalNames }) {
+  const skillsRoot = path.resolve(skillsDir);
   if (!existsSync(skillsRoot)) {
-    return { checked: 0, errors };
+    return 0;
   }
   if (!statSync(skillsRoot).isDirectory()) {
-    errors.push(`${options.skillsDir}: expected a directory`);
-    return { checked: 0, errors };
+    errors.push(`${skillsDir}: expected a directory`);
+    return 0;
   }
 
   const entries = listEntries(skillsRoot);
@@ -249,7 +255,24 @@ export function validateSkills(options) {
     }
   }
 
-  if (options.checkCompat) validateCompatSurface(skillsRoot, path.resolve(options.compatSkillsDir), errors);
+  return checked;
+}
+
+export function validateSkills(options) {
+  const errors = [];
+  const seenNames = new Map();
+  const skillsRoots = [options.skillsDir, ...(options.extraSkillsDirs ?? [])];
+  const globalNames = collectGlobalSkillNames(options.globalSkillsDirs, path.resolve(options.skillsDir));
+  for (const reserved of options.reservedNames) globalNames.add(reserved);
+
+  let checked = 0;
+  for (const skillsDir of skillsRoots) {
+    checked += validateSkillsRoot(skillsDir, { errors, seenNames, globalNames });
+  }
+
+  if (options.checkCompat) {
+    validateCompatSurface(skillsRoots.map((dir) => path.resolve(dir)), path.resolve(options.compatSkillsDir), errors);
+  }
 
   return { checked, errors };
 }

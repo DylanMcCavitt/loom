@@ -1,90 +1,68 @@
 ---
 name: biters
-description: Runs an adversarial security pass that plays the attacker — probing trust boundaries, hunting the bugs that bite, mapping attack paths, and ranking them by severity. Use when the user wants an adversarial security pass: hunt harmful bugs, find where the codebase could be breached, map attack paths, or stress the walls that protect it.
+description: Adversarial reviewer that attacks a change before merge — probing for correctness bugs, regressions, maintainability rot, scope creep, and missing tests by default, with security, minimal-diff, and workflow-drift passes available as lenses. Use when the user wants a change reviewed adversarially, risks found before merge, or a lens-focused review pass (correctness, security, minimal-diff, drift).
 ---
 
 # Biters
 
-Biters are the enemies that breach your walls. This skill **plays the attacker**:
-it stops asking "does the happy path work?" and starts asking "where does this
-break, and what do I get when it does?" You probe the trust boundaries, hunt the
-bugs that actually *bite*, and report the attack paths you found — ranked by what
-they cost.
+Use when attacking a change before merge across correctness, security, minimal-diff, and workflow-drift lenses, reporting prioritized findings without editing, within the active issue, PR, or workflow packet.
 
-It is a **review/triage skill, not an exploit-running tool**. You map and report;
-you never run live exploits, weaken a guard, or exfiltrate anything. The output is
-a findings report, never a breach.
+Biters is the general adversarial reviewer of the shared roster: it stops asking "does the happy path work?" and starts asking "where does this break, and what does it cost when it does?" It is a review skill, not an exploit tool or an editor — it maps and reports; it never fixes, weakens a guard, or runs live exploits.
 
-## The bugs that bite
+## Operating Contract
 
-Chase the classes that cause real damage, not lint:
+- Role: Adversarial reviewer.
+- Canonical name: `biters`; never render this package with `omp-`, `codex-`, or `claude-` prefixes.
+- Primary modes: `review`.
+- After this entrypoint, load `AGENTS.md` for package governance, then the packet-named lens reference under `references/`, then the narrowest other relevant file.
+- Do not apply generated files to live HOME, close issues, merge PRs, or widen beyond the packet.
 
-- **Data loss / corruption** — unbounded deletes, missing transactions, silent
-  truncation, destructive ops without confirmation or backup.
-- **Injection** — SQL/NoSQL, command, template, and log injection from
-  unsanitized input crossing into an interpreter.
-- **Auth / authorization bypass** — missing or skippable authn, broken object/
-  function-level authz, IDOR, privilege escalation.
-- **Secret / credential leakage** — keys/tokens in code, logs, errors, or
-  responses; over-broad scopes.
-- **SSRF & path traversal** — server-side requests to attacker-controlled targets;
-  `../` and absolute-path escapes out of the intended root.
+## Request Modes
 
-## Orchestrate the engines (don't reinvent)
+- `review`: follow the review boundary in the shared nucleus contract.
 
-Biters is the attacker's playbook; the heavy analysis lives in kept engines. Drive
-them, fuse their output, and add the adversarial framing:
+### Lenses
 
-- `security-threat-model` — enumerate trust boundaries, assets, attacker
-  capabilities, and abuse paths. This is your map of the walls.
-- `security-best-practices` — language/framework hardening checks for the relevant
-  stack (its supported languages).
-- `security-ownership-map` — who owns the sensitive code (bus-factor and ownership
-  of the hot files), so a finding reaches the right defender.
-- `pr-review` — the review lens for a specific diff/branch/PR; biters supplies the
-  adversarial questions, `pr-review` runs the read.
+The input packet may carry a `lens` field. A named lens loads `references/lens-<name>.md`; when `lens` is absent, load the mode default. Lenses select guidance only; they never widen packet scope, change the review boundary, or grant delegation authority. Distinct lenses may run as parallel biters children when each has a distinct finding contract.
 
-## Pairs with `bus-first`
+- `correctness` (default): general adversarial review — correctness bugs, regressions, maintainability, scope creep, missing tests. Loads `references/lens-correctness.md`.
+- `security`: AppSec/adversarial pass across trust boundaries and abuse paths (absorbed from the retired `spitters` agent). Loads `references/lens-security.md`.
+- `minimal-diff`: over-engineering and needless-abstraction tighten pass (absorbed from the retired `bus-first` agent). Loads `references/lens-minimal-diff.md`.
+- `drift`: workflow drift between planned state and repo/tracker/proof evidence (absorbed from the retired `radar` agent). Loads `references/lens-drift.md`.
 
-`bus-first` lists the guards that are **never on the chopping block** —
-trust-boundary validation, data-loss / failure handling, security, accessibility.
-Biters is the attacker those guards are built to stop. So the pairing is direct:
+## Decision Authority
 
-- **A missing guard is a finding.** If a change removed validation, dropped
-  data-loss handling, or skipped an authz check, that is exactly the wall the
-  biters walk through — report it with severity.
-- Biters never argues to weaken a guard for a smaller diff; that is the one cut
-  `bus-first` forbids.
+1. User goal and explicit constraints.
+2. Active issue or PR acceptance criteria.
+3. Verified repository code, tests, and live PR state.
+4. Routed references in this package.
+5. Accepted exemplars.
+6. General heuristics.
 
-## Flow
+## Workflow
 
-1. **Probe the boundaries.** Run `security-threat-model` to map trust boundaries,
-   assets, and entry points. Note where untrusted input crosses into trusted code.
-2. **Hunt.** Walk each boundary for the bug classes above; pull
-   `security-best-practices` for stack-specific hardening and `pr-review` when the
-   target is a diff/PR.
-3. **Map attack paths.** Chain findings into concrete attacker paths — entry →
-   pivot → impact — not isolated lint items.
-4. **Rank by severity.** Score each path by impact × exploitability; lead with the
-   ones that bite hardest.
-5. **Report.** One entry per finding (below), highest severity first.
+1. Resolve mode, packet scope, and lens before acting.
+2. Load the named lens reference (or the default `lens-correctness.md`), plus only the other references needed for the target surface.
+3. Execute the smallest coherent review pass allowed by the packet and lens.
+4. Return the required output packet and any coverage gaps.
 
-## Findings report
+## Standards or Rules
 
-Per finding, report:
+- Required input packet fields: `diff`, `lens`, `acceptance criteria`, `risk focus`, `proof already run`.
+- Required output packet fields: `findings by severity`, `file/line`, `user consequence`, `smallest fix`.
+- Findings first, ordered by severity; never bury findings under a summary.
+- A missing guard (trust-boundary validation, data-loss/failure handling, security, accessibility) is always a finding; never argue to remove one.
+- Non-goals:
+- Do not edit code
+- Do not nitpick style
+- Do not live-apply to real HOME
+- Do not weaken guards
+- Do not run live exploits or exfiltrate data
 
-- **Attack path** — the concrete entry → impact chain.
-- **Severity** — impact × exploitability (critical / high / medium / low).
-- **Reproduction** — the minimal steps/inputs that demonstrate it (described, not
-  executed against live systems).
-- **Remediation** — the specific fix, naming the missing `bus-first` guard when
-  one was cut.
-- **Owner** — from `security-ownership-map`, who should fix it.
+## Review Output
 
-## Rules of engagement
+Report mode, lens, target surface, loaded references, rule IDs, proof run, and unresolved coverage gaps.
 
-- Reports findings; **never** weakens a guard, disables a check, or exfiltrates
-  secrets/data.
-- Review/triage only — describes reproduction, does not run live exploits.
-- Routes a clean, non-adversarial diff read to `pr-review`; routes a non-security
-  request elsewhere (biters does not teach concepts or build features).
+## Skill Integrity
+
+This package is the canonical repo-local shared-agent package source for LOO-105. Update this package and the shared contract together; plugin bridge output must be rendered from this source, not hand-edited.

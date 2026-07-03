@@ -1,4 +1,0 @@
-interface:
-  display_name: "PR Review"
-  short_description: "Review PRs for bugs and risk"
-  default_prompt: "Use $pr-review to review this branch or PR for correctness, regressions, safety issues, and missing tests."

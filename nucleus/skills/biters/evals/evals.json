@@ -4,31 +4,37 @@
     {
       "id": 1,
       "prompt": "Do an adversarial security pass on the auth flow — where could it be bypassed?",
-      "expected_output": "Activates biters: plays the attacker against the auth flow, probing trust boundaries via security-threat-model, hunting auth/authorization-bypass, injection, secret-leakage, SSRF, and path-traversal bugs (pulling security-best-practices for stack hardening), mapping concrete attack paths and ranking them by severity, and reporting each finding with reproduction, remediation, and the owner from security-ownership-map. Treats any missing bus-first guard as a finding. Reports only — does not run live exploits or weaken guards.",
+      "expected_output": "Activates biters with the security lens (lens-security.md): plays the attacker against the auth flow, probing trust boundaries (using the security-threat-model utility skill when available), hunting auth/authorization-bypass, injection, secret-leakage, SSRF, and path-traversal bugs (pulling security-best-practices for stack hardening), mapping concrete attack paths and ranking them by severity, and reporting each finding with reproduction and mitigation. Treats any missing guard as a finding. Reports only — does not run live exploits or weaken guards.",
       "files": []
     },
     {
       "id": 2,
       "prompt": "Where could this codebase get breached?",
-      "expected_output": "Activates biters: enumerates trust boundaries and assets with security-threat-model, hunts the bugs that bite (data loss, injection, auth bypass, secret leakage, SSRF, path traversal), chains them into attacker paths ranked by severity, and reports findings with reproduction and remediation. A cut bus-first guard (validation, data-loss handling, security, accessibility) is reported as a finding.",
+      "expected_output": "Activates biters with the security lens: enumerates trust boundaries and assets, hunts the bugs that bite (data loss, injection, auth bypass, secret leakage, SSRF, path traversal), chains them into attacker paths ranked by severity, and reports findings with reproduction and mitigation. A cut guard (validation, data-loss handling, security, accessibility) is reported as a finding.",
       "files": []
     },
     {
       "id": 3,
-      "prompt": "hunt the nasty bugz that cud get us pwned and rank em by how bad",
-      "expected_output": "Despite the typos and slang, activates biters: runs the adversarial pass, hunts the harmful bug classes, maps attack paths, ranks them by severity, and reports findings with reproduction and remediation — orchestrating security-threat-model, security-best-practices, security-ownership-map, and pr-review rather than reinventing them.",
+      "prompt": "Review this PR before merge — find the bugs and risks.",
+      "expected_output": "Activates biters with the default correctness lens (lens-correctness.md): inspects base/head, changed files, and surrounding code; prioritizes correctness bugs, behavioral regressions, safety boundary violations, missing tests, scope creep, and docs mismatch; returns findings first, ordered by severity, each with file/line, user consequence, and smallest fix. Does not edit code.",
       "files": []
     },
     {
       "id": 4,
-      "prompt": "Review this PR for style and naming nits.",
-      "expected_output": "Does NOT activate biters; routes to the general pr-review review lens for a non-adversarial style/quality read. biters only runs an adversarial security pass and supplies attacker-framed questions, not stylistic review.",
+      "prompt": "This diff feels over-engineered — tighten it.",
+      "expected_output": "Activates biters with the minimal-diff lens (lens-minimal-diff.md): walks the reuse ladder over each added construct, proposes KEEP/CUT/GUARD findings mapped to ladder rungs, never proposes removing trust-boundary validation, data-loss handling, security, or accessibility, and confirms no guard was weakened. Proposes cuts only; does not edit.",
       "files": []
     },
     {
       "id": 5,
+      "prompt": "Has the repo drifted from the planned issues? Check before we launch.",
+      "expected_output": "Activates biters with the drift lens (lens-drift.md): compares repo/tracker/proof evidence against the planned state, reports exactly one drift class (none, low-risk, material, unknown), cites evidence for every claim, and suggests the next route (rocket-launch, lab smoke-proof lens, roboports, or blueprint triage lens). Check-only — no tracker writes or repo edits.",
+      "files": []
+    },
+    {
+      "id": 6,
       "prompt": "Explain how OAuth 2.0 authorization code flow works.",
-      "expected_output": "Does NOT activate biters; this is a conceptual explanation, not a request to attack or audit a codebase. No security pass, no findings — biters does not teach concepts.",
+      "expected_output": "Does NOT activate biters; this is a conceptual explanation, not a request to review or attack a change. No review pass, no findings — biters does not teach concepts.",
       "files": []
     }
   ]

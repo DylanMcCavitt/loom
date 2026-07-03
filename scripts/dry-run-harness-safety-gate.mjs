@@ -26,6 +26,7 @@ import {
   claudePlanPath,
   dryRunLinkPlanPath,
   nucleusSkillsRoot,
+  nucleusUtilitiesRoot,
   resourceManifestPath,
 } from "./lib/layout.mjs";
 
@@ -409,7 +410,7 @@ function trackedPathErrors() {
     // or "browser" legitimately match runtime-state path tokens. Skill files are
     // secret-scanned by validate-skills and the tracked-source content scan, so they
     // are exempt from this runtime-state path-name check.
-    if (trackedPath.startsWith(`${nucleusSkillsRoot}/`) || trackedPath.startsWith(`${compatSkillsRoot}/`)) continue;
+    if (trackedPath.startsWith(`${nucleusSkillsRoot}/`) || trackedPath.startsWith(`${nucleusUtilitiesRoot}/`) || trackedPath.startsWith(`${compatSkillsRoot}/`)) continue;
     const reason = dangerousPathReason(trackedPath);
     if (reason) errors.push(`tracked repo path is dangerous ${reason}: ${trackedPath}`);
   }

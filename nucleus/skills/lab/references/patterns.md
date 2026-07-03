@@ -6,7 +6,11 @@ Resolve request mode before acting. Reviews do not become edits; proof does not 
 
 ## Narrow reference loading
 
-Load `SKILL.md`, then only the reference files needed for the requested surface. Use `coverage-gaps.md` when the package lacks a stable rule.
+Load `SKILL.md`, then the packet-named lens reference (`lens-command-proof.md` by default), then only the other reference files needed for the requested surface. Use `coverage-gaps.md` when the package lacks a stable rule.
+
+## Lens fanout
+
+A proof coordinator may run distinct proof lenses (`command-proof`, `ui-proof`, `smoke-proof`) as parallel lab children when each lens has a distinct evidence contract; siblings coordinate through the parent packet.
 
 ## Packet output
 

@@ -17,8 +17,9 @@ Node >= 20, ESM (`type: module`), no external runtime dependencies.
 ## Layout
 
 - `nucleus/` - canonical, model-agnostic source for agents and skills. **Edit here first.**
-  - `nucleus/skills/<agent>/` - one Vercel-shaped package per canonical agent (SKILL.md, AGENTS.md, references/, exemplars/)
-  - `nucleus/agents/shared-nucleus-agents.md` - shared agent contract: request modes, delegation DAG, packet contract, decision authority
+  - `nucleus/skills/<agent>/` - one Vercel-shaped package per canonical agent (SKILL.md, AGENTS.md, references/ with lens files, exemplars/). Exactly 7 roster agents: `blueprint` (shape), `roboports` (implement), `biters` (review), `lab` (prove), `repair-pack` (repair), `rocket-launch` (launch), `belt` (handoffs). Behavioral variants are lens references selected by the packet `lens` field.
+  - `nucleus/utilities/<skill>/` - non-roster utility skills (tdd, debug-tools, assembler, prospect, space-age, security-*, etc.)
+  - `nucleus/agents/shared-nucleus-agents.md` - shared agent contract: request modes, pipeline DAG, lens policy, packet contract, decision authority
 - `adapters/` - harness-specific translators (omp, codex, claude, plugin-bridge). Adapters translate format only; never change canonical names, routing, or behavior.
 - `distributions/` - generated/checkable output and OMP reference snapshots. Never hand-edit generated output.
 - `.agents/skills/` - rendered compatibility surface generated from `nucleus/skills/`; edit `nucleus/skills/` instead.
@@ -28,7 +29,7 @@ Node >= 20, ESM (`type: module`), no external runtime dependencies.
 
 ## Agent roster
 
-When work matches a canonical agent role (see the roster table in `nucleus/agents/shared-nucleus-agents.md`), load that agent's package from `nucleus/skills/<agent>/` and follow its mode boundaries. Resolve request mode (`shape`, `implement`, `review`, `prove`, `repair`, `launch`) before acting.
+When work matches a canonical agent role (see the roster table in `nucleus/agents/shared-nucleus-agents.md`), load that agent's package from `nucleus/skills/<agent>/` and follow its mode boundaries. Resolve request mode (`shape`, `implement`, `review`, `prove`, `repair`, `launch`) and lens before acting; when the packet names a lens, load only that lens reference.
 
 ## Hard rules
 

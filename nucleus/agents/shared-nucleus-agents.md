@@ -1,47 +1,20 @@
 # Shared nucleus agent contract
 
-Issues: LOO-96 base contract; LOO-97 autonomous delegation DAG; LOO-98 repair-pack finding-fix loop; LOO-99 offline shared-agent eval harness; LOO-101 canonical package rendering; LOO-102 scratch-HOME shared roster activation; LOO-103 evidence intake and decision log; LOO-104 deterministic shared-package checks; LOO-105 canonical repo-local package source. Status: contract plus offline eval harness plus repo-local canonical packages plus rendered plugin distribution plus deterministic package checks plus scratch-HOME activation proof; this document defines the canonical shared agent model and does not authorize native OMP/Codex/Claude role-agent files or real-HOME apply without HITL review.
+Issues: LOO-96 base contract; LOO-97 delegation DAG; LOO-98 repair-pack loop; LOO-99 offline evals; LOO-100 OMP-prefix retirement; LOO-101 package rendering; LOO-102 scratch-HOME activation; LOO-103 evidence intake; LOO-104 deterministic checks; LOO-105 repo-local canonical source; LOO-154 roster consolidation (17 -> 7) with lens references. This document defines the canonical shared agent model and does not authorize native OMP/Codex/Claude role-agent files or real-HOME apply without HITL review.
 
-Source pattern: [Teaching agents product design at Vercel](https://vercel.com/blog/teaching-agents-product-design-at-vercel).
-
-## Mapping decision
-
-Vercel describes one repo-local `product-design` skill with `AGENTS.md`, `SKILL.md`, focused `references/`, `exemplars/`, eval fixtures, and a human-reviewed update loop.
-
-Loom has a multi-agent nucleus, so the adapted target is **one Vercel-shaped skill package per canonical nucleus agent**, not one giant shared super-skill and not flat `omp-*` role ports.
-
-Each canonical agent package has this shape:
-
-```text
-nucleus/skills/{agent-name}/
-├── AGENTS.md
-├── SKILL.md
-├── references/
-│   ├── agent-judgment.md
-│   ├── rules.md
-│   ├── patterns.md
-│   ├── glossary.md
-│   └── coverage-gaps.md
-└── exemplars/
-    └── pr-{name}.md
-```
-
-Shared cross-agent references such as delegation DAGs, review/proof policy, repair-pack rules, and harness surfaces may live in a common harness reference area, but each agent entrypoint must route to the narrowest relevant source instead of duplicating broad guidance.
+Source pattern: [Teaching agents product design at Vercel](https://vercel.com/blog/teaching-agents-product-design-at-vercel). Loom adapts that shape as one Vercel-shaped skill package per canonical nucleus agent under `nucleus/skills/{agent-name}/` (AGENTS.md, SKILL.md, references/, exemplars/). Non-roster utility skills live under `nucleus/utilities/`.
 
 ## Model
 
 - Skills remain routing, playbooks, triggers, guardrails, references, exemplars, and stable rules.
-- Agents are delegated specialists that execute bounded work packets selected by request mode and source routing.
+- Agents are delegated specialists that execute bounded work packets selected by request mode, source routing, and lens.
 - Harness adapters may translate file format or frontmatter only; names, behavior contracts, routing, references, and packets stay canonical.
-- Deterministic checks handle mechanical rules when code can identify the failure and suggest a concrete fix.
-- Judgment stays in agent guidance with evidence, explicit assumptions, exceptions, and coverage gaps.
+- Deterministic checks handle mechanical rules; judgment stays in agent guidance with evidence, assumptions, exceptions, and coverage gaps.
 
 ## Naming rules
 
-- Use Factorio workflow nouns.
-- Do not use harness prefixes such as `omp-`, `codex-`, or `claude-`.
-- Do not treat direct OMP bundled-agent role ports as the target model.
-- The same canonical agent roster must be usable across OMP, Codex, Claude, and future model harnesses.
+- Use Factorio workflow nouns; no harness prefixes such as `omp-`, `codex-`, or `claude-`.
+- The same canonical roster is usable across OMP, Codex, Claude, and future harnesses; direct OMP bundled-agent role ports stay superseded.
 
 ## Request modes
 
@@ -56,66 +29,59 @@ Every `SKILL.md` resolves mode before acting so audits do not become edits and p
 | `repair` | Fix one concrete finding from a compact packet. | One finding only; no drive-by cleanup. |
 | `launch` | Enforce merge/closeout gates. | No red gates; tracker bridge owns closeout. |
 
-## Autonomous delegation DAG
+## Roster
 
-Shared nucleus packages run as a staged DAG, not an ad hoc nested swarm. The parent agent that starts a wave owns integration, conflict resolution, final proof selection, and tracker/PR reporting.
+One agent per mode; behavioral variants are lens references inside the agent package, selected by the packet `lens` field.
+
+| Agent | Role | Primary modes | Lenses (`references/`) |
+| --- | --- | --- | --- |
+| `blueprint` | Shape owner | `shape` | `spec-synthesis` (default), `issue-decomposition`, `architecture`, `research-spike`, `triage` |
+| `roboports` | Issue delivery coordinator | `implement` | `issue-delivery` (default), `refactor`, `performance` |
+| `biters` | Adversarial reviewer | `review` | `correctness` (default), `security`, `minimal-diff`, `drift` |
+| `lab` | Proof specialist | `prove` | `command-proof` (default), `ui-proof`, `smoke-proof` |
+| `repair-pack` | Narrow finding fixer | `repair` | none; one finding per packet |
+| `rocket-launch` | Launch gatekeeper | `launch` | none; gate record only |
+| `belt` | Handoff carrier | `shape`, `review` | `handoff` (default), `thread-control`, `resume` |
+
+## Lens policy
+
+- The input packet may name one or more lenses; when `lens` is absent, the agent loads its mode default.
+- Only the named lens references load; lenses never widen the packet scope or change the mode boundary.
+- Review and proof may fan out one child per lens in parallel across correctness, security, user-visible behavior, minimal diff, and workflow drift.
+
+## Pipeline DAG
+
+The delegation matrix is replaced by one pipeline; per-agent child lists live in `agentDelegation` in `nucleus/agents/shared-nucleus-agents.json`.
+
+```text
+blueprint -> roboports -> { biters (lens fanout), lab (lens fanout) }
+biters -> repair-pack -> biters (re-review) -> lab -> rocket-launch
+belt may carry a handoff at any transition
+```
 
 Global policy:
 
 - Maximum autonomous depth is 3: root issue/PR owner at depth 0, each child wave increments depth by one.
+- The parent that starts a wave owns integration, conflict resolution, final proof selection, and tracker/PR reporting.
 - Stop when depth is exhausted, no allowed child exists for the mode/scope, a packet would widen scope, a coverage gap blocks the decision, proof is red before launch, or native rendering/live HOME apply/merge/closeout is requested in this contract slice.
 - Child agents never merge PRs, close Linear issues, apply generated files to live HOME, create native OMP/Codex/Claude agent files in this contract slice, or invent standards when references are missing.
 - Every wave transition records parent, child agents, issue/PR id, mode, scope, loaded references, allowed next agents, proof state, and stop reason.
+- Implementation children may run in parallel only when packets name disjoint files or the parent owns all integration edits.
 
-Mode boundaries:
-
-| Mode | Allowed next agents | Forbidden autonomous actions |
-| --- | --- | --- |
-| `shape` | `blueprint`, `ghosts`, `main-bus`, `science-pack`, `radar`, `belt` | Implement code, render native agents, open launch PRs, merge, close issues. |
-| `implement` | `roboports`, `recycler`, `modules`, `lab`, `biters`, `spitters`, `spidertron`, `bus-first`, `repair-pack`, `belt` | Merge PRs, close issues, live HOME apply, delegate outside issue/worktree scope. |
-| `review` | `biters`, `spitters`, `bus-first`, `radar`, `main-bus`, `science-pack`, `belt` | Edit code, run broad implementation, merge/close issues, claim proof. |
-| `prove` | `lab`, `spidertron`, `radar`, `belt` | Change behavior, add features, mock proof, claim unexercised branches. |
-| `repair` | `repair-pack`, `lab` | Fix adjacent cleanup, accept multiple findings, change acceptance criteria, skip named proof, spawn review agents. |
-| `launch` | `rocket-launch`, `lab`, `radar`, `belt` | Merge PRs, close Linear issues, live HOME apply, native agent rendering, change scope, bypass tracker bridge. |
-
-Per-agent child lists and wave-advance authority live in `agentDelegation` in `nucleus/agents/shared-nucleus-agents.json`. Review and proof may fan out in parallel across distinct lenses such as correctness, security, user-visible behavior, minimal diff, and workflow drift. Implementation children may run in parallel only when packets name disjoint files or the parent owns all integration edits.
-
-`roboports` coordinates the implementation loop: implement the scoped issue in one branch/worktree; fan out `lab`, `biters`, `spitters`, and `spidertron` for proof and review; run `bus-first` after the first review/proof wave; send one concrete finding at a time to `repair-pack`; rerun named proof; return a review-ready PR packet to the parent. `rocket-launch` records launch-gate evidence while the tracker bridge owns closeout outside this contract slice.
+`roboports` coordinates the implementation loop: implement the scoped issue in one branch/worktree; fan out `lab` and `biters` across proof and review lenses; run the `minimal-diff` lens after the first review/proof wave; send one concrete finding at a time to `repair-pack`; rerun the named proof; return a review-ready PR packet to the parent. `rocket-launch` records launch-gate evidence while the tracker bridge owns closeout outside this contract slice.
 
 ## Repair-pack finding-fix loop
 
-`repair-pack` is the fresh-context fixer for one concrete review or proof finding. It is a Vercel-shaped per-agent package, but this slice defines only the contract; it does not create native agent files, eval harnesses, or live HOME output.
+`repair-pack` supports only `repair` mode. It may delegate only the named `prove` check to `lab`, with max one child level. It may not spawn review agents, start broad workflow delegation, render native agent files, or live-apply to HOME. Package: `nucleus/skills/repair-pack/`.
 
-Required future package shape:
+Every repair request uses a finding packet with these required fields: file, symbol, scope, concrete risk, minimal expected fix, proof check, rule/source id, non-goals, and allowed files. Missing fields are a blocker, not permission to widen the work.
 
-```text
-nucleus/skills/repair-pack/
-├── AGENTS.md
-├── SKILL.md
-├── references/
-│   ├── repair-pack.md
-│   ├── rules.md
-│   └── coverage-gaps.md
-└── exemplars/
-    └── finding-{stable-id}.md
-```
+1. Accept exactly one finding per packet, starting from fresh compact context.
+2. Apply the minimal expected fix; no drive-by cleanup, broad refactors, or acceptance-criteria changes.
+3. Rerun the named proof through `lab` or the coordinator; the coordinator reruns the `minimal-diff` lens only when the diff changed or the fix risks scope creep.
+4. Return changed files, proof result, residual risk, and blocker reason when blocked.
 
-`repair-pack` supports only `repair` mode. It may delegate only the named `prove` check to `lab`, with max one child level. It may not spawn review agents, start broad workflow delegation, render native agent files, implement eval harnesses, or live-apply to HOME.
-
-Every repair request uses a finding packet with these required fields: file, symbol, scope, concrete risk, minimal expected fix, proof check, rule/source id, non-goals, and allowed files. Missing source/rule id, missing proof, missing allowed files, or a fix outside the allowed scope is a blocker, not permission to widen the work.
-
-Repair rules:
-
-1. Accept exactly one finding per packet.
-2. Start from fresh compact context: issue/PR id, finding packet, relevant excerpts, allowed files, and named proof only.
-3. Apply the minimal expected fix; no drive-by cleanup, style-only edits, broad refactors, or acceptance-criteria changes.
-4. Rerun the named proof through `lab` or the coordinator.
-5. Run `bus-first` again only when the diff changed or the fix risks scope creep.
-6. Return changed files, proof result, residual risk, and blocker reason when blocked.
-
-The original implementer is avoided by default to reduce context drag, anchoring, and bias. Consult them only through the coordinator for one narrow question when intent is unrecoverable from issue/code/proof evidence, the minimal fix would alter an owned API/data contract/user workflow, or the allowed files are insufficient and need scope clarification.
-
-Coverage gaps stop or route work. Missing standards go to `references/coverage-gaps.md`, shape questions route to `blueprint`, `main-bus`, or `science-pack`, and deterministic checks are proposed only when the linter-vs-guidance rule passes.
+The original implementer is avoided by default to reduce anchoring and context drag; consult them only through the coordinator for one narrow question when intent is unrecoverable from issue/code/proof evidence or the allowed files need scope clarification.
 
 ## Decision authority
 
@@ -129,138 +95,22 @@ Resolve conflicts in this order:
 6. Verified adjacent shipped patterns.
 7. General heuristics.
 
-## Starter roster
-
-| Agent | Role | Primary modes | Purpose |
-| --- | --- | --- | --- |
-| `blueprint` | Spec synthesizer | `shape` | Turns current context into a PRD/spec with acceptance criteria, non-goals, proof plan, and open decisions. |
-| `ghosts` | Issue decomposer | `shape` | Splits an approved plan/spec into dependency-ordered Linear issues and sub-issues. |
-| `inserter` | Triage router | `shape`, `review` | Classifies, prioritizes, labels, and routes incoming tracker work. |
-| `roboports` | Issue delivery coordinator | `implement` | Runs one tracked issue through branch/worktree, implementation, proof, review, and PR readiness. |
-| `radar` | Drift scanner | `review`, `prove` | Checks repo/tracker/proof drift and recommends the next route without mutating state. |
-| `lab` | Proof specialist | `prove` | Runs proof-only validation and records behavior evidence without expanding scope. |
-| `biters` | General adversarial reviewer | `review` | Attacks correctness, regression, maintainability, scope, and missing-test risks before merge. |
-| `spitters` | Security attacker | `review` | Runs AppSec/adversarial security review across trust boundaries and abuse paths. |
-| `spidertron` | UI workflow tester | `prove`, `review` | Drives browser/desktop UI workflows and captures user-visible proof. |
-| `bus-first` | Minimal-diff tightener | `review` | Applies reuse-before-build doctrine and flags needless abstraction or scope creep. |
-| `repair-pack` | Narrow finding fixer | `repair` | Fixes exactly one concrete review/proof finding from a fresh compact packet. |
-| `main-bus` | Architecture seam planner | `shape`, `review` | Plans shared lanes/seams so features plug into existing structure instead of parallel spaghetti. |
-| `science-pack` | Research spike | `shape`, `review` | Resolves one open unknown with source-grounded findings before build. |
-| `belt` | Handoff carrier | `shape`, `review` | Moves durable context between agents/threads with concise state, proof, risks, and next actions. |
-| `recycler` | Behavior-preserving refactorer | `implement` | Deletes, consolidates, or clarifies existing code without changing behavior. |
-| `modules` | Measured performance optimizer | `implement`, `prove` | Optimizes a proven bottleneck with before/after measurement and stops when returns diminish. |
-| `rocket-launch` | Launch gatekeeper | `launch` | Records launch-gate readiness after review/proof/CI gates and tracker bridge evidence are satisfied. |
-
-## Rule and evidence schema
-
-Rules use stable IDs and cite their source:
-
-```markdown
-## rule/{stable-id}
-Status: proposed | accepted | rejected
-Scope:
-Rule:
-Why:
-Exceptions:
-Source:
-Bad example:
-Good example:
-Assumptions:
-Open decisions:
-```
-
-Missing or unverified guidance belongs in `references/coverage-gaps.md`, not in an agent's implicit behavior.
-
-## Linter vs agent guidance
-
-Use deterministic checks when all are true:
-
-1. Code can identify the failure without rendering.
-2. The rule avoids likely false positives.
-3. The violation has a concrete fix.
-
-Use agent guidance when the decision needs workflow/codebase context, the rule would need many exceptions, or the standard is new/policy-bearing. For either path, add an exemplar or eval that can catch regressions.
-
-## Evidence-intake and decision log
-
-Guidance changes follow the Vercel-style collector -> judge -> human review loop. This is a documentation and offline-contract workflow only; it does not collect from live Slack, Figma, GitHub, HOME, session history, or private runtime state.
-
-Collector workflow:
-
-1. Gather messages, links, files, and nearby context: the active issue or PR scope, referenced agent/skill/rule/exemplar/eval/lint/coverage-gap surface, and adjacent shipped guidance needed to understand the excerpt.
-2. Preserve source handles, excerpts, timestamps or revisions when available, and unresolved context gaps.
-3. Do not score, rank, group, accept, reject, choose destinations, propose rules, or write accepted guidance.
-
-Judge workflow:
-
-1. Validate that cited sources are reachable, relevant to the scoped agent/workflow, and not private live-system state.
-2. Separate facts, inferences, and open questions so human reviewers can see what is verified versus assumed.
-3. Group related candidates by agent, workflow, rule surface, destination surface, and evidence theme.
-4. Keep every candidate pending. The judge does not accept, reject, score, apply changes, or turn candidates into rules.
-
-Human review choices are exactly: rule, reference, exemplar, lint rule, eval, coverage gap, or no change.
-
-Decision-log entries record:
-
-```markdown
-Scope:
-Rationale:
-Evidence:
-Exceptions:
-Approver:
-Target file:
-Checks:
-```
-
-Accepted changes land in the narrowest relevant destination:
-
-- rule -> agent-specific `references/rules.md` when the guidance is stable and enforceable;
-- reference -> agent-specific `references/*.md` when source-grounded context is the durable artifact;
-- exemplar -> agent-specific `exemplars/*.md` when a concrete worked example best preserves the decision;
-- lint rule -> deterministic lint/check surface only when the linter-vs-guidance rule passes;
-- eval -> offline eval fixture when behavior should be regression-tested;
-- coverage gap -> `references/coverage-gaps.md` when evidence is missing or the standard remains unresolved;
-- no change -> decision log only, with no guidance, lint, eval, exemplar, or reference file changes.
-
-## Activation gate
-
-LOO-102 activates the starter roster only through the plugin-bridge scratch-HOME path:
-
-1. `node scripts/render-plugin-bridge.mjs --home <scratch> --write --json` renders approved create-missing candidates under `~/.agents/plugins/loom-nucleus/` and the personal marketplace catalog, then records marker metadata in `~/.loom-harness/applied-manifest.json`.
-2. A second `--write` against the same scratch HOME must be a clean no-op: every appliable candidate reports `already-applied`, no new files are created, and the marker manifest is unchanged.
-3. `adapters/plugin-bridge/loom-nucleus/hooks/verify-loom-install.mjs` verifies the installed copy without writing: missing components, marker hash drift, malformed manifests, forbidden provider/auth/profile keys, and non-portable absolute paths produce structured non-zero reports.
-4. Proof covers the shared roster package shape once at the source surface and once through each native plugin consumer: OMP-compatible Vercel-shaped packages under `nucleus/skills/{agent-name}/`, Codex via `.codex-plugin/plugin.json#skills`, and Claude via `.claude-plugin/plugin.json#skills`.
-5. Existing OMP, Codex, and Claude auth, sessions, histories, caches, DBs, browser state, local settings, plugin caches, and runtime files remain local-only. The renderer only reads tracked source, the resource manifest, and the scratch HOME marker/files it owns.
-
-Live-HOME promotion gate: **dry-run -> review -> explicit apply**. A dry-run manifest and deterministic checks must pass before review; the human reviewer must explicitly approve the apply target before any non-scratch HOME write. The evidence/decision-log owner is the LOO-103 collector -> judge -> human review loop. Required deterministic checks before apply are `scripts/validate-shared-agent-packages.mjs`, `scripts/validate-shared-agent-evals.mjs`, `scripts/render-plugin-bridge.mjs --json`, and the targeted plugin-bridge scratch apply/verifier proof.
+Coverage gaps stop or route work. Missing standards go to `references/coverage-gaps.md`; shape questions route to `blueprint`; deterministic checks are proposed only when code can identify the failure, false positives are unlikely, and the violation has a concrete fix.
 
 ## Packet contract
 
-Every agent receives a bounded input packet and returns a bounded output packet. The machine-readable packet fields for each agent live in `nucleus/agents/shared-nucleus-agents.json`. Common invariants:
+Every agent receives a bounded input packet and returns a bounded output packet; machine-readable fields live in `nucleus/agents/shared-nucleus-agents.json`. Common invariants:
 
-- report mode, target surface, loaded references, rule IDs, proof run, and unresolved coverage gaps;
+- report mode, lens, target surface, loaded references, rule IDs, proof run, and unresolved coverage gaps;
 - no live HOME apply;
 - no scope widening beyond the packet;
 - no issue closeout or PR merge in this contract slice; launch records gates for the tracker bridge;
 - no native harness agent rendering in this contract slice.
 
-## Superseded direct OMP-role candidates
+Rules use stable IDs (`## rule/{stable-id}`) citing status, scope, rule, why, exceptions, source, bad/good examples, assumptions, and open decisions. Missing or unverified guidance belongs in `references/coverage-gaps.md`.
 
-- `omp-designer` (Codex) — direct OMP designer role port; future UI workflow proof belongs to shared `spidertron` and routed references.
-- `omp-planner` (Codex) — direct OMP planning role port; future planning work is split across `blueprint`, `ghosts`, `roboports`, and `main-bus`.
-- `omp-reviewer` (Codex) — direct OMP reviewer role port; future review work is split across `biters`, `spitters`, `bus-first`, `lab`, and stable rule citations.
-- `omp-librarian` (Codex) — potential OMP research role port; future research belongs to shared `science-pack` and source-grounded references.
+## Governance and activation
 
-These candidates remain only as historical adapter-plan context. LOO-101 removes them from the active plugin renderer path in favor of shared-agent packages, and LOO-105 makes `nucleus/skills/{agent-name}/` the canonical authoring source for those packages. They are not the desired shared nucleus agent model.
+Guidance changes follow the collector -> judge -> human review loop defined in `nucleus/agents/shared-nucleus-agents.json#evidenceIntake`; human review chooses rule, reference, exemplar, lint rule, eval, coverage gap, or no change, and accepted changes land in the narrowest relevant destination.
 
-## Related and deferred work
-
-- LOO-97 is this slice: autonomous delegation DAG and mode-bound delegation policy.
-- LOO-98 is this slice: defines the `repair-pack` finding-fix loop.
-- LOO-99 adds retrieval-vs-application evals with judge and holdout fixtures.
-- LOO-100 retires OMP-prefixed active candidates.
-- LOO-101 renders each shared agent as a Vercel-shaped package for OMP/Codex/Claude adapters.
-- LOO-102 activates the shared starter roster only after package rendering, evals, deterministic checks, and governance pass.
-- LOO-103 adds the shared evidence-intake collector -> judge -> human decision-log workflow.
-- LOO-104 encodes mechanical package checks at `scripts/validate-shared-agent-packages.mjs`; judgment-heavy guidance stays in references, evals, or coverage gaps.
-- LOO-105 moves shared-agent package authorship to `nucleus/skills/{agent-name}/`; plugin shared-agent package candidates are derived from `nucleus/skills/{agent-name}/` at render/validation time; the former committed byte-copy distribution tree is intentionally absent.
+Activation stays gated: **dry-run -> review -> explicit apply**. Scratch-HOME rendering via `scripts/render-plugin-bridge.mjs`, deterministic checks (`scripts/validate-shared-agent-packages.mjs`, `scripts/validate-shared-agent-evals.mjs`), and the plugin-bridge verifier must pass before any human-approved non-scratch HOME write. Full activation detail, superseded `omp-*` candidates, and historical issue context live in `docs/agents/shared-nucleus-agent-history.md` and the JSON contract.

@@ -22,7 +22,7 @@
     {
       "id": 4,
       "prompt": "Create the Linear issues now.",
-      "expected_output": "Does NOT create issues. Recognizes this as decomposition work and routes to the ghosts skill, which splits the spec into tracer-bullet issues in dependency order.",
+      "expected_output": "Does NOT create issues under the default spec-synthesis lens. Recognizes this as decomposition work and switches to blueprint's issue-decomposition lens, which splits the spec into tracer-bullet issues in dependency order.",
       "files": []
     },
     {

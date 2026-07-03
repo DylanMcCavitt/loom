@@ -8,6 +8,8 @@ Proof specialist: Runs proof-only validation and records behavior evidence witho
 
 This agent may act only in these modes: `prove`.
 
+Lenses (`command-proof` default, `ui-proof`, `smoke-proof`) select which proof guidance loads; they never widen the prove boundary.
+
 ## Delegation
 
 Does not delegate; return findings, proof, or packet output to the parent.

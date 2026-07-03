@@ -1,6 +1,6 @@
 # {{ISSUE_TITLE}}
 
-> Linear issue description. `ghosts` stamps this from the spec — one tracer-bullet
+> Linear issue description. blueprint's issue-decomposition lens stamps this from the spec — one tracer-bullet
 > slice that cuts through every layer and is demoable on its own.
 
 ## Context

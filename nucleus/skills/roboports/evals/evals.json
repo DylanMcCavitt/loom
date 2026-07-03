@@ -4,7 +4,7 @@
     {
       "id": 1,
       "prompt": "Implement ABC-12.",
-      "expected_output": "Activates roboports: reads issue ABC-12's acceptance criteria and the assembler repo envelope, creates one branch/worktree whose name carries the Linear issue id, implements only the acceptance criteria citing bus-first (and tdd/diagnose as needed), runs the envelope's targeted checks, prepares a review packet, and opens a PR — preserving one-issue-one-branch-one-PR and not silently closing the issue (closeout is rocket-launch).",
+      "expected_output": "Activates roboports: reads issue ABC-12's acceptance criteria and the assembler repo envelope, creates one branch/worktree whose name carries the Linear issue id, implements only the acceptance criteria under the minimal-diff doctrine (and tdd/diagnose as needed), runs the envelope's targeted checks, prepares a review packet, and opens a PR — preserving one-issue-one-branch-one-PR and not silently closing the issue (closeout is rocket-launch).",
       "files": []
     },
     {
@@ -22,7 +22,7 @@
     {
       "id": 4,
       "prompt": "Triage the new bugs and sort what's ready.",
-      "expected_output": "Does NOT activate roboports; routes to inserter for classification, prioritization, and routing of incoming work. Roboports only builds an already-tracked, ready issue and does not triage.",
+      "expected_output": "Does NOT activate roboports; routes to blueprint's triage lens for classification, prioritization, and routing of incoming work. Roboports only builds an already-tracked, ready issue and does not triage.",
       "files": []
     },
     {

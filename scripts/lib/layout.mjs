@@ -8,6 +8,7 @@ export const ompSourceRoot = "adapters/omp/source";
 
 export const nucleusRoot = "nucleus";
 export const nucleusSkillsRoot = "nucleus/skills";
+export const nucleusUtilitiesRoot = "nucleus/utilities";
 export const nucleusAgentsRoot = "nucleus/agents";
 export const sharedAgentContractPath = "nucleus/agents/shared-nucleus-agents.json";
 export const sharedAgentContractMarkdownPath = "nucleus/agents/shared-nucleus-agents.md";

@@ -5,10 +5,10 @@ import { test } from "node:test";
 const skill = readFileSync(new URL("../nucleus/skills/blueprint/SKILL.md", import.meta.url), "utf8");
 
 test("blueprint has the required trigger", () => {
-  assert.match(skill, /description: Synthesizes a PRD\/spec from existing context without interviewing/u);
+  assert.match(skill, /description: The shape owner\. Turns current context into a PRD\/spec/u);
   assert.match(
     skill,
-    /Use when the user wants a PRD or spec written from current context, or wants\/needs a reusable PR, issue, project-doc, or PRD template\./u,
+    /Use for any shape-mode work - specs, breaking work into issues, planning structure, resolving unknowns, or triaging incoming issues\./u,
   );
 });
 
@@ -39,9 +39,10 @@ test("blueprint owns the four canonical templates", () => {
   }
 });
 
-test("blueprint never creates issues and routes onward", () => {
-  assert.match(skill, /Blueprint never creates issues/u);
-  for (const route of ["prospect", "ghosts", "map-seed"]) {
+test("blueprint spec-synthesis never creates issues and routes onward", () => {
+  assert.match(skill, /The spec-synthesis lens never creates issues/u);
+  for (const route of ["prospect", "map-seed", "roboports"]) {
     assert.ok(skill.includes(`\`${route}\``), `${route} route missing`);
   }
+  assert.match(skill, /issue-decomposition lens/u);
 });

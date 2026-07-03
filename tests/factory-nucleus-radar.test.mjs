@@ -58,8 +58,8 @@ test("radar.mjs is structurally pure: no filesystem or child_process access", ()
   assert.doesNotMatch(source, /node:child_process/u, "radar must not import node:child_process");
 });
 
-test("the radar skill documents exactly the schema drift classes", () => {
-  const skill = readFileSync(new URL("../nucleus/skills/radar/SKILL.md", import.meta.url), "utf8");
+test("the biters drift lens documents exactly the schema drift classes", () => {
+  const skill = readFileSync(new URL("../nucleus/skills/biters/references/lens-drift.md", import.meta.url), "utf8");
   for (const cls of DRIFT_CLASSES) {
     assert.ok(skill.includes(`\`${cls}\``), `skill missing drift class ${cls}`);
   }

@@ -7,22 +7,12 @@ const markdown = readFileSync(new URL("../nucleus/agents/shared-nucleus-agents.m
 
 const EXPECTED_ROSTER = [
   "blueprint",
-  "ghosts",
-  "inserter",
   "roboports",
-  "radar",
-  "lab",
   "biters",
-  "spitters",
-  "spidertron",
-  "bus-first",
+  "lab",
   "repair-pack",
-  "main-bus",
-  "science-pack",
-  "belt",
-  "recycler",
-  "modules",
   "rocket-launch",
+  "belt",
 ];
 
 const REQUEST_MODES = ["shape", "implement", "review", "prove", "repair", "launch"];
@@ -42,8 +32,8 @@ const REQUIRED_RULE_FIELDS = [
 const FORBIDDEN_PREFIXES = ["omp-", "codex-", "claude-"];
 
 test("shared nucleus agent contract records the canonical Factorio roster", () => {
-  assert.equal(contract.schemaVersion, 6);
-  assert.equal(contract.generatedForIssue, "LOO-105");
+  assert.equal(contract.schemaVersion, 7);
+  assert.equal(contract.generatedForIssue, "LOO-154");
   assert.equal(contract.status, "canonical-repo-source-ready");
   assert.deepEqual(contract.agents.map((agent) => agent.name), EXPECTED_ROSTER);
   assert.equal(new Set(contract.agents.map((agent) => agent.name)).size, EXPECTED_ROSTER.length);
@@ -104,6 +94,13 @@ test("delegation modes define allowed next agents and boundaries", () => {
     assert.ok(entry.forbiddenActions.length > 0, `${entry.mode} missing forbidden actions`);
     assert.ok(entry.advanceRule, `${entry.mode} missing advance rule`);
   }
+  const allowedByMode = Object.fromEntries(contract.delegationModes.map((entry) => [entry.mode, entry.allowedNextAgents]));
+  assert.deepEqual(allowedByMode.shape, ["blueprint", "belt"]);
+  assert.deepEqual(allowedByMode.implement, ["roboports", "lab", "biters", "repair-pack", "belt"]);
+  assert.deepEqual(allowedByMode.review, ["biters", "belt"]);
+  assert.deepEqual(allowedByMode.prove, ["lab", "belt"]);
+  assert.deepEqual(allowedByMode.repair, ["repair-pack", "lab"]);
+  assert.deepEqual(allowedByMode.launch, ["rocket-launch", "lab", "belt"]);
   const launch = contract.delegationModes.find((entry) => entry.mode === "launch");
   assert.ok(launch.allowedNextAgents.includes("rocket-launch"));
   for (const action of ["merge PRs", "close Linear issues", "live HOME apply", "native agent rendering"]) {
@@ -131,11 +128,9 @@ test("per-agent delegation lists are bounded to the canonical roster", () => {
     assert.equal(typeof delegation.mayAdvanceNextWave, "boolean", `${agent} missing wave authority`);
     if (delegation.mayAdvanceNextWave) waveAdvancers.push(agent);
   }
-  for (const agent of ["blueprint", "ghosts", "roboports", "repair-pack", "rocket-launch"]) {
-    assert.ok(waveAdvancers.includes(agent), `${agent} must be able to advance a wave`);
-  }
+  assert.deepEqual(waveAdvancers, ["blueprint", "roboports", "repair-pack", "rocket-launch"]);
   assert.deepEqual(contract.agentDelegation.lab.allowedChildren, []);
-  assert.deepEqual(contract.agentDelegation.roboports.orderedWaves, [["lab", "biters", "spitters", "spidertron"], ["bus-first"], ["repair-pack"], ["lab"]]);
+  assert.deepEqual(contract.agentDelegation.roboports.orderedWaves, [["lab", "biters"], ["biters"], ["repair-pack"], ["lab"]]);
   const rocketLaunch = contract.agents.find((agent) => agent.name === "rocket-launch");
   assert.ok(!rocketLaunch.outputPacket.includes("merge result"));
   assert.ok(!rocketLaunch.outputPacket.includes("tracker closeout"));
@@ -210,10 +205,10 @@ test("repair-pack rules and delegation forbid broad fixer swarms", () => {
   assert.match(markdown, /delegate only .*`lab`/u);
 });
 
-test("repair-pack post-fix loop routes proof, bus-first, and implementer consultation", () => {
+test("repair-pack post-fix loop routes proof, minimal-diff recheck, and implementer consultation", () => {
   assert.ok(contract.repairPack.postFixLoop.some((step) => /minimal fix inside allowed files/u.test(step)));
   assert.ok(contract.repairPack.postFixLoop.some((step) => /lab reruns the named proof/u.test(step)));
-  assert.ok(contract.repairPack.postFixLoop.some((step) => /bus-first rechecks only when the diff changed/u.test(step)));
+  assert.ok(contract.repairPack.postFixLoop.some((step) => /biters minimal-diff lens only when the diff changed/u.test(step)));
   assert.ok(contract.repairPack.postFixLoop.some((step) => /coordinator integrates/u.test(step)));
   assert.match(contract.repairPack.originalImplementerPolicy.avoidByDefault, /fresh context reduces anchoring/u);
   assert.ok(contract.repairPack.originalImplementerPolicy.consultWhen.some((condition) => /undocumented intent/u.test(condition)));
@@ -225,8 +220,8 @@ test("repair-pack post-fix loop routes proof, bus-first, and implementer consult
 test("parallel fanout, roboports loop, and coverage gaps are explicit", () => {
   assert.ok(contract.parallelFanout.reviewProofLenses.includes("security"));
   assert.match(contract.parallelFanout.writeScopes, /disjoint files/u);
-  assert.ok(contract.roboportsDAG.sequence.some((step) => /lab, biters, spitters, and spidertron/u.test(step)));
-  assert.ok(contract.roboportsDAG.sequence.some((step) => /run bus-first after the first proof\/review wave/u.test(step)));
+  assert.ok(contract.roboportsDAG.sequence.some((step) => /fan out lab and biters across proof and review lenses/u.test(step)));
+  assert.ok(contract.roboportsDAG.sequence.some((step) => /biters minimal-diff lens after the first proof\/review wave/u.test(step)));
   assert.match(contract.roboportsDAG.loopBack, /repair-pack returns to lab/u);
   assert.match(contract.coverageGapPolicy.defaultAction, /stop or route/u);
   assert.ok(contract.coverageGapPolicy.routes.some((route) => /references\/coverage-gaps\.md/u.test(route)));
@@ -314,6 +309,29 @@ test("every agent has bounded packet-level contract fields and routed modes", ()
     assert.ok(agent.inputPacket.length > 0, `${agent.name} missing input packet`);
     assert.ok(agent.outputPacket.length > 0, `${agent.name} missing output packet`);
     assert.ok(agent.nonGoals.some((goal) => /Do not live-apply to real HOME/u.test(goal)), `${agent.name} missing live-HOME guard`);
+  }
+});
+
+test("lens policy selects packet-named lens references without widening scope", () => {
+  assert.equal(contract.lensPolicy.packetField, "lens");
+  assert.match(contract.lensPolicy.loading, /Only the named lens references load/u);
+  assert.match(contract.lensPolicy.boundaries, /never widen packet scope/u);
+  for (const agent of contract.agents) {
+    if (!agent.lenses) continue;
+    assert.ok(agent.lenses.available.includes(agent.lenses.default), `${agent.name} default lens must be available`);
+  }
+  const lensed = contract.agents.filter((agent) => agent.lenses).map((agent) => agent.name);
+  assert.deepEqual(lensed, ["blueprint", "roboports", "biters", "lab", "belt"]);
+});
+
+test("absorbed agents map to consolidated roster lenses", () => {
+  for (const [retired, destination] of Object.entries(contract.absorbedAgents)) {
+    assert.ok(!AGENT_NAMES.has(retired), `${retired} must not remain on the roster`);
+    const [agent, keyword, lens] = destination.split(" ");
+    assert.equal(keyword, "lens");
+    assert.ok(AGENT_NAMES.has(agent), `${retired} must map to a roster agent`);
+    const target = contract.agents.find((entry) => entry.name === agent);
+    assert.ok(target.lenses.available.includes(lens), `${retired} must map to an available ${agent} lens`);
   }
 });
 

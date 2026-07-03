@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-const skill = readFileSync(new URL("../nucleus/skills/execute-plan/SKILL.md", import.meta.url), "utf8");
+const skill = readFileSync(new URL("../nucleus/utilities/execute-plan/SKILL.md", import.meta.url), "utf8");
 
 test("execute-plan has the required trigger", () => {
   assert.match(

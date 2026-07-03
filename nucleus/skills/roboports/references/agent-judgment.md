@@ -2,7 +2,7 @@
 
 ## Role
 
-Issue delivery coordinator: Runs one tracked issue through branch/worktree, implementation, proof, review, and PR readiness.
+Issue delivery coordinator: Runs one tracked issue through branch/worktree, implementation, proof, review, and PR readiness, and covers behavior-preserving refactors and measured performance work through the `refactor` and `performance` lenses.
 
 ## Authority
 
@@ -10,7 +10,7 @@ This agent may act only in these modes: `implement`.
 
 ## Delegation
 
-May delegate only through the shared DAG. Preferred children: `lab`, `biters`, `spitters`, `spidertron`, `bus-first`, `repair-pack`.
+May delegate only through the shared DAG. Preferred children: `lab` (including the lab ui-proof lens), `biters` (including its security, minimal-diff, and drift lenses), and `repair-pack`.
 
 ## Stop conditions
 

@@ -16,20 +16,20 @@ iterate `SKILL.md` until both pass.
 ## Pipeline
 
 ```
-prospect      land on the idea            -> Linear initiative/project + idea doc
-  -> research    survey before building    -> Linear document (research notes)
-  -> blueprint   draft spec + templates    -> Linear doc (PRD) + blueprint/templates/
-  -> main-bus    keep lanes open to scale  -> architecture/ADR notes
-  -> ghosts      stamp planned work        -> Linear issues/sub-issues, dependency-ordered
-  -> inserter    sort/route/prioritize     -> Linear states + labels
-  -> roboports   build the ghosts          -> branch/worktree -> implement/test -> PR
-  -> radar       check drift               -> check-only sync evidence + next route
-  -> proof-pass  prove behavior            -> targeted proof artifacts
-  -> rocket-launch  ship it                -> review gate, merge PR, close Linear issue
-  -> space-age   beyond one repo           -> CI/CD + multi-repo/multi-env logistics
+prospect      land on the idea               -> Linear initiative/project + idea doc
+  -> blueprint (research-spike lens)   survey before building   -> Linear document (research notes)
+  -> blueprint (spec-synthesis lens)   draft spec + templates   -> Linear doc (PRD) + blueprint/templates/
+  -> blueprint (architecture lens)     keep lanes open to scale -> architecture/ADR notes
+  -> blueprint (issue-decomposition)   stamp planned work       -> Linear issues/sub-issues, dependency-ordered
+  -> blueprint (triage lens)           sort/route/prioritize    -> Linear states + labels
+  -> roboports                         build the ghosts         -> branch/worktree -> implement/test -> PR
+  -> biters (drift lens)               check drift              -> check-only sync evidence + next route
+  -> lab                               prove behavior           -> targeted proof artifacts
+  -> rocket-launch                     ship it                  -> review gate, merge PR, close Linear issue
+  -> space-age                         beyond one repo          -> CI/CD + multi-repo/multi-env logistics
 
 assembler   crafts the per-repo envelope + tooling that every skill above reads.
-bus-first   the minimal-diff doctrine every code-writing skill cites.
+biters' minimal-diff lens carries the doctrine every code-writing skill cites.
 ```
 
 ## Principles
@@ -78,23 +78,25 @@ migration notes explaining the cutover.
 
 | Skill | Factorio | Does | Linear | GitHub | Status | Replaces / Reuses |
 |---|---|---|---|---|---|---|
-| `bus-first` | Gleba spoilage / clean bus | minimal-diff doctrine ladder | — | — | MVP | new; inspired by ponytail |
 | `prospect` | scout a new patch | start a new idea | initiative/project + doc | — | MVP | new |
-| `blueprint` | saved layout you stamp | PRD/spec + reusable templates | document; template scaffolds | PR/issue templates | MVP | replaces `to-prd` |
-| `ghosts` | ghost = planned-unbuilt entity | split plan into tracer-bullet issues, dep-ordered | issues/sub-issues, blocked-by | — | MVP | replaces `to-issues` |
-| `roboports` | construction/logistic bots | execute one issue end-to-end + fanout discipline | reads issue/acceptance | branch/worktree -> PR | MVP | replaces `issue-execution`, `agent-recipes`; reuses `tdd`, `diagnose` |
-| `radar` | radar scan | check-only drift model + next-route suggestion | reads state/labels/dependencies | reads branch/PR/proof evidence | MVP | new |
-| `proof-pass` | proof circuit | proof-only validation and evidence capture | optional read-only checks | local/browser/test artifacts | MVP | kept engine; used by `rocket-launch` |
-| `rocket-launch` | launch | ship: review gate, merge, close issue | close issue, status update | PR review/merge/CI | MVP | replaces `thread-closeout`, `gh-issue-thread-chain` closeout; reuses `pr-review`, `proof-pass` |
+| `blueprint` | saved layout you stamp | shape owner: PRD/spec (`spec-synthesis`), issue decomposition (`issue-decomposition`), architecture (`architecture`), research spikes (`research-spike`), triage (`triage`) via lenses | documents, issues/sub-issues, states + labels | PR/issue templates | MVP | absorbs `ghosts`, `main-bus`, `science-pack`/`research`, `inserter` as lenses |
+| `roboports` | construction/logistic bots | execute one issue end-to-end + fanout discipline; refactor (`refactor`) and performance (`performance`) via lenses | reads issue/acceptance | branch/worktree -> PR | MVP | absorbs `recycler`/`quality`, `modules` as lenses; reuses `tdd`, `debug-tools` |
+| `biters` | enemies that breach your walls | adversarial review: correctness (`correctness`), security (`security`), minimal-diff doctrine (`minimal-diff`), drift (`drift`) via lenses | reads state/labels/dependencies for drift | reads diff/PR/proof evidence | MVP | absorbs `spitters`, `bus-first`, `radar`, `pr-review` as lenses; reuses `security-threat-model`, `security-best-practices` |
+| `lab` | the lab proves science | proof-only validation: command (`command-proof`), UI (`ui-proof`), smoke (`smoke-proof`) via lenses | optional read-only checks | local/browser/test artifacts | MVP | absorbs `spidertron`, `proof-pass` as lenses; used by `rocket-launch` |
+| `repair-pack` | repair packs fix one thing | fix exactly one review/proof finding from a compact packet | reads finding packet | targeted diff + proof rerun | MVP | unchanged |
+| `rocket-launch` | launch | ship: review gate, merge, close issue | close issue, status update | PR review/merge/CI | MVP | replaces `thread-closeout`, `gh-issue-thread-chain` closeout; reuses the `biters` lenses and `lab` |
+| `belt` | transport belts move items | handoffs and thread continuity: `handoff`, `thread-control`, `resume` via lenses | — | — | MVP | absorbs `handoff`, `thread-control`, `resume-thread` as lenses |
 | `assembler` | machine that builds machines | per-repo envelope + tooling generation | team/project/label map | template files | MVP (minimal) | replaces `repo-workflow-bootstrap`, `workflow-kit`, `setup-matt-pocock-skills` |
-| `research` | science packs (tiered) | spike/investigate before building | research document | — | enrich | new |
-| `main-bus` | central bus, anti-spaghetti | scalability/architecture so you don't wall yourself in | ADR/doc | — | enrich | replaces `improve-codebase-architecture` |
-| `inserter` | filter inserter / logistics request | triage: classify, prioritize, route to ready | states + labels | — | enrich | replaces `triage` |
-| `modules` | modules + beacons (diminishing returns) | optimize where returns exist | — | — | enrich | new; reuses `diagnose` |
-| `quality` | quality tiers + recycler | refactor in place / salvage / delete | — | — | enrich | new; cites `bus-first` |
 | `space-age` | platforms/planets | CI/CD + multi-repo/multi-env logistics | cross-project | CI | enrich | new |
 | `map-seed` | reroll a bad starting map | throwaway prototype + plan around fixed constraints + retro + restart with learnings | optional prototype note | — | enrich | re-themes `prototype` |
-| `biters` | enemies that breach your walls | adversarial security review: hunt harmful bugs, breaches, attack paths | — | — | enrich | new; reuses `security-threat-model`, `security-best-practices`, `pr-review` |
+
+LOO-154 consolidated the former 17-skill roster: `ghosts`, `main-bus`,
+`science-pack`/`research`, and `inserter` became `blueprint` lenses;
+`recycler`/`quality` and `modules` became `roboports` lenses; `spitters`,
+`bus-first`, and `radar` became `biters` lenses; `spidertron` and `proof-pass`
+became `lab` lenses. The factory-nucleus plan vocabulary (`inserter`, `ghosts`,
+`radar`, `proof-pass` stage names) is unchanged; those stages route to the
+consolidated skills' lenses.
 
 ## MVP skill contracts
 

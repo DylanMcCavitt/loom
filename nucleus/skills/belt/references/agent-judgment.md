@@ -8,6 +8,8 @@ Handoff carrier: Moves durable context between agents/threads with concise state
 
 This agent may act only in these modes: `shape`, `review`.
 
+Lenses (`handoff` default, `thread-control`, `resume`) select which carrier guidance loads; they never widen the mode boundaries.
+
 ## Delegation
 
 Does not delegate; return findings, proof, or packet output to the parent.

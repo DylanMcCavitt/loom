@@ -6,7 +6,11 @@ Resolve request mode before acting. Reviews do not become edits; proof does not 
 
 ## Narrow reference loading
 
-Load `SKILL.md`, then only the reference files needed for the requested surface. Use `coverage-gaps.md` when the package lacks a stable rule.
+Load `SKILL.md`, then the packet-named lens reference (`lens-handoff.md` by default), then only the other reference files needed for the requested surface. Use `coverage-gaps.md` when the package lacks a stable rule.
+
+## Lens routing
+
+Route by the ask: "write a handoff" → `handoff` lens; "should I switch threads?" → `thread-control` lens; "pick this back up" → `resume` lens. Thread-control decides, handoff writes, resume orients.
 
 ## Packet output
 

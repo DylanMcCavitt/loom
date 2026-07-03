@@ -8,7 +8,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { nucleusSkillsRoot } from "./lib/layout.mjs";
+import { nucleusSkillsRoot, nucleusUtilitiesRoot } from "./lib/layout.mjs";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
@@ -132,11 +132,15 @@ function factorioTableSkills(manifest) {
 }
 
 function shippedSkillNames(root = repoRoot, skillsRoot = nucleusSkillsRoot) {
-  const dir = path.join(root, skillsRoot);
-  if (!existsSync(dir)) return new Set();
-  return new Set(readdirSync(dir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && existsSync(path.join(dir, entry.name, "SKILL.md")))
-    .map((entry) => entry.name));
+  const names = new Set();
+  for (const candidateRoot of [skillsRoot, nucleusUtilitiesRoot]) {
+    const dir = path.join(root, candidateRoot);
+    if (!existsSync(dir)) continue;
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isDirectory() && existsSync(path.join(dir, entry.name, "SKILL.md"))) names.add(entry.name);
+    }
+  }
+  return names;
 }
 
 export function validateFactorioKitRoster({ root = repoRoot, manifestPath = "docs/skills/factorio-kit.md", skillsRoot = nucleusSkillsRoot } = {}) {

@@ -1,4 +1,0 @@
-interface:
-  display_name: "Thread Organizer"
-  short_description: "Rename threads from issue artifacts"
-  default_prompt: "Use $thread-organizer to rename this thread to issue-#NUMBER from its linked issue artifact."

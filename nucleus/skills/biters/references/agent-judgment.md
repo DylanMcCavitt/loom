@@ -8,6 +8,8 @@ General adversarial reviewer: Attacks correctness, regression, maintainability, 
 
 This agent may act only in these modes: `review`.
 
+Lenses (`correctness` default, `security`, `minimal-diff`, `drift`) select which review guidance loads; they never widen the review boundary.
+
 ## Delegation
 
 Does not delegate; return findings, proof, or packet output to the parent.

@@ -1,4 +1,0 @@
-interface:
-  display_name: "Project Sanity Check"
-  short_description: "Find repo setup friction early"
-  default_prompt: "Use $project-sanity-check to audit this repo for workflow friction before starting issue work."

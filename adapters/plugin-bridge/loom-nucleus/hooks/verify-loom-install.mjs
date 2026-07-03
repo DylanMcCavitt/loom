@@ -39,24 +39,15 @@ export const EXPECTED_OMP_SKILLS = [
 ];
 
 // LOO-101 renders every canonical shared nucleus agent as a Vercel-shaped skill package.
+// LOO-154 consolidated the roster to 7 agents; retired variants live on as lens references.
 export const EXPECTED_SHARED_AGENT_PACKAGES = [
   "belt",
   "biters",
   "blueprint",
-  "bus-first",
-  "ghosts",
-  "inserter",
   "lab",
-  "main-bus",
-  "modules",
-  "radar",
-  "recycler",
   "repair-pack",
   "roboports",
-  "rocket-launch",
-  "science-pack",
-  "spidertron",
-  "spitters"
+  "rocket-launch"
 ];
 
 export const REQUIRED_SHARED_AGENT_PACKAGE_FILES = [

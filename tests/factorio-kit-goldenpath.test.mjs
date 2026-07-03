@@ -4,10 +4,19 @@ import { test } from "node:test";
 import { createWorld } from "./fixtures/mock-linear-github.mjs";
 
 const skillsRoot = new URL("../nucleus/skills/", import.meta.url);
-const MVP = ["prospect", "blueprint", "ghosts", "roboports", "radar", "proof-pass", "rocket-launch", "assembler", "bus-first"];
-const KIT = [...MVP, "map-seed", "biters", "research", "main-bus", "inserter", "modules", "quality", "space-age"];
+const utilitiesRoot = new URL("../nucleus/utilities/", import.meta.url);
+const MVP = ["prospect", "blueprint", "roboports", "biters", "lab", "repair-pack", "rocket-launch", "belt", "assembler"];
+const KIT = [...MVP, "space-age", "map-seed"];
+// Roster agent packages carry lens references instead of trigger evals.
+const EVAL_SKILLS = KIT.filter((name) => !["lab", "repair-pack", "belt"].includes(name));
+
+function skillUrl(name, file) {
+  const inSkills = new URL(`${name}/${file}`, skillsRoot);
+  return existsSync(inSkills) ? inSkills : new URL(`${name}/${file}`, utilitiesRoot);
+}
+
 const manifest = readFileSync(new URL("../docs/skills/factorio-kit.md", import.meta.url), "utf8");
-const assemblerSkill = readFileSync(new URL("../nucleus/skills/assembler/SKILL.md", import.meta.url), "utf8");
+const assemblerSkill = readFileSync(new URL("../nucleus/utilities/assembler/SKILL.md", import.meta.url), "utf8");
 const adr0003 = readFileSync(new URL("../docs/decisions/0003-factorio-workflow-kit.md", import.meta.url), "utf8");
 
 // ---- Golden path: idea -> spec -> ghosts -> roboports -> rocket-launch ----
@@ -70,9 +79,15 @@ test("bridge invariant: a merge without the PR closing keyword does not close th
 
 // ---- Eval coverage gate: every kit skill ships runnable trigger evals ----
 
-test("every kit skill ships evals with positive + negative coverage", () => {
+test("every kit skill ships a SKILL.md in a shipped root", () => {
   for (const name of KIT) {
-    const evalsPath = new URL(`${name}/evals/evals.json`, skillsRoot);
+    assert.ok(existsSync(skillUrl(name, "SKILL.md")), `${name}: missing SKILL.md`);
+  }
+});
+
+test("every eval-bearing kit skill ships evals with positive + negative coverage", () => {
+  for (const name of EVAL_SKILLS) {
+    const evalsPath = skillUrl(name, "evals/evals.json");
     assert.ok(existsSync(evalsPath), `${name}: missing evals/evals.json`);
     const data = JSON.parse(readFileSync(evalsPath, "utf8"));
     assert.equal(data.skill_name, name, `${name}: evals skill_name mismatch`);
@@ -118,10 +133,11 @@ test("workflow docs use post-cutover content-envelope terminology", () => {
   assert.match(targetDocs, /content-envelope/u);
 });
 
-test("renamed skills have no duplicate canonical old paths", () => {
-  assert.equal(existsSync(new URL("dispatch/SKILL.md", skillsRoot)), false);
-  assert.equal(existsSync(new URL("robots/SKILL.md", skillsRoot)), false);
-  assert.ok(existsSync(new URL("inserter/SKILL.md", skillsRoot)), "inserter skill missing");
+test("renamed and absorbed skills have no duplicate canonical old paths", () => {
+  for (const retired of ["dispatch", "robots", "inserter", "ghosts", "radar", "proof-pass", "bus-first", "main-bus", "science-pack", "research", "spitters", "spidertron", "recycler", "quality", "modules"]) {
+    assert.equal(existsSync(new URL(`${retired}/SKILL.md`, skillsRoot)), false, `${retired} must not remain in nucleus/skills`);
+    assert.equal(existsSync(new URL(`${retired}/SKILL.md`, utilitiesRoot)), false, `${retired} must not remain in nucleus/utilities`);
+  }
   assert.ok(existsSync(new URL("roboports/SKILL.md", skillsRoot)), "roboports skill missing");
 });
 
@@ -129,21 +145,23 @@ test("renamed skills have no duplicate canonical old paths", () => {
 
 test("kit handoff targets all exist as skills", () => {
   const edges = {
-    prospect: ["research", "blueprint", "ghosts"],
-    blueprint: ["ghosts", "map-seed", "prospect"],
-    ghosts: ["roboports", "inserter"],
-    roboports: ["radar", "proof-pass", "rocket-launch", "inserter", "bus-first"],
-    radar: ["inserter", "roboports", "proof-pass", "rocket-launch"],
-    "rocket-launch": ["roboports", "proof-pass"],
-    assembler: ["ghosts", "blueprint", "prospect"],
+    prospect: ["blueprint", "roboports"],
+    blueprint: ["map-seed", "prospect", "roboports"],
+    roboports: ["lab", "rocket-launch", "tdd", "belt"],
+    biters: ["repair-pack", "belt"],
+    lab: ["belt"],
+    "rocket-launch": ["roboports", "lab", "belt"],
+    assembler: ["blueprint", "prospect"],
+    "map-seed": ["blueprint"],
+    "space-age": ["rocket-launch", "roboports"],
   };
   for (const [from, targets] of Object.entries(edges)) {
-    const skill = readFileSync(new URL(`${from}/SKILL.md`, skillsRoot), "utf8");
+    const skill = readFileSync(skillUrl(from, "SKILL.md"), "utf8");
     for (const to of targets) {
       // A routed-to target backticked in a SKILL.md MUST exist as a skill;
       // a dangling route fails here instead of being silently skipped.
       if (skill.includes(`\`${to}\``)) {
-        const present = existsSync(new URL(`${to}/SKILL.md`, skillsRoot));
+        const present = existsSync(skillUrl(to, "SKILL.md"));
         assert.ok(present, `${from} routes to ${to} which must exist`);
       }
     }

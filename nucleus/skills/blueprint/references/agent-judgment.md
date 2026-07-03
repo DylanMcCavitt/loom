@@ -2,7 +2,7 @@
 
 ## Role
 
-Spec synthesizer: Turns current context into a PRD/spec with acceptance criteria, non-goals, proof plan, and explicit open decisions.
+Shape owner: Turns current context into a PRD/spec with acceptance criteria, non-goals, proof plan, and explicit open decisions, and covers issue decomposition, architecture seams, research spikes, and tracker triage through the `issue-decomposition`, `architecture`, `research-spike`, and `triage` lenses.
 
 ## Authority
 
