@@ -18,18 +18,18 @@ display:
 task: 
   eager: preferred
   agentModelOverrides: 
-    designer: anthropic/claude-fable-5:high
+    designer: cursor/claude-fable-5-medium:medium
     explore: openai-codex/gpt-5.5:low
     librarian: openai-codex/gpt-5.5
-    plan: anthropic/claude-fable-5:xhigh
+    plan: cursor/claude-fable-5-high:high
     reviewer: openai-codex/gpt-5.5:xhigh
-    sonic: openai-codex/gpt-5.5:low
-    task: openai-codex/gpt-5.5:medium
+    sonic: cursor/composer-2.5
+    task: cursor/composer-2.5
     Tester: openai-codex/gpt-5.5:medium
 mcp: 
   discoveryMode: true
 advisor: 
-  enabled: false
+  enabled: true
   subagents: false
 github: 
   enabled: true
@@ -41,11 +41,11 @@ modelRoles:
   smol: openai-codex/gpt-5.5:xhigh
   tiny: openai-codex/gpt-5.5:low
   default: openai-codex/gpt-5.5:xhigh
-  plan: openai-codex/gpt-5.5:xhigh
-  designer: anthropic/claude-fable-5:off
+  plan: cursor/claude-fable-5-high:high
+  designer: cursor/claude-fable-5-medium:medium
   vision: openai-codex/gpt-5.5:high
   slow: openai-codex/gpt-5.5:xhigh
-  task: openai-codex/gpt-5.5:medium
+  task: cursor/composer-2.5
   advisor: openai-codex/gpt-5.5:off
   commit: openai-codex/gpt-5.5:low
 dev: 
@@ -60,9 +60,11 @@ hideThinkingBlock: false
 readLineNumbers: true
 retry: 
   fallbackChains: 
-    openai-codex/gpt-5.5: 
-      - anthropic/claude-fable-5
-    anthropic/claude-fable-5: 
+    cursor/claude-fable-5-high: 
+      - openai-codex/gpt-5.5
+    cursor/claude-fable-5-medium: 
+      - openai-codex/gpt-5.5
+    cursor/composer-2.5: 
       - openai-codex/gpt-5.5
 codexResets: 
   autoRedeem: "yes"
@@ -70,7 +72,10 @@ recap:
   idleSeconds: 60
 enabledModels: 
   - openai-codex/gpt-5.5
-  - anthropic/claude-fable-5
+  - cursor/composer-2.5
+  - cursor/claude-fable-5-low
+  - cursor/claude-fable-5-medium
+  - cursor/claude-fable-5-high
 cycleOrder: 
   - smol
   - default
