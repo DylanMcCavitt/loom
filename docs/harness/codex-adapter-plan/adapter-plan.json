@@ -203,13 +203,13 @@
       "rationale": "Direct OMP librarian role ports are superseded. Future source-verified research activation must render the shared science-pack package, using the canonical name without an omp- prefix."
     },
     {
-      "ompAgent": "oracle",
-      "sourceFile": "distributions/snapshots/omp-builtins/agents/oracle.md",
+      "ompAgent": "sonic",
+      "sourceFile": "distributions/snapshots/omp-builtins/agents/sonic.md",
       "recommendation": "drop",
-      "codexSurface": "native-default-or-worker",
+      "codexSurface": "native-worker",
       "codexCandidate": null,
       "candidateTemplate": null,
-      "rationale": "The broad senior-engineer role overlaps Codex default and worker agents; porting it would blur ownership and increase routing ambiguity."
+      "rationale": "Low-reasoning mechanical worker maps to Codex native worker; no omp-specific role file is needed."
     },
     {
       "ompAgent": "plan",
@@ -221,13 +221,13 @@
       "rationale": "Direct OMP planner role ports are superseded. Future architecture/planning activation must render the relevant shared nucleus packages such as blueprint, ghosts, roboports, and main-bus, using canonical names without an omp- prefix."
     },
     {
-      "ompAgent": "quick_task",
-      "sourceFile": "distributions/snapshots/omp-builtins/agents/quick_task.md",
-      "recommendation": "keep",
-      "codexSurface": "native-worker",
-      "codexCandidate": "worker",
+      "ompAgent": "Tester",
+      "sourceFile": "distributions/snapshots/omp-builtins/agents/Tester.md",
+      "recommendation": "adapt",
+      "codexSurface": "shared-nucleus-package",
+      "codexCandidate": "omp-tester",
       "candidateTemplate": null,
-      "rationale": "Low-reasoning mechanical work maps to Codex worker or a lightweight model/profile choice; no OMP-specific role file is needed."
+      "rationale": "Specialized test-authoring agent with contract-defending discipline; worth adapting as a nucleus-backed test specialist."
     },
     {
       "ompAgent": "reviewer",

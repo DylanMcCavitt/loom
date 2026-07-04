@@ -64,9 +64,9 @@ The #39 snapshot contains eight bundled OMP agents. The Claude plan maps each on
 | `designer` | adapt | agent | `omp-designer` | UI/UX review is a narrow reusable role with read-heavy tools. |
 | `explore` | adapt | agent | `omp-explorer` | Read-only codebase scouting is useful without OMP runtime semantics. |
 | `librarian` | adapt | agent or skill | `omp-librarian` | Source-verified library/API research is distinct enough to preserve. |
-| `oracle` | drop | native main thread | none | Broad senior-engineer behavior overlaps Claude's main thread and adds routing ambiguity. |
 | `plan` | adapt | agent | `omp-planner` | Complex architectural planning benefits from a focused planning role. |
-| `quick_task` | keep | native task delegation | native quick delegation | Mechanical low-reasoning work can remain native to Claude's normal delegation/tooling model. |
+| `sonic` | drop | native task delegation | none | Low-reasoning mechanical worker overlaps Claude's native task delegation; no custom role file is needed. |
+| `Tester` | adapt | agent | `omp-tester` | Specialized test-authoring role with contract-defending discipline; worth preserving as a focused Claude agent. |
 | `reviewer` | adapt | agent | `omp-reviewer` | Review discipline can be preserved as a read-only Claude review agent. |
 | `task` | keep | native task delegation | native task | General-purpose delegated execution is already native Claude behavior. |
 

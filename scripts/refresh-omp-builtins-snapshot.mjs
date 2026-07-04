@@ -16,11 +16,10 @@ import { homedir, tmpdir } from "node:os";
 import path from "node:path";
 import { parseFrontmatter } from "./lib/frontmatter.mjs";
 import { ompBuiltinsSnapshotRoot } from "./lib/layout.mjs";
-import { COMMAND_REGISTRY_MARKER, PACKAGE_LAYOUT, assertPackageLayout, assertRegistryMarker, discoverPackageRoot } from "./lib/omp-package-contract.mjs";
+import { COMMAND_REGISTRY_MARKER, EXPECTED_AGENTS, PACKAGE_LAYOUT, assertPackageLayout, assertRegistryMarker, discoverPackageRoot } from "./lib/omp-package-contract.mjs";
 
 const USAGE = "Usage: node scripts/refresh-omp-builtins-snapshot.mjs [--write] [--snapshot-dir <path>]";
 const DEFAULT_SNAPSHOT_DIR = ompBuiltinsSnapshotRoot;
-const EXPECTED_AGENTS = ["designer", "explore", "librarian", "oracle", "plan", "quick_task", "reviewer", "task"];
 const PORTABILITY_CLASSES = {
   textAndTui: "omp-acp-text-and-tui-runtime",
   textOnly: "omp-acp-text-runtime",

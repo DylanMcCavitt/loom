@@ -253,13 +253,13 @@
       "rationale": "Source-verified library/API research is distinct enough to preserve, while live source-fetching policy stays with the parent environment."
     },
     {
-      "ompAgent": "oracle",
-      "sourceFile": "distributions/snapshots/omp-builtins/agents/oracle.md",
+      "ompAgent": "sonic",
+      "sourceFile": "distributions/snapshots/omp-builtins/agents/sonic.md",
       "recommendation": "drop",
-      "claudeSurface": "native-main-thread",
+      "claudeSurface": "native-task-delegation",
       "claudeCandidate": null,
       "candidateTemplate": null,
-      "rationale": "The broad senior-engineer role overlaps Claude's main thread and would add routing ambiguity."
+      "rationale": "Low-reasoning mechanical worker overlaps Claude's native task delegation; no custom role file is needed."
     },
     {
       "ompAgent": "plan",
@@ -271,13 +271,13 @@
       "rationale": "Complex architectural planning benefits from a focused planning role when the main task needs sequencing and risk analysis."
     },
     {
-      "ompAgent": "quick_task",
-      "sourceFile": "distributions/snapshots/omp-builtins/agents/quick_task.md",
-      "recommendation": "keep",
-      "claudeSurface": "native-task-delegation",
-      "claudeCandidate": "native-quick-delegation",
+      "ompAgent": "Tester",
+      "sourceFile": "distributions/snapshots/omp-builtins/agents/Tester.md",
+      "recommendation": "adapt",
+      "claudeSurface": "agent",
+      "claudeCandidate": "omp-tester",
       "candidateTemplate": null,
-      "rationale": "Mechanical low-reasoning work can remain native to Claude's normal delegation/tooling model without a custom OMP role file."
+      "rationale": "Specialized test-authoring role with high-signal, contract-defending test discipline; worth preserving as a focused Claude agent."
     },
     {
       "ompAgent": "reviewer",

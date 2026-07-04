@@ -4,7 +4,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
 
-import { discoverPackageRoot } from "../scripts/lib/omp-package-contract.mjs";
+import { EXPECTED_AGENTS, discoverPackageRoot } from "../scripts/lib/omp-package-contract.mjs";
 
 const snapshotDir = new URL("../distributions/snapshots/omp-builtins/", import.meta.url).pathname;
 const sourcePath = new URL("../distributions/snapshots/omp-builtins/source.json", import.meta.url).pathname;
@@ -55,9 +55,8 @@ test("OMP built-ins snapshot validator accepts the checked-in files", () => {
 test("bundled OMP task agents are snapshotted with source metadata", () => {
   assert.equal(source.source.packageName, "@oh-my-pi/pi-coding-agent");
   assert.match(source.source.cliVersion, /^omp\/\d+\.\d+\.\d+/u);
-  const expected = ["designer", "explore", "librarian", "oracle", "plan", "quick_task", "reviewer", "task"];
-  assert.deepEqual(source.expectedBundledAgents, expected);
-  assert.deepEqual(source.agents.map(agent => agent.name), expected);
+  assert.deepEqual(source.expectedBundledAgents, EXPECTED_AGENTS);
+  assert.deepEqual(source.agents.map(agent => agent.name), EXPECTED_AGENTS);
   for (const agent of source.agents) {
     assert.ok(existsSync(path.join(snapshotDir, agent.file)), `${agent.file} missing`);
     assert.match(agent.sha256, /^[a-f0-9]{64}$/u);

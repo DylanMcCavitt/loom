@@ -59,7 +59,7 @@ test("assertPackageLayout fails a moved layout with an actionable stale-contract
       () => assertPackageLayout(root),
       (error) => {
         assert.match(error.message, /contract may be stale/u);
-        assert.match(error.message, /omp\/16\.0\.5/u);
+        assert.match(error.message, /omp\/16\.3\.4/u);
         assert.ok(error.message.includes(PACKAGE_LAYOUT.commandRegistry), "lists the missing registry file");
         assert.ok(error.message.includes(PACKAGE_LAYOUT.builtinRulesRoot), "lists the missing rules root");
         assert.match(error.message, /omp-package-contract\.mjs/u, "names the file to re-verify");

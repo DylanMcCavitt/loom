@@ -3,10 +3,10 @@
   "generatedForIssue": 39,
   "source": {
     "packageName": "@oh-my-pi/pi-coding-agent",
-    "packageVersion": "16.0.5",
-    "cliVersion": "omp/16.0.5",
-    "packageRoot": "~/.bun/install/global/node_modules/@oh-my-pi/pi-coding-agent",
-    "packageJsonPath": "~/.bun/install/global/node_modules/@oh-my-pi/pi-coding-agent/package.json"
+    "packageVersion": "16.3.4",
+    "cliVersion": "omp/16.3.4",
+    "packageRoot": "/tmp/omp-16.3.4-pkg/package",
+    "packageJsonPath": "/tmp/omp-16.3.4-pkg/package/package.json"
   },
   "commandSourceTypes": [
     {
@@ -35,14 +35,14 @@
     }
   ],
   "sourceFiles": [
-    "~/.bun/install/global/node_modules/@oh-my-pi/pi-coding-agent/src/slash-commands/builtin-registry.ts",
-    "~/.bun/install/global/node_modules/@oh-my-pi/pi-coding-agent/src/slash-commands/available-commands.ts",
-    "~/.bun/install/global/node_modules/@oh-my-pi/pi-coding-agent/src/slash-commands/acp-builtins.ts"
+    "/tmp/omp-16.3.4-pkg/package/src/slash-commands/builtin-registry.ts",
+    "/tmp/omp-16.3.4-pkg/package/src/slash-commands/available-commands.ts",
+    "/tmp/omp-16.3.4-pkg/package/src/slash-commands/acp-builtins.ts"
   ],
   "counts": {
     "total": 58,
-    "acpAdvertised": 28,
-    "tuiRuntimeOnly": 30
+    "acpAdvertised": 27,
+    "tuiRuntimeOnly": 31
   },
   "commands": [
     {
@@ -53,13 +53,14 @@
       "advertisedInAcp": true,
       "tuiRuntimeOnly": false,
       "allowsArgs": true,
-      "inputHint": "[on|off|status|dump [raw]]",
+      "inputHint": "[on|off|status|dump [raw]|configure]",
       "description": "Toggle advisor",
       "subcommands": [
         "on",
         "off",
         "status",
-        "dump"
+        "dump",
+        "configure"
       ]
     },
     {
@@ -149,7 +150,7 @@
       "advertisedInAcp": true,
       "tuiRuntimeOnly": false,
       "allowsArgs": true,
-      "inputHint": "[focus instructions]",
+      "inputHint": "[${COMPACT_MODES.map(mode => mode.name).join(\"|\")}] [focus]",
       "description": "Compact the conversation",
       "subcommands": []
     },
@@ -171,7 +172,7 @@
       "portabilityClass": "omp-tui-runtime-only",
       "advertisedInAcp": false,
       "tuiRuntimeOnly": true,
-      "allowsArgs": false,
+      "allowsArgs": true,
       "description": "Pick text or code from the conversation to copy",
       "subcommands": []
     },
@@ -179,14 +180,12 @@
       "name": "debug",
       "aliases": [],
       "sourceType": "builtin-slash-command",
-      "portabilityClass": "omp-acp-text-and-tui-runtime",
-      "advertisedInAcp": true,
-      "tuiRuntimeOnly": false,
-      "allowsArgs": true,
+      "portabilityClass": "omp-tui-runtime-only",
+      "advertisedInAcp": false,
+      "tuiRuntimeOnly": true,
+      "allowsArgs": false,
       "description": "Open debug tools selector",
-      "subcommands": [
-        "dump-next-request"
-      ]
+      "subcommands": []
     },
     {
       "name": "drop",
@@ -207,7 +206,7 @@
       "advertisedInAcp": true,
       "tuiRuntimeOnly": false,
       "allowsArgs": true,
-      "description": "Return full transcript as plain text",
+      "description": "Return full transcript as plain text, with LLM request JSON path",
       "subcommands": []
     },
     {
@@ -418,7 +417,7 @@
       "advertisedInAcp": false,
       "tuiRuntimeOnly": true,
       "allowsArgs": true,
-      "inputHint": "[count|duration]",
+      "inputHint": "[count|duration] [prompt]",
       "description": "Toggle loop mode. While enabled, the next prompt you send re-submits after every yield. Esc cancels the current iteration; /loop again to disable.",
       "subcommands": []
     },
@@ -523,8 +522,8 @@
       "advertisedInAcp": true,
       "tuiRuntimeOnly": false,
       "allowsArgs": true,
-      "inputHint": "<path>",
-      "description": "Move the current session file",
+      "inputHint": "[<path>]",
+      "description": "Move the current session to a different directory",
       "subcommands": []
     },
     {
@@ -630,7 +629,8 @@
       "portabilityClass": "omp-tui-runtime-only",
       "advertisedInAcp": false,
       "tuiRuntimeOnly": true,
-      "allowsArgs": false,
+      "allowsArgs": true,
+      "inputHint": "[session id]",
       "description": "Resume a different session",
       "subcommands": []
     },
@@ -709,7 +709,7 @@
       "advertisedInAcp": true,
       "tuiRuntimeOnly": false,
       "allowsArgs": false,
-      "description": "Share session via an encrypted link (secret gist or share server)",
+      "description": "Share session via an encrypted link (share server or secret gist)",
       "subcommands": []
     },
     {

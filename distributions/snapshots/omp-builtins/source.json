@@ -3,27 +3,42 @@
   "generatedForIssue": 39,
   "source": {
     "packageName": "@oh-my-pi/pi-coding-agent",
-    "packageVersion": "16.0.5",
-    "cliVersion": "omp/16.0.5",
-    "packageRoot": "~/.bun/install/global/node_modules/@oh-my-pi/pi-coding-agent",
-    "packageJsonPath": "~/.bun/install/global/node_modules/@oh-my-pi/pi-coding-agent/package.json"
+    "packageVersion": "16.3.4",
+    "cliVersion": "omp/16.3.4",
+    "packageRoot": "/tmp/omp-16.3.4-pkg/package",
+    "packageJsonPath": "/tmp/omp-16.3.4-pkg/package/package.json"
   },
   "expectedBundledAgents": [
+    "Tester",
     "designer",
     "explore",
     "librarian",
-    "oracle",
     "plan",
-    "quick_task",
     "reviewer",
+    "sonic",
     "task"
   ],
   "agents": [
     {
+      "name": "Tester",
+      "file": "agents/Tester.md",
+      "bytes": 12510,
+      "sha256": "25af8519f4a27b4ac0f0b7fa6df98886e75918a59361b5e657eb3087b2ba2fe8",
+      "frontmatterKeys": [
+        "name",
+        "description",
+        "tools",
+        "spawns",
+        "model",
+        "thinkingLevel"
+      ],
+      "description": "Authoritative test writer. ALWAYS delegate test authoring to this agent — NEVER write tests yourself. Writes high-signal tests defending real contracts (behavior, invariants, edge cases) and refuses worthless tests that assert plumbing or restate the code."
+    },
+    {
       "name": "designer",
       "file": "agents/designer.md",
-      "bytes": 4228,
-      "sha256": "856aad7ddad0b0703d95bdcb5dbdeba1ddd7c2ec1dcd700643f1843f2b8ea447",
+      "bytes": 4226,
+      "sha256": "7738caf886f09c7483a7f4b5dbebfd749d0510a3ec1058fe4306f6dc5fa38d90",
       "frontmatterKeys": [
         "name",
         "description",
@@ -34,8 +49,8 @@
     {
       "name": "explore",
       "file": "agents/explore.md",
-      "bytes": 2144,
-      "sha256": "7fac3c6895abe0ba029dec7a5930164989ba4aac199e0144ff45b2a8ba8fd358",
+      "bytes": 2142,
+      "sha256": "e37c65196d02a6fe8c4c07092b6d976ff38188f9b9507f44d1c5a8ebd186a887",
       "frontmatterKeys": [
         "name",
         "description",
@@ -49,8 +64,8 @@
     {
       "name": "librarian",
       "file": "agents/librarian.md",
-      "bytes": 5614,
-      "sha256": "c6e62b3bd08dbb12ae66729fdea1761f66a7f9e751ab1d64850540de6650bec0",
+      "bytes": 5610,
+      "sha256": "447d843128208684fea92bd4625761c7b481422ff3d2e1ff2b8088da2a68e5be",
       "frontmatterKeys": [
         "name",
         "description",
@@ -62,24 +77,10 @@
       "description": "Researches external libraries and APIs by reading source code. Returns definitive, source-verified answers."
     },
     {
-      "name": "oracle",
-      "file": "agents/oracle.md",
-      "bytes": 3822,
-      "sha256": "1626f18eca0c7549a6c5e637774f591ed30f8595d873fe9dc54615f26a61f7aa",
-      "frontmatterKeys": [
-        "name",
-        "description",
-        "spawns",
-        "model",
-        "thinkingLevel"
-      ],
-      "description": "Wise senior engineer to consult or delegate work to — debugging, architecture, second opinions, and hands-on implementation when asked."
-    },
-    {
       "name": "plan",
       "file": "agents/plan.md",
-      "bytes": 1809,
-      "sha256": "06613abea7f52974f56608862db99329b0326047ce113069001e195e0aa104ca",
+      "bytes": 1805,
+      "sha256": "2a3c03bd369e6a79acbde1f53a9ea1232216333ef6b09fe780de0d982af4a7db",
       "frontmatterKeys": [
         "name",
         "description",
@@ -91,23 +92,10 @@
       "description": "Software architect for complex multi-file architectural decisions. NOT for simple tasks, single-file changes, or tasks completable in <5 tool calls."
     },
     {
-      "name": "quick_task",
-      "file": "agents/quick_task.md",
-      "bytes": 1432,
-      "sha256": "b47bb545b070d62924b35b420d4546d683c798e1ac5ab75455f10264039755b1",
-      "frontmatterKeys": [
-        "name",
-        "description",
-        "model",
-        "thinkingLevel"
-      ],
-      "description": "Low-reasoning agent for strictly mechanical updates or data collection only"
-    },
-    {
       "name": "reviewer",
       "file": "agents/reviewer.md",
-      "bytes": 5296,
-      "sha256": "f6d94c4b5e725476675b5ab1e75fbae6bad7f66221ee8671a9fd4a042bc30087",
+      "bytes": 5604,
+      "sha256": "c70e926a906140d6c060978592ad5134c9aa8ce7df134810b5ea7cf9bcdad2d8",
       "frontmatterKeys": [
         "name",
         "description",
@@ -120,10 +108,23 @@
       "description": "Code review specialist for quality/security analysis"
     },
     {
+      "name": "sonic",
+      "file": "agents/sonic.md",
+      "bytes": 1423,
+      "sha256": "01710e2ad99d72f43adbd5ae84b2762d8ce3de3c6ad181888debf84462307ccc",
+      "frontmatterKeys": [
+        "name",
+        "description",
+        "model",
+        "thinkingLevel"
+      ],
+      "description": "Low-reasoning agent for strictly mechanical updates or data collection only"
+    },
+    {
       "name": "task",
       "file": "agents/task.md",
-      "bytes": 1419,
-      "sha256": "a1a06d5eaa41d21d60f1c317d78b5dfb1ad1bd977e130536ea713b57a36336e6",
+      "bytes": 1415,
+      "sha256": "e0f7c86debfb73e66c5e9681d3d8924646bbe524db0282bbfd0dffb1ca4c374b",
       "frontmatterKeys": [
         "name",
         "description",

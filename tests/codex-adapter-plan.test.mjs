@@ -55,7 +55,7 @@ test("Codex adapter plan maps every bundled OMP agent once", () => {
   const expected = source.expectedBundledAgents.toSorted();
   const actual = plan.ompAgentMappings.map(mapping => mapping.ompAgent).toSorted();
   assert.deepEqual(actual, expected);
-  assert.deepEqual(new Set(plan.ompAgentMappings.map(mapping => mapping.recommendation)), new Set(["drop", "keep", "superseded"]));
+  assert.deepEqual(new Set(plan.ompAgentMappings.map(mapping => mapping.recommendation)), new Set(["adapt", "drop", "keep", "superseded"]));
   for (const mapping of plan.ompAgentMappings) {
     assert.ok(mapping.codexSurface, `${mapping.ompAgent} missing Codex surface`);
     assert.ok(mapping.rationale, `${mapping.ompAgent} missing rationale`);

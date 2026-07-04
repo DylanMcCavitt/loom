@@ -52,9 +52,9 @@ prefix.
 | `designer` | superseded | shared nucleus package | `spidertron` | Future UI/UX workflow activation belongs to shared `spidertron`, not `omp-designer`. |
 | `explore` | keep | native subagent | `explorer` | Codex already ships a read-heavy explorer role. |
 | `librarian` | superseded | shared nucleus package | `science-pack` | Future source-verified research activation belongs to shared `science-pack`, not `omp-librarian`. |
-| `oracle` | drop | native default/worker | none | Broad senior-engineer behavior overlaps native Codex defaults and would add routing ambiguity. |
 | `plan` | superseded | shared nucleus packages | `blueprint` / `ghosts` / `roboports` / `main-bus` | Future planning work routes through canonical shared packages, not `omp-planner`. |
-| `quick_task` | keep | native worker/profile choice | `worker` | Mechanical low-reasoning work maps to native worker and optional profile/model choice. |
+| `sonic` | drop | native worker | none | Low-reasoning mechanical worker maps to Codex native worker; no omp-specific role file is needed. |
+| `Tester` | adapt | shared nucleus package | `omp-tester` | Specialized test-authoring agent; worth adapting as a nucleus-backed test specialist. |
 | `reviewer` | superseded | shared nucleus packages | `biters` / `spitters` / `bus-first` / `lab` | Future review work routes through canonical shared packages, not `omp-reviewer`. |
 | `task` | keep | native worker/default | `worker` | General-purpose delegated execution is already native Codex behavior. |
 
