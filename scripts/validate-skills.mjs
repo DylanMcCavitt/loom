@@ -164,9 +164,11 @@ function collectRelativeFiles(root, current = root, files = []) {
   return files.sort();
 }
 
+const COMPAT_SURFACE_REMEDIATION = "; run 'npm run render-skills-compat' and commit the result";
+
 function validateCompatSurface(skillsRoots, compatRoot, errors) {
   if (!existsSync(compatRoot) || !statSync(compatRoot).isDirectory()) {
-    errors.push(`${path.relative(process.cwd(), compatRoot)}: expected rendered compatibility surface`);
+    errors.push(`${path.relative(process.cwd(), compatRoot)}: expected rendered compatibility surface${COMPAT_SURFACE_REMEDIATION}`);
     return;
   }
   const canonicalSources = new Map();
@@ -180,7 +182,7 @@ function validateCompatSurface(skillsRoots, compatRoot, errors) {
   const compatFiles = collectRelativeFiles(compatRoot);
   const rootLabels = skillsRoots.map((root) => path.relative(process.cwd(), root)).join(" and ");
   if (JSON.stringify(canonicalFiles) !== JSON.stringify(compatFiles)) {
-    errors.push(`${path.relative(process.cwd(), compatRoot)}: rendered compatibility surface must contain exactly the files in ${rootLabels}`);
+    errors.push(`${path.relative(process.cwd(), compatRoot)}: rendered compatibility surface must contain exactly the files in ${rootLabels}${COMPAT_SURFACE_REMEDIATION}`);
     return;
   }
   for (const relativeFile of canonicalFiles) {
@@ -188,7 +190,7 @@ function validateCompatSurface(skillsRoots, compatRoot, errors) {
     const canonical = readFileSync(path.join(sourceRoot, relativeFile));
     const compat = readFileSync(path.join(compatRoot, relativeFile));
     if (!canonical.equals(compat)) {
-      errors.push(`${path.join(path.relative(process.cwd(), compatRoot), relativeFile)}: rendered compatibility file differs from ${path.join(path.relative(process.cwd(), sourceRoot), relativeFile)}`);
+      errors.push(`${path.join(path.relative(process.cwd(), compatRoot), relativeFile)}: rendered compatibility file differs from ${path.join(path.relative(process.cwd(), sourceRoot), relativeFile)}${COMPAT_SURFACE_REMEDIATION}`);
     }
   }
 }

@@ -10,8 +10,9 @@ explicit live apply.
 - `loom` is the version-controlled nucleus repo. It owns canonical source under
   `nucleus/`, harness adapters under `adapters/`, generated/checkable output
   under `distributions/`, renderers, validators, and operator docs.
-- The Factorio workflow kit is authored under `nucleus/skills/` and rendered to
-  `.agents/skills/` as the OMP compatibility surface.
+- The Factorio workflow kit is authored under `nucleus/skills/` and
+  `nucleus/utilities/`, then rendered to `.agents/skills/` as the OMP
+  compatibility surface.
 - OMP, Codex, and Claude are target harnesses. They consume rendered or linked
   surfaces; their runtime state stays local-only.
 - `scripts/render-nucleus.mjs` renders the OMP/Codex/Claude adapter nucleus and
@@ -29,6 +30,19 @@ Never skip straight to `--write` against the real HOME. A live apply requires a
 clean dry-run manifest, human review of the destinations, and explicit approval
 for the concrete target HOME.
 
+## Regenerate the compat surface after nucleus edits
+
+When you change canonical skill source under `nucleus/skills/` or
+`nucleus/utilities/`, regenerate the OMP compatibility surface before commit:
+
+```sh
+npm run render-skills-compat
+```
+
+Commit the rendered `.agents/skills/` output with the nucleus edits. CI enforces
+byte-identical parity through `validate-skills.mjs`; a drift failure names this
+command as the fix.
+
 ## Current live baseline
 
 The historical pre-cutover live inventory is recorded in
@@ -37,7 +51,7 @@ It is superseded by ADR 0004 and the LOO-107..111 layout cutover; use it only as
 reference context. The current operator distinction:
 
 - Already effective:
-  - `.agents/skills` is rendered from `nucleus/skills`.
+  - `.agents/skills` is rendered from `nucleus/skills/` and `nucleus/utilities/`.
   - OMP mirror files are rendered from `adapters/omp/source/`.
 - Planned or gated:
   - generated Codex config/profile fragments;

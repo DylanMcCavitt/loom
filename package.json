@@ -11,6 +11,7 @@
     "doctor": "node scripts/doctor.mjs",
     "choose-tracker": "node scripts/factory-nucleus/factory.mjs choose-tracker",
     "render-nucleus": "node scripts/render-nucleus.mjs",
+    "render-skills-compat": "node scripts/render-skills-compat.mjs",
     "install-nucleus": "node scripts/render-nucleus.mjs --write",
     "smoke:live": "node --test tests/factory-nucleus-live-smoke.test.mjs",
     "runtime-adapter": "node scripts/runtime-adapter/server.mjs",

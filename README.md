@@ -17,6 +17,7 @@ npm run factory -- scan --root <repo>
 npm run factory -- init-envelope --root <repo>
 npm run choose-tracker -- --root <repo>
 npm run render-nucleus
+npm run render-skills-compat
 npm run check
 ```
 
@@ -77,7 +78,7 @@ Scope a different live HOME with `--home <dir>` (default `$HOME`); see `node scr
 - [`docs/operator/`](docs/operator/) - operator-facing daily workflow and install/update flows.
 - [`docs/architecture/`](docs/architecture/) - compact architecture maps for Factory Nucleus and the harness bridge.
 - [`docs/harness/`](docs/harness/) - manifests, adapter plans, and bridge/reference context only; no active source templates or generated payloads.
-- [`.agents/skills/`](.agents/skills/) - rendered compatibility surface generated from `nucleus/skills/`; edit `nucleus/skills/` first.
+- [`.agents/skills/`](.agents/skills/) - rendered compatibility surface generated from `nucleus/skills/` and `nucleus/utilities/`; edit nucleus source first, then run `npm run render-skills-compat`.
 - [`scripts/autoresearch.sh`](scripts/autoresearch.sh) - full-flow traceability benchmark script; `reference-only`.
 - [`.gitignore`](.gitignore) - excludes runtime state, local overlays, common credential files, logs, databases, sessions, blobs, and caches; `track`.
 

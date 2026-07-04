@@ -9,6 +9,7 @@ Loom (oh-my-pi-config) is a declarative, dry-run-safe nucleus harness unifying O
 - `npm run validate` - validators + dry-run inventory + safety gate
 - `npm run doctor` - environment/health check
 - `npm run render-nucleus` - dry-run render of all candidates (writes nothing live)
+- `npm run render-skills-compat` - regenerate `.agents/skills/` from `nucleus/skills/` and `nucleus/utilities/` after nucleus edits
 - `npm run install-nucleus` - gated apply (`--write`); create-missing-only, requires clean dry run
 - `npm run factory -- scan --root <repo>` / `init-envelope --root <repo>` - Factory Nucleus envelope tooling
 
@@ -22,7 +23,7 @@ Node >= 20, ESM (`type: module`), no external runtime dependencies.
   - `nucleus/agents/shared-nucleus-agents.md` - shared agent contract: request modes, pipeline DAG, lens policy, packet contract, decision authority
 - `adapters/` - harness-specific translators (omp, codex, claude, plugin-bridge). Adapters translate format only; never change canonical names, routing, or behavior.
 - `distributions/` - generated/checkable output and OMP reference snapshots. Never hand-edit generated output.
-- `.agents/skills/` - rendered compatibility surface generated from `nucleus/skills/`; edit `nucleus/skills/` instead.
+- `.agents/skills/` - rendered compatibility surface generated from `nucleus/skills/` and `nucleus/utilities/`; edit nucleus source, then run `npm run render-skills-compat`.
 - `.factory/droids/` - Factory harness adapters for the canonical agent roster; thin routers to `nucleus/skills/<agent>/`.
 - `docs/harness/resource-manifest.md` - canonical dispositions: `track`, `adapt`, `reference-only`, `local-only`.
 - `scripts/` - validators, renderers, and the read-only safety gate (`dry-run-harness-safety-gate.mjs`).
