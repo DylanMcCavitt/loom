@@ -1,0 +1,38 @@
+name: Auto-merge on approval
+
+# When a human approves a non-draft PR, arm GitHub auto-merge (squash) so the
+# PR merges as soon as required checks pass. Requires two repo settings:
+# "Allow auto-merge" (Settings > General) and a branch protection / ruleset on
+# main requiring the "check" status; without required checks GitHub refuses to
+# arm auto-merge on an already-green PR, so this job falls back to an
+# immediate squash merge in that case (the approval already happened).
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  arm-auto-merge:
+    if: >-
+      github.event.review.state == 'approved' &&
+      github.event.pull_request.draft == false &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.review.author_association)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enable auto-merge (squash)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -eu
+          if gh pr merge "$PR" -R "$REPO" --auto --squash; then
+            echo "Auto-merge armed for #$PR"
+          else
+            echo "Could not arm auto-merge (likely no required checks configured); trying direct squash merge since the PR is approved."
+            gh pr merge "$PR" -R "$REPO" --squash
+          fi
