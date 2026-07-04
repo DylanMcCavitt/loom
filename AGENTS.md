@@ -18,11 +18,11 @@ Node >= 20, ESM (`type: module`), no external runtime dependencies.
 
 - `nucleus/` - canonical, model-agnostic source for agents and skills. **Edit here first.**
   - `nucleus/skills/<agent>/` - one Vercel-shaped package per canonical agent (SKILL.md, AGENTS.md, references/ with lens files, exemplars/). Exactly 7 roster agents: `blueprint` (shape), `roboports` (implement), `biters` (review), `lab` (prove), `repair-pack` (repair), `rocket-launch` (launch), `belt` (handoffs). Behavioral variants are lens references selected by the packet `lens` field.
-  - `nucleus/utilities/<skill>/` - non-roster utility skills (tdd, debug-tools, assembler, prospect, space-age, security-*, etc.)
+  - `nucleus/utilities/<skill>/` - four repo-owned kit utilities (`assembler`, `prospect`, `space-age`, `map-seed`). Cited engines such as `tdd` and `debug-tools` are operator-local under `~/.agents/skills/` (see `docs/skills/operator-local-manifest.md`).
   - `nucleus/agents/shared-nucleus-agents.md` - shared agent contract: request modes, pipeline DAG, lens policy, packet contract, decision authority
 - `adapters/` - harness-specific translators (omp, codex, claude, plugin-bridge). Adapters translate format only; never change canonical names, routing, or behavior.
 - `distributions/` - generated/checkable output and OMP reference snapshots. Never hand-edit generated output.
-- `.agents/skills/` - rendered compatibility surface generated from `nucleus/skills/`; edit `nucleus/skills/` instead.
+- `.agents/skills/` - rendered compatibility surface generated from `nucleus/skills/` and `nucleus/utilities/` via `node scripts/render-skills-compat.mjs`; edit nucleus source instead.
 - `.factory/droids/` - Factory harness adapters for the canonical agent roster; thin routers to `nucleus/skills/<agent>/`.
 - `docs/harness/resource-manifest.md` - canonical dispositions: `track`, `adapt`, `reference-only`, `local-only`.
 - `scripts/` - validators, renderers, and the read-only safety gate (`dry-run-harness-safety-gate.mjs`).

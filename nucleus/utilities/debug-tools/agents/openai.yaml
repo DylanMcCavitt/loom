@@ -1,4 +1,0 @@
-interface:
-  display_name: "Debug Tools"
-  short_description: "Debug agent and omp workflows"
-  default_prompt: "Use $debug-tools to inspect this thread or an omp /debug report and recommend concrete workflow fixes."

@@ -92,6 +92,19 @@ The gate reports OMP, Codex, and Claude candidate live paths, planned repo targe
 
 The gate does not modify live `~/.omp`, `~/.codex`, `~/.claude`, `.agents`, or repo config. With `--check-live`, it only reads path metadata and symlink targets.
 
+
+## LOO-152 repo-owned skill slimming
+
+LOO-152 reduced tracked repo-owned skills to **eleven**:
+
+- `nucleus/skills/` — seven roster agents
+- `nucleus/utilities/` — four kit utilities (`assembler`, `prospect`, `space-age`, `map-seed`)
+- `.agents/skills/` — rendered compatibility surface from both roots
+
+Seventeen cited-engine utilities moved operator-local to `~/.agents/skills/`. The repo records
+names and live paths in [`docs/skills/operator-local-manifest.md`](../skills/operator-local-manifest.md)
+only; LOO-152 does not write live `~/.agents`.
+
 ## Checks
 
 Run the offline validator and test suite from the repo root:

@@ -6,6 +6,7 @@ Historical context moved out of `nucleus/agents/shared-nucleus-agents.md` by LOO
 
 - LOO-96 base contract; LOO-97 autonomous delegation DAG; LOO-98 repair-pack finding-fix loop; LOO-99 offline shared-agent eval harness; LOO-100 retirement of OMP-prefixed active candidates; LOO-101 canonical package rendering; LOO-102 scratch-HOME shared roster activation; LOO-103 evidence intake and decision log; LOO-104 deterministic shared-package checks; LOO-105 canonical repo-local package source.
 - LOO-154 consolidated the 17-agent starter roster to 7 agents with lens references and moved non-roster skills to `nucleus/utilities/`.
+- LOO-152 slimmed repo-owned skills to 11 (7 roster + 4 kit utilities) and moved 17 cited-engine utilities operator-local to `~/.agents/skills/` per `docs/skills/operator-local-manifest.md`.
 
 ## Pre-consolidation starter roster (superseded by LOO-154)
 

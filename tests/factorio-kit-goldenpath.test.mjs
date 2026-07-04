@@ -7,6 +7,13 @@ const skillsRoot = new URL("../nucleus/skills/", import.meta.url);
 const utilitiesRoot = new URL("../nucleus/utilities/", import.meta.url);
 const MVP = ["prospect", "blueprint", "roboports", "biters", "lab", "repair-pack", "rocket-launch", "belt", "assembler"];
 const KIT = [...MVP, "space-age", "map-seed"];
+const MOVED_OPERATOR_LOCAL = [
+  "chrome-devtools", "chronicle", "computer-use", "debug-tools", "deliverable-report",
+  "execute-plan", "find-skills", "grill-with-docs", "openai-docs", "repo-triage",
+  "security-best-practices", "security-ownership-map", "security-threat-model",
+  "skill-maintenance", "swiftui-pro", "tdd", "write-a-skill",
+];
+const OPERATOR_LOCAL_ENGINES = new Set(["tdd", "diagnose", "debug-tools"]);
 // Roster agent packages carry lens references instead of trigger evals.
 const EVAL_SKILLS = KIT.filter((name) => !["lab", "repair-pack", "belt"].includes(name));
 
@@ -141,6 +148,19 @@ test("renamed and absorbed skills have no duplicate canonical old paths", () => 
   assert.ok(existsSync(new URL("roboports/SKILL.md", skillsRoot)), "roboports skill missing");
 });
 
+test("operator-local utilities are not tracked under nucleus/utilities", () => {
+  for (const name of MOVED_OPERATOR_LOCAL) {
+    assert.equal(
+      existsSync(new URL(`${name}/SKILL.md`, utilitiesRoot)),
+      false,
+      `${name} must not remain in nucleus/utilities after LOO-152`,
+    );
+  }
+  for (const name of ["assembler", "prospect", "space-age", "map-seed"]) {
+    assert.ok(existsSync(new URL(`${name}/SKILL.md`, utilitiesRoot)), `${name} kit utility missing`);
+  }
+});
+
 // ---- Handoff graph: every routed-to kit skill actually exists ----
 
 test("kit handoff targets all exist as skills", () => {
@@ -161,6 +181,7 @@ test("kit handoff targets all exist as skills", () => {
       // A routed-to target backticked in a SKILL.md MUST exist as a skill;
       // a dangling route fails here instead of being silently skipped.
       if (skill.includes(`\`${to}\``)) {
+        if (OPERATOR_LOCAL_ENGINES.has(to)) continue;
         const present = existsSync(skillUrl(to, "SKILL.md"));
         assert.ok(present, `${from} routes to ${to} which must exist`);
       }

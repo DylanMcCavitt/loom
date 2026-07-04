@@ -80,8 +80,8 @@ migration notes explaining the cutover.
 |---|---|---|---|---|---|---|
 | `prospect` | scout a new patch | start a new idea | initiative/project + doc | — | MVP | new |
 | `blueprint` | saved layout you stamp | shape owner: PRD/spec (`spec-synthesis`), issue decomposition (`issue-decomposition`), architecture (`architecture`), research spikes (`research-spike`), triage (`triage`) via lenses | documents, issues/sub-issues, states + labels | PR/issue templates | MVP | absorbs `ghosts`, `main-bus`, `science-pack`/`research`, `inserter` as lenses |
-| `roboports` | construction/logistic bots | execute one issue end-to-end + fanout discipline; refactor (`refactor`) and performance (`performance`) via lenses | reads issue/acceptance | branch/worktree -> PR | MVP | absorbs `recycler`/`quality`, `modules` as lenses; reuses `tdd`, `debug-tools` |
-| `biters` | enemies that breach your walls | adversarial review: correctness (`correctness`), security (`security`), minimal-diff doctrine (`minimal-diff`), drift (`drift`) via lenses | reads state/labels/dependencies for drift | reads diff/PR/proof evidence | MVP | absorbs `spitters`, `bus-first`, `radar`, `pr-review` as lenses; reuses `security-threat-model`, `security-best-practices` |
+| `roboports` | construction/logistic bots | execute one issue end-to-end + fanout discipline; refactor (`refactor`) and performance (`performance`) via lenses | reads issue/acceptance | branch/worktree -> PR | MVP | absorbs `recycler`/`quality`, `modules` as lenses; cites operator-local `tdd`, `debug-tools` |
+| `biters` | enemies that breach your walls | adversarial review: correctness (`correctness`), security (`security`), minimal-diff doctrine (`minimal-diff`), drift (`drift`) via lenses | reads state/labels/dependencies for drift | reads diff/PR/proof evidence | MVP | absorbs `spitters`, `bus-first`, `radar`, `pr-review` as lenses; cites operator-local `security-threat-model`, `security-best-practices`, `security-ownership-map` |
 | `lab` | the lab proves science | proof-only validation: command (`command-proof`), UI (`ui-proof`), smoke (`smoke-proof`) via lenses | optional read-only checks | local/browser/test artifacts | MVP | absorbs `spidertron`, `proof-pass` as lenses; used by `rocket-launch` |
 | `repair-pack` | repair packs fix one thing | fix exactly one review/proof finding from a compact packet | reads finding packet | targeted diff + proof rerun | MVP | unchanged |
 | `rocket-launch` | launch | ship: review gate, merge, close issue | close issue, status update | PR review/merge/CI | MVP | replaces `thread-closeout`, `gh-issue-thread-chain` closeout; reuses the `biters` lenses and `lab` |
@@ -409,11 +409,13 @@ active responsibilities.
   `improve-codebase-architecture`, `repo-workflow-bootstrap`, `workflow-kit`,
   `setup-matt-pocock-skills`, `agent-recipes`.
 - **Re-theme (renamed, content reused):** `prototype` -> `map-seed`.
-- **Keep as engines (cited, not retired):** `diagnose`, `tdd`, `pr-review`,
+- **Keep as engines (cited, operator-local at `~/.agents/skills/`):** `diagnose`, `tdd`, `pr-review`,
   `proof-pass`, `handoff`, `repo-triage`, `resume-thread`, `deliverable-report`,
   `execute-plan`, `zoom-out`, `thread-control`, `fleet-status`,
   `security-threat-model`, `security-best-practices`, `security-ownership-map`,
-  plus all non-workflow skills.
+  `debug-tools`, plus other non-workflow skills listed in
+  [`operator-local-manifest.md`](operator-local-manifest.md).
+- **Repo-owned kit utilities (`nucleus/utilities/`):** `assembler`, `prospect`, `space-age`, `map-seed`.
 - For each retired skill: delete its dir, drop/rewrite its `*-skill.test.mjs`,
   remove its `canonical-manifest.md` row, and update the README test tables.
 
