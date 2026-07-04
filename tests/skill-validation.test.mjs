@@ -1,9 +1,15 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { mkdtempSync, rmSync, symlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { test } from "node:test";
 
 const validator = new URL("../scripts/validate-skills.mjs", import.meta.url).pathname;
 const fixtures = new URL("fixtures/skills/", import.meta.url).pathname;
+const repoRoot = new URL("../", import.meta.url).pathname;
+const repoSkillsDir = new URL("../nucleus/skills", import.meta.url).pathname;
+const repoCompatSkillsDir = new URL("../.agents/skills", import.meta.url).pathname;
 
 function runValidation(fixture, extraArgs = []) {
   return spawnSync(process.execPath, [
@@ -14,6 +20,27 @@ function runValidation(fixture, extraArgs = []) {
     `${fixtures}global/.agents/skills`,
     ...extraArgs,
   ], { encoding: "utf8" });
+}
+
+function runRepoValidation(globalSkillsDir) {
+  return spawnSync(process.execPath, [
+    validator,
+    "--skills-dir",
+    repoSkillsDir,
+    "--global-skills-dir",
+    globalSkillsDir,
+  ], { cwd: repoRoot, encoding: "utf8" });
+}
+
+function withSymlinkedGlobalSkillsRoot(target, callback) {
+  const scratch = mkdtempSync(path.join(tmpdir(), "validate-skills-global-"));
+  try {
+    const globalSkillsDir = path.join(scratch, "skills");
+    symlinkSync(target, globalSkillsDir, "dir");
+    return callback(globalSkillsDir);
+  } finally {
+    rmSync(scratch, { force: true, recursive: true });
+  }
 }
 
 test("accepts valid one-level skills with concrete triggers", () => {
@@ -39,6 +66,19 @@ test("rejects names colliding with global skills", () => {
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /collides with an existing global skill/u);
 });
+
+for (const { name, target } of [
+  { name: "canonical skills root", target: repoSkillsDir },
+  { name: "compatibility skills root", target: repoCompatSkillsDir },
+]) {
+  test(`ignores global skills dir that resolves to this repo's ${name}`, () => {
+    withSymlinkedGlobalSkillsRoot(target, (globalSkillsDir) => {
+      const result = runRepoValidation(globalSkillsDir);
+      assert.equal(result.status, 0, result.stderr);
+      assert.match(result.stdout, /Skill validation passed: \d+ skills checked/u);
+    });
+  });
+}
 
 test("rejects API-key and token looking text", () => {
   const result = runValidation("bad-secret");
