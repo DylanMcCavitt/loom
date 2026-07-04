@@ -28,6 +28,8 @@ export const claudeTemplatesDir = "adapters/claude/templates";
 export const pluginBridgePlanPath = "adapters/plugin-bridge/plan.json";
 export const pluginBridgeDir = "adapters/plugin-bridge";
 
+export const factoryDroidsRoot = ".factory/droids";
+
 export const distributionsRoot = "distributions";
 export const snapshotsRoot = "distributions/snapshots";
 export const ompBuiltinsSnapshotRoot = "distributions/snapshots/omp-builtins";
