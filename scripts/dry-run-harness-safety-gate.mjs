@@ -66,7 +66,6 @@ const REQUIRED_GENERATED_FIELDS = [
 const REQUIRED_HARNESSES = ["omp", "codex", "claude"];
 
 const SOURCE_SCAN_SCOPES = [
-  /^autoresearch\.sh$/u,
   /^docs\//u,
   /^adapters\/omp\/source\//u,
   /^scripts\//u,

@@ -179,7 +179,7 @@ export function preflightFindings(candidates) {
 // --- rendering + safety gate over rendered output --------------------------------------------
 
 export function renderToTemp(candidates) {
-  const tempRoot = mkdtempSync(path.join(tmpdir(), "render-harness-nucleus-"));
+  const tempRoot = mkdtempSync(path.join(tmpdir(), "render-nucleus-"));
   for (const candidate of candidates) {
     const target = safeJoin(tempRoot, candidate.renderedRelPath);
     mkdirSync(path.dirname(target), { recursive: true });

@@ -17,7 +17,7 @@ function ownershipBucket(entry) {
 function nextOwner(entry) {
   if (entry.ownership === "marker-owned") return "marker-manifest";
   if (entry.ownership === "repo-mirror" || entry.ownership === "user-file") return "explicit-omp-apply-gate";
-  if (entry.liveStatus === "absent" && entry.appliable) return "render-harness-nucleus";
+  if (entry.liveStatus === "absent" && entry.appliable) return "render-nucleus";
   return "none";
 }
 

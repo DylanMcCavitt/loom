@@ -78,7 +78,6 @@ Scope a different live HOME with `--home <dir>` (default `$HOME`); see `node scr
 - [`docs/architecture/`](docs/architecture/) - compact architecture maps for Factory Nucleus and the harness bridge.
 - [`docs/harness/`](docs/harness/) - manifests, adapter plans, and bridge/reference context only; no active source templates or generated payloads.
 - [`.agents/skills/`](.agents/skills/) - rendered compatibility surface generated from `nucleus/skills/`; edit `nucleus/skills/` first.
-- [`scripts/autoresearch.sh`](scripts/autoresearch.sh) - full-flow traceability benchmark script; `reference-only`.
 - [`.gitignore`](.gitignore) - excludes runtime state, local overlays, common credential files, logs, databases, sessions, blobs, and caches; `track`.
 
 ## Validators And Tests
@@ -122,7 +121,7 @@ npm run check
 | Harness safety gate | `node --test tests/harness-safety-gate.test.mjs` |
 | Install command | `node --test tests/install-command.test.mjs` |
 | OMP built-ins snapshot | `node --test tests/omp-builtins-snapshot.test.mjs` |
-| Render harness nucleus | `node --test tests/render-harness-nucleus.test.mjs` |
+| Render nucleus | `node --test tests/render-nucleus.test.mjs` |
 | Runtime adapter | `node --test tests/runtime-adapter.test.mjs` |
 | Runtime adapter extension | `node --test tests/runtime-adapter-extension.test.mjs` |
 | Skill validation | `node --test tests/skill-validation.test.mjs` |
