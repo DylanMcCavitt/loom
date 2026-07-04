@@ -3,10 +3,10 @@
   "generatedForIssue": 39,
   "source": {
     "packageName": "@oh-my-pi/pi-coding-agent",
-    "packageVersion": "16.3.4",
-    "cliVersion": "omp/16.3.4",
-    "packageRoot": "/tmp/omp-16.3.4-pkg/package",
-    "packageJsonPath": "/tmp/omp-16.3.4-pkg/package/package.json"
+    "packageVersion": "16.3.5",
+    "cliVersion": "omp/16.3.5",
+    "packageRoot": "/tmp/omp-16.3.5-pkg/package",
+    "packageJsonPath": "/tmp/omp-16.3.5-pkg/package/package.json"
   },
   "expectedBundledAgents": [
     "Tester",

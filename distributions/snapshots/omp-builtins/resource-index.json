@@ -3,10 +3,10 @@
   "generatedForIssue": 39,
   "source": {
     "packageName": "@oh-my-pi/pi-coding-agent",
-    "packageVersion": "16.3.4",
-    "cliVersion": "omp/16.3.4",
-    "packageRoot": "/tmp/omp-16.3.4-pkg/package",
-    "packageJsonPath": "/tmp/omp-16.3.4-pkg/package/package.json"
+    "packageVersion": "16.3.5",
+    "cliVersion": "omp/16.3.5",
+    "packageRoot": "/tmp/omp-16.3.5-pkg/package",
+    "packageJsonPath": "/tmp/omp-16.3.5-pkg/package/package.json"
   },
   "portableResources": {
     "bundledAgents": [
@@ -807,8 +807,8 @@
           },
           {
             "path": "src/prompts/tools/read.md",
-            "bytes": 4009,
-            "sha256": "22b996961cfdea97c6d57883a50ee51bd089eb53545a7651f378e7947879d9b2"
+            "bytes": 4137,
+            "sha256": "4e7bbf98cb19fbf93b7ed672a2f437b73227930ed4d25e51e81ea91bd1710e16"
           },
           {
             "path": "src/prompts/tools/recall.md",
@@ -876,8 +876,8 @@
             "sha256": "dc362d29885b8c128ce466bba2ed6e81e30665347efc8c6a78089a7166667e40"
           }
         ],
-        "bytes": 61483,
-        "combinedSha256": "8a4a45827c84cac97b70ca181278d4a25ae2bd21856571f07c437f495f71703e"
+        "bytes": 61611,
+        "combinedSha256": "5f58bb54521242ce33bb2038512f61195edfce750fd747b5e57da7549d057b1d"
       }
     ],
     "builtInRules": [

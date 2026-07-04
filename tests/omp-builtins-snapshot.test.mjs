@@ -55,6 +55,16 @@ test("OMP built-ins snapshot validator accepts the checked-in files", () => {
 test("bundled OMP task agents are snapshotted with source metadata", () => {
   assert.equal(source.source.packageName, "@oh-my-pi/pi-coding-agent");
   assert.match(source.source.cliVersion, /^omp\/\d+\.\d+\.\d+/u);
+  assert.deepEqual(EXPECTED_AGENTS, [
+    "Tester",
+    "designer",
+    "explore",
+    "librarian",
+    "plan",
+    "reviewer",
+    "sonic",
+    "task",
+  ]);
   assert.deepEqual(source.expectedBundledAgents, EXPECTED_AGENTS);
   assert.deepEqual(source.agents.map(agent => agent.name), EXPECTED_AGENTS);
   for (const agent of source.agents) {
