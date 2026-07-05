@@ -43,3 +43,12 @@ When work matches a canonical agent role (see the roster table in `nucleus/agent
 ## Verification
 
 Before finishing: `npm run check` must pass. For harness-surface changes also confirm `npm run render-nucleus` dry run reports `Result: passed`.
+
+## Cursor Cloud specific instructions
+
+- This repo has **zero runtime dependencies** and no build step. `npm ci` is essentially a no-op but keeps things clean; it is the update script.
+- There is **no dev server, GUI, database, or container**. "Running the app" means invoking the CLI scripts in `## Commands` and running the test/validate gates — all fully offline and hermetic.
+- `npm test` / `npm run check` runs the full Node test suite and takes ~60–90s; do not assume it hung.
+- The only server-style component is the **runtime-adapter** (`npm run runtime-adapter`): a dependency-free MCP stdio server speaking newline-delimited JSON-RPC 2.0 (`initialize` / `tools/list` / `tools/call`). It is launched by an MCP host, not a browser; live ops spawn `omp --mode rpc` and need a real OMP install, but read ops like `session.list` work standalone.
+- `npm run install-nucleus` (`--write`) and `npm run smoke:live` are intentionally gated/opt-in: the former writes to live `~/.omp`/`~/.codex`/`~/.claude` (never run without human approval), the latter needs real Linear/GitHub auth via the `LOO_LIVE_*` env vars shown by `npm run doctor`. Neither is part of routine dev/test.
+- The environment ships Node 22, which satisfies the `>=20` engine requirement even though `.nvmrc` pins `20`.
