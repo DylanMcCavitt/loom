@@ -113,20 +113,24 @@ npm run check
 
 | Area | Command |
 | --- | --- |
-| Automation routing fixtures | `node --test tests/automation-routing.test.mjs` |
-| Automation workflow benchmark | `node --test tests/automation-workflow-benchmark.test.mjs` |
+| Biters skill package | `node --test tests/biters-skill.test.mjs` |
+| Blueprint skill package | `node --test tests/blueprint-skill.test.mjs` |
 | Claude adapter plan | `node --test tests/claude-adapter-plan.test.mjs` |
 | Codex adapter plan | `node --test tests/codex-adapter-plan.test.mjs` |
 | Execute-plan skill | `node --test tests/execute-plan-skill.test.mjs` |
+| Factory Nucleus envelope | `node --test tests/factory-nucleus-envelope.test.mjs` |
+| Factory Nucleus scan | `node --test tests/factory-nucleus-scan.test.mjs` |
 | Harness manifest | `node --test tests/harness-manifest.test.mjs` |
 | Harness safety gate | `node --test tests/harness-safety-gate.test.mjs` |
 | Install command | `node --test tests/install-command.test.mjs` |
+| Nucleus docs drift | `node --test tests/nucleus-docs-drift.test.mjs` |
 | OMP built-ins snapshot | `node --test tests/omp-builtins-snapshot.test.mjs` |
 | Render harness nucleus | `node --test tests/render-harness-nucleus.test.mjs` |
+| Roboports skill package | `node --test tests/roboports-skill.test.mjs` |
 | Runtime adapter | `node --test tests/runtime-adapter.test.mjs` |
 | Runtime adapter extension | `node --test tests/runtime-adapter-extension.test.mjs` |
+| Shared-agent evals | `node --test tests/shared-agent-evals.test.mjs` |
 | Skill validation | `node --test tests/skill-validation.test.mjs` |
-| Thread-control skill | `node --test tests/thread-control-skill.test.mjs` |
 
 ## Canonical References
 
