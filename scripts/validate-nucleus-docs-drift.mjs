@@ -40,6 +40,7 @@ const DOC_OMITTED_TESTS = Object.freeze([
   "tests/frontmatter.test.mjs",
   "tests/harness-safety-lib.test.mjs",
   "tests/toml-key-scan.test.mjs",
+  "tests/shared-agent-contract-validator.test.mjs", // arrives via PR #205 (LOO-196); promote to a README table row after both land
 ]);
 
 const STALE_ACTIVE_PATHS = Object.freeze([
