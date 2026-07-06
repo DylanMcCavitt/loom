@@ -5,8 +5,8 @@
     "packageName": "@oh-my-pi/pi-coding-agent",
     "packageVersion": "16.3.5",
     "cliVersion": "omp/16.3.5",
-    "packageRoot": "/tmp/omp-16.3.5-pkg/package",
-    "packageJsonPath": "/tmp/omp-16.3.5-pkg/package/package.json"
+    "packageRoot": "<ephemeral-package-root>/package",
+    "packageJsonPath": "<ephemeral-package-root>/package/package.json"
   },
   "commandSourceTypes": [
     {
@@ -35,9 +35,9 @@
     }
   ],
   "sourceFiles": [
-    "/tmp/omp-16.3.5-pkg/package/src/slash-commands/builtin-registry.ts",
-    "/tmp/omp-16.3.5-pkg/package/src/slash-commands/available-commands.ts",
-    "/tmp/omp-16.3.5-pkg/package/src/slash-commands/acp-builtins.ts"
+    "<ephemeral-package-root>/package/src/slash-commands/builtin-registry.ts",
+    "<ephemeral-package-root>/package/src/slash-commands/available-commands.ts",
+    "<ephemeral-package-root>/package/src/slash-commands/acp-builtins.ts"
   ],
   "counts": {
     "total": 58,

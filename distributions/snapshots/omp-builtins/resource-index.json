@@ -5,8 +5,8 @@
     "packageName": "@oh-my-pi/pi-coding-agent",
     "packageVersion": "16.3.5",
     "cliVersion": "omp/16.3.5",
-    "packageRoot": "/tmp/omp-16.3.5-pkg/package",
-    "packageJsonPath": "/tmp/omp-16.3.5-pkg/package/package.json"
+    "packageRoot": "<ephemeral-package-root>/package",
+    "packageJsonPath": "<ephemeral-package-root>/package/package.json"
   },
   "portableResources": {
     "bundledAgents": [
