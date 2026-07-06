@@ -73,8 +73,7 @@ function makeFixture() {
   mkdirSync(path.join(root, "docs/skills"), { recursive: true });
   mkdirSync(path.join(root, "nucleus/skills/bus-first"), { recursive: true });
   mkdirSync(path.join(root, "scripts"), { recursive: true });
-  writeFileSync(path.join(root, "scripts/render-nucleus.mjs"), "// fixture
-");
+  writeFileSync(path.join(root, "scripts/render-nucleus.mjs"), "// fixture\n");
   writeFileSync(path.join(root, "package.json"), JSON.stringify({ name: "oh-my-pi-config", scripts: { "render-nucleus": "node scripts/render-nucleus.mjs", "install-nucleus": "node scripts/render-nucleus.mjs --write", check: "npm run validate", doctor: "node scripts/doctor.mjs" } }, null, 2));
   writeFileSync(path.join(root, "README.md"), "# oh-my-pi-config\n\n```sh\nnpm run render-nucleus\nnpm run check\n```\n");
   writeFileSync(path.join(root, "docs/operator/daily-workflow.md"), "```sh\nnpm run doctor\n```\n");
