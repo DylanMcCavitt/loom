@@ -78,7 +78,6 @@ Scope a different live HOME with `--home <dir>` (default `$HOME`); see `node scr
 - [`docs/architecture/`](docs/architecture/) - compact architecture maps for Factory Nucleus and the harness bridge.
 - [`docs/harness/`](docs/harness/) - manifests, adapter plans, and bridge/reference context only; no active source templates or generated payloads.
 - [`.agents/skills/`](.agents/skills/) - rendered compatibility surface generated from `nucleus/skills/` and `nucleus/utilities/`; edit nucleus source first.
-- [`scripts/autoresearch.sh`](scripts/autoresearch.sh) - full-flow traceability benchmark script; `reference-only`.
 - [`.gitignore`](.gitignore) - excludes runtime state, local overlays, common credential files, logs, databases, sessions, blobs, and caches; `track`.
 
 ## Validators And Tests

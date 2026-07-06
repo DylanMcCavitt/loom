@@ -128,9 +128,3 @@ node scripts/render-nucleus.mjs --write    # strict-manual apply (create-missing
 ```
 
 The dry-run is AFK-safe and writes nothing; only `track`/`adapt` surfaces are appliable, while `reference-only` and `local-only` surfaces are reported and skipped. The `--write` path is HITL: it runs only after a clean dry-run + gate pass, never overwrites an existing non-marker live file, backs up kit-owned markers before updating, and applies idempotently against `~/.loom-harness/applied-manifest.json`.
-
-Full-flow traceability benchmark, distinct from the dry-run gate:
-
-```sh
-bash scripts/autoresearch.sh
-```
