@@ -72,8 +72,11 @@ function makeFixture() {
   mkdirSync(path.join(root, "docs/harness"), { recursive: true });
   mkdirSync(path.join(root, "docs/skills"), { recursive: true });
   mkdirSync(path.join(root, "nucleus/skills/bus-first"), { recursive: true });
-  writeFileSync(path.join(root, "package.json"), JSON.stringify({ scripts: { "render-nucleus": "node scripts/render-nucleus.mjs", "install-nucleus": "node scripts/render-nucleus.mjs --write", check: "npm run validate", doctor: "node scripts/doctor.mjs" } }, null, 2));
-  writeFileSync(path.join(root, "README.md"), "```sh\nnpm run render-nucleus\nnpm run check\n```\n");
+  mkdirSync(path.join(root, "scripts"), { recursive: true });
+  writeFileSync(path.join(root, "scripts/render-nucleus.mjs"), "// fixture
+");
+  writeFileSync(path.join(root, "package.json"), JSON.stringify({ name: "oh-my-pi-config", scripts: { "render-nucleus": "node scripts/render-nucleus.mjs", "install-nucleus": "node scripts/render-nucleus.mjs --write", check: "npm run validate", doctor: "node scripts/doctor.mjs" } }, null, 2));
+  writeFileSync(path.join(root, "README.md"), "# oh-my-pi-config\n\n```sh\nnpm run render-nucleus\nnpm run check\n```\n");
   writeFileSync(path.join(root, "docs/operator/daily-workflow.md"), "```sh\nnpm run doctor\n```\n");
   writeFileSync(path.join(root, "docs/operator/install-update.md"), "`install-nucleus` is `node scripts/render-nucleus.mjs --write`.\n");
   writeFileSync(path.join(root, "docs/harness/live-nucleus-inventory-2026-06-25.md"), "> Superseded historical snapshot: ADR 0004.\n> Old paths below are preserved only as 2026-06-25 evidence.\n`omp/.omp/agent/AGENTS.md`\n");
@@ -87,7 +90,7 @@ function makeFixture() {
 test("docs drift validator passes minimal aligned docs", () => {
   const root = makeFixture();
   try {
-    assert.deepEqual(evaluateNucleusDocsDrift({ root, skillsRoot: "nucleus/skills" }).failures, []);
+    assert.deepEqual(evaluateNucleusDocsDrift({ root, skillsRoot: "nucleus/skills", repoDirName: "loom" }).failures, []);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -100,7 +103,7 @@ test("docs drift validator catches an OMP manifest resource missing from the own
       ["omp-user-project-resources", "track", "adapters/omp/source/ and docs/harness/omp/", "no"],
       ["omp-personal-local-overrides", "local-only", "none", "yes"],
     ]);
-    const failures = evaluateNucleusDocsDrift({ root, skillsRoot: "nucleus/skills" }).failures;
+    const failures = evaluateNucleusDocsDrift({ root, skillsRoot: "nucleus/skills", repoDirName: "loom" }).failures;
     assert.ok(
       failures.some((failure) => failure.includes("omp-runtime-state") && failure.includes("ownership state matrix")),
       `expected missing ownership state matrix row for omp-runtime-state, got:\n${failures.join("\n")}`,
@@ -118,7 +121,7 @@ test("docs drift validator catches local-only OMP surfaces documented as repo-ow
       ["omp-personal-local-overrides", "local-only", "none", "yes"],
       ["omp-runtime-state", "track", "adapters/omp/runtime-state/", "no"],
     ]);
-    const failures = evaluateNucleusDocsDrift({ root, skillsRoot: "nucleus/skills" }).failures;
+    const failures = evaluateNucleusDocsDrift({ root, skillsRoot: "nucleus/skills", repoDirName: "loom" }).failures;
     assert.ok(
       failures.some((failure) => failure.includes("omp-runtime-state") && failure.includes("local-only")),
       `expected local-only ownership drift for omp-runtime-state, got:\n${failures.join("\n")}`,

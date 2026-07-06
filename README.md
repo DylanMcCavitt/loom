@@ -107,25 +107,58 @@ npm run check
 | Codex plan | `node scripts/validate-codex-adapter-plan.mjs` | Validates Codex adapter plan data, templates, mappings, and forbidden keys. |
 | Claude plan | `node scripts/validate-claude-adapter-plan.mjs` | Validates Claude adapter plan data, templates, mappings, and unsafe surfaces. |
 | Skills | `node scripts/validate-skills.mjs` | Validates repo skill shape, frontmatter, naming, and secret-like content. |
+| Skills compat render | `npm run render` | Regenerates `.agents/skills/` from `nucleus/skills/` and `nucleus/utilities/` after nucleus edits. |
 | Docs drift | `node scripts/validate-nucleus-docs-drift.mjs` | Guards README/operator commands, stale active-path claims, and the Factorio kit roster. |
 
 ### Test Suites
 
 | Area | Command |
 | --- | --- |
-| Automation routing fixtures | `node --test tests/automation-routing.test.mjs` |
-| Automation workflow benchmark | `node --test tests/automation-workflow-benchmark.test.mjs` |
+| Assembler skill | `node --test tests/assembler-skill.test.mjs` |
+| Biters skill | `node --test tests/biters-skill.test.mjs` |
+| Blueprint skill | `node --test tests/blueprint-skill.test.mjs` |
 | Claude adapter plan | `node --test tests/claude-adapter-plan.test.mjs` |
 | Codex adapter plan | `node --test tests/codex-adapter-plan.test.mjs` |
+| Factorio kit golden path | `node --test tests/factorio-kit-goldenpath.test.mjs` |
+| Factory Nucleus adapter contract | `node --test tests/factory-nucleus-adapter-contract.test.mjs` |
+| Factory Nucleus dry run | `node --test tests/factory-nucleus-dry-run.test.mjs` |
+| Factory Nucleus envelope | `node --test tests/factory-nucleus-envelope.test.mjs` |
+| Factory Nucleus golden factory | `node --test tests/factory-nucleus-golden-factory.test.mjs` |
+| Factory Nucleus JSON | `node --test tests/factory-nucleus-json.test.mjs` |
+| Factory Nucleus live smoke CI | `node --test tests/factory-nucleus-live-smoke-ci.test.mjs` |
+| Factory Nucleus live smoke | `node --test tests/factory-nucleus-live-smoke.test.mjs` |
+| Factory Nucleus prune | `node --test tests/factory-nucleus-prune.test.mjs` |
+| Factory Nucleus radar | `node --test tests/factory-nucleus-radar.test.mjs` |
+| Factory Nucleus recipe | `node --test tests/factory-nucleus-recipe.test.mjs` |
+| Factory Nucleus run | `node --test tests/factory-nucleus-run.test.mjs` |
+| Factory Nucleus scan | `node --test tests/factory-nucleus-scan.test.mjs` |
+| Factory Nucleus schema evals | `node --test tests/factory-nucleus-schema-evals.test.mjs` |
+| Factory Nucleus schema | `node --test tests/factory-nucleus-schema.test.mjs` |
+| Factory Nucleus science | `node --test tests/factory-nucleus-science.test.mjs` |
+| Factory Nucleus tracker GitHub | `node --test tests/factory-nucleus-tracker-github.test.mjs` |
+| Factory Nucleus tracker Linear | `node --test tests/factory-nucleus-tracker-linear.test.mjs` |
+| Factory Nucleus tracker picker | `node --test tests/factory-nucleus-tracker-picker.test.mjs` |
+| Factory Nucleus tracker | `node --test tests/factory-nucleus-tracker.test.mjs` |
 | Harness manifest | `node --test tests/harness-manifest.test.mjs` |
 | Harness safety gate | `node --test tests/harness-safety-gate.test.mjs` |
 | Install command | `node --test tests/install-command.test.mjs` |
+| Map seed skill | `node --test tests/map-seed-skill.test.mjs` |
+| Nucleus docs drift | `node --test tests/nucleus-docs-drift.test.mjs` |
 | OMP built-ins snapshot | `node --test tests/omp-builtins-snapshot.test.mjs` |
+| OMP contracts | `node --test tests/omp-contracts.test.mjs` |
+| Plugin bridge | `node --test tests/plugin-bridge.test.mjs` |
+| Prospect skill | `node --test tests/prospect-skill.test.mjs` |
 | Render harness nucleus | `node --test tests/render-harness-nucleus.test.mjs` |
+| Roboports skill | `node --test tests/roboports-skill.test.mjs` |
+| Rocket launch skill | `node --test tests/rocket-launch-skill.test.mjs` |
 | Runtime adapter | `node --test tests/runtime-adapter.test.mjs` |
 | Runtime adapter extension | `node --test tests/runtime-adapter-extension.test.mjs` |
+| Shared-agent evals | `node --test tests/shared-agent-evals.test.mjs` |
+| Shared-agent package validation | `node --test tests/shared-agent-package-validation.test.mjs` |
+| Shared nucleus agents | `node --test tests/shared-nucleus-agents.test.mjs` |
 | Skill validation | `node --test tests/skill-validation.test.mjs` |
-| Thread-control skill | `node --test tests/thread-control-skill.test.mjs` |
+| Space age skill | `node --test tests/space-age-skill.test.mjs` |
+
 
 ## Canonical References
 

@@ -29,6 +29,19 @@ const COMMAND_DOC_PATHS = Object.freeze([
 
 const OMP_OWNERSHIP_DOC_PATH = "docs/harness/omp-ownership.md";
 
+// Phase-4 rename: edit this set once to flip repo dir, package name, and README H1 together.
+const PINNED_IDENTITY_ALIASES = Object.freeze(new Set([
+  "loom",
+  "oh-my-pi-config",
+]));
+
+// Internal lib/helper suites omitted from README's Test Suites table.
+const DOC_OMITTED_TESTS = Object.freeze([
+  "tests/frontmatter.test.mjs",
+  "tests/harness-safety-lib.test.mjs",
+  "tests/toml-key-scan.test.mjs",
+]);
+
 const STALE_ACTIVE_PATHS = Object.freeze([
   {
     label: "old OMP tracked source root",
@@ -49,6 +62,16 @@ const STALE_ACTIVE_PATHS = Object.freeze([
 
 function readText(relativePath, root = repoRoot) {
   return readFileSync(path.join(root, relativePath), "utf8");
+}
+
+function operatorDocPaths(root = repoRoot) {
+  const operatorDir = path.join(root, "docs/operator");
+  if (!existsSync(operatorDir)) return ["README.md"];
+  const operatorDocs = readdirSync(operatorDir, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".md"))
+    .map((entry) => path.join("docs/operator", entry.name).split(path.sep).join("/"))
+    .sort((a, b) => a.localeCompare(b));
+  return ["README.md", ...operatorDocs];
 }
 
 function walkMarkdown(relativePath, root = repoRoot, files = []) {
@@ -213,14 +236,100 @@ export function validateOmpOwnershipMatrix({
   return failures;
 }
 
+function readmeTestSuiteSection(readmeText) {
+  const match = readmeText.match(/### Test Suites\n\n(?<table>[\s\S]*?)(?:\n\n## |\n*$)/u);
+  return match?.groups?.table ?? "";
+}
+
+function citedTestPaths(text) {
+  const paths = new Set();
+  for (const match of text.matchAll(/node --test (tests\/[a-zA-Z0-9._/-]+\.test\.mjs)/giu)) {
+    paths.add(match[1]);
+  }
+  return paths;
+}
+
+function citedScriptPaths(text) {
+  const paths = new Set();
+  for (const match of text.matchAll(/node (scripts\/[a-zA-Z0-9._/-]+\.mjs)/giu)) {
+    paths.add(match[1]);
+  }
+  return paths;
+}
+
+function diskTestPaths(root = repoRoot) {
+  const testsDir = path.join(root, "tests");
+  if (!existsSync(testsDir)) return new Set();
+  return new Set(
+    readdirSync(testsDir, { withFileTypes: true })
+      .filter((entry) => entry.isFile() && entry.name.endsWith(".test.mjs"))
+      .map((entry) => path.posix.join("tests", entry.name)),
+  );
+}
+
+export function validateTestTableSync({ root = repoRoot } = {}) {
+  const failures = [];
+  const readme = readText("README.md", root);
+  const documented = citedTestPaths(readmeTestSuiteSection(readme));
+  const omitted = new Set(DOC_OMITTED_TESTS);
+  const onDisk = diskTestPaths(root);
+
+  for (const relativePath of onDisk) {
+    if (!documented.has(relativePath) && !omitted.has(relativePath)) {
+      failures.push(`README.md: missing Test Suites row for ${relativePath}; document it or add to DOC_OMITTED_TESTS`);
+    }
+  }
+  for (const relativePath of documented) {
+    if (!existsSync(path.join(root, relativePath))) {
+      failures.push(`README.md: Test Suites table cites missing file ${relativePath}`);
+    }
+  }
+  return failures;
+}
+
+export function validateScriptsTableExistence({ root = repoRoot, docPaths = operatorDocPaths(root) } = {}) {
+  const failures = [];
+  for (const relativePath of docPaths) {
+    const content = readText(relativePath, root);
+    for (const scriptPath of citedScriptPaths(content)) {
+      if (!existsSync(path.join(root, scriptPath))) {
+        failures.push(`${relativePath}: cites missing script ${scriptPath}`);
+      }
+    }
+  }
+  return failures;
+}
+
+export function validateNameAliasPinning({ root = repoRoot, repoDirName = path.basename(root) } = {}) {
+  const failures = [];
+  const packageJson = JSON.parse(readText("package.json", root));
+  const readme = readText("README.md", root);
+  const h1Match = readme.match(/^# (.+)$/m);
+  const h1 = h1Match?.[1]?.trim();
+
+  if (!PINNED_IDENTITY_ALIASES.has(packageJson.name)) {
+    failures.push(`package.json: name "${packageJson.name}" is not in pinned identity alias set; update PINNED_IDENTITY_ALIASES only during Phase-4 rename`);
+  }
+  if (!h1 || !PINNED_IDENTITY_ALIASES.has(h1)) {
+    failures.push(`README.md: H1 "${h1 ?? "missing"}" is not in pinned identity alias set; update PINNED_IDENTITY_ALIASES only during Phase-4 rename`);
+  }
+  if (!PINNED_IDENTITY_ALIASES.has(repoDirName)) {
+    failures.push(`repo directory name "${repoDirName}" is not in pinned identity alias set; update PINNED_IDENTITY_ALIASES only during Phase-4 rename`);
+  }
+  return failures;
+}
+
 export function evaluateNucleusDocsDrift(options = {}) {
   const failures = [
     ...validateNoActiveStalePaths(options),
     ...validateDocumentedCommands(options),
     ...validateFactorioKitRoster(options),
     ...validateOmpOwnershipMatrix(options),
+    ...validateTestTableSync(options),
+    ...validateScriptsTableExistence(options),
+    ...validateNameAliasPinning(options),
   ];
-  return { checks: 4, failures };
+  return { checks: 7, failures };
 }
 
 const invokedDirectly = process.argv[1]
