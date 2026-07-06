@@ -23,7 +23,6 @@ Node >= 20, ESM (`type: module`), no external runtime dependencies.
 - `adapters/` - harness-specific translators (omp, codex, claude, plugin-bridge). Adapters translate format only; never change canonical names, routing, or behavior.
 - `distributions/` - generated/checkable output and OMP reference snapshots. Never hand-edit generated output.
 - `.agents/skills/` - rendered compatibility surface generated from `nucleus/skills/` and `nucleus/utilities/` via `node scripts/render-skills-compat.mjs`; edit nucleus source instead.
-- `.factory/droids/` - Factory harness adapters for the canonical agent roster; thin routers to `nucleus/skills/<agent>/`.
 - `docs/harness/resource-manifest.md` - canonical dispositions: `track`, `adapt`, `reference-only`, `local-only`.
 - `scripts/` - validators, renderers, and the read-only safety gate (`dry-run-harness-safety-gate.mjs`).
 
