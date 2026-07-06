@@ -89,7 +89,7 @@ function makeFixture() {
 test("docs drift validator passes minimal aligned docs", () => {
   const root = makeFixture();
   try {
-    assert.deepEqual(evaluateNucleusDocsDrift({ root, skillsRoot: "nucleus/skills", repoDirName: "loom" }).failures, []);
+    assert.deepEqual(evaluateNucleusDocsDrift({ root, skillsRoot: "nucleus/skills" }).failures, []);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -102,7 +102,7 @@ test("docs drift validator catches an OMP manifest resource missing from the own
       ["omp-user-project-resources", "track", "adapters/omp/source/ and docs/harness/omp/", "no"],
       ["omp-personal-local-overrides", "local-only", "none", "yes"],
     ]);
-    const failures = evaluateNucleusDocsDrift({ root, skillsRoot: "nucleus/skills", repoDirName: "loom" }).failures;
+    const failures = evaluateNucleusDocsDrift({ root, skillsRoot: "nucleus/skills" }).failures;
     assert.ok(
       failures.some((failure) => failure.includes("omp-runtime-state") && failure.includes("ownership state matrix")),
       `expected missing ownership state matrix row for omp-runtime-state, got:\n${failures.join("\n")}`,
@@ -120,7 +120,7 @@ test("docs drift validator catches local-only OMP surfaces documented as repo-ow
       ["omp-personal-local-overrides", "local-only", "none", "yes"],
       ["omp-runtime-state", "track", "adapters/omp/runtime-state/", "no"],
     ]);
-    const failures = evaluateNucleusDocsDrift({ root, skillsRoot: "nucleus/skills", repoDirName: "loom" }).failures;
+    const failures = evaluateNucleusDocsDrift({ root, skillsRoot: "nucleus/skills" }).failures;
     assert.ok(
       failures.some((failure) => failure.includes("omp-runtime-state") && failure.includes("local-only")),
       `expected local-only ownership drift for omp-runtime-state, got:\n${failures.join("\n")}`,

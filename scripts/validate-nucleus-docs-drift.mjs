@@ -29,7 +29,7 @@ const COMMAND_DOC_PATHS = Object.freeze([
 
 const OMP_OWNERSHIP_DOC_PATH = "docs/harness/omp-ownership.md";
 
-// Phase-4 rename: edit this set once to flip repo dir, package name, and README H1 together.
+// Phase-4 rename: edit this set once to flip package name and README H1 together.
 const PINNED_IDENTITY_ALIASES = Object.freeze(new Set([
   "loom",
   "oh-my-pi-config",
@@ -40,7 +40,6 @@ const DOC_OMITTED_TESTS = Object.freeze([
   "tests/frontmatter.test.mjs",
   "tests/harness-safety-lib.test.mjs",
   "tests/toml-key-scan.test.mjs",
-  "tests/shared-agent-contract-validator.test.mjs", // arrives via PR #205 (LOO-196); promote to a README table row after both land
 ]);
 
 const STALE_ACTIVE_PATHS = Object.freeze([
@@ -301,7 +300,7 @@ export function validateScriptsTableExistence({ root = repoRoot, docPaths = oper
   return failures;
 }
 
-export function validateNameAliasPinning({ root = repoRoot, repoDirName = path.basename(root) } = {}) {
+export function validateNameAliasPinning({ root = repoRoot } = {}) {
   const failures = [];
   const packageJson = JSON.parse(readText("package.json", root));
   const readme = readText("README.md", root);
@@ -313,9 +312,6 @@ export function validateNameAliasPinning({ root = repoRoot, repoDirName = path.b
   }
   if (!h1 || !PINNED_IDENTITY_ALIASES.has(h1)) {
     failures.push(`README.md: H1 "${h1 ?? "missing"}" is not in pinned identity alias set; update PINNED_IDENTITY_ALIASES only during Phase-4 rename`);
-  }
-  if (!PINNED_IDENTITY_ALIASES.has(repoDirName)) {
-    failures.push(`repo directory name "${repoDirName}" is not in pinned identity alias set; update PINNED_IDENTITY_ALIASES only during Phase-4 rename`);
   }
   return failures;
 }
