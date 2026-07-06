@@ -5,25 +5,15 @@ import {
   lstatSync,
   mkdirSync,
   readFileSync,
-  readlinkSync,
-  realpathSync,
-  rmSync,
-  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
-import { REPO_ROOT, readJson, repoPath } from "./harness-candidate-model.mjs";
+import { readJson } from "./harness-candidate-model.mjs";
 
 const MARKER_DIR = ".loom-harness";
 const MARKER_FILE = "applied-manifest.json";
 const MARKER_SCHEMA_VERSION = 1;
-
-const OMP_REPO_OWNED_DESTINATIONS = new Set([
-  "~/.omp/agent/AGENTS.md",
-  "~/.omp/agent/RULES.md",
-  "~/.omp/agent/config.yml",
-]);
 
 export function sha256(content) {
   return createHash("sha256").update(content).digest("hex");
@@ -43,7 +33,6 @@ export function pathExists(filePath) {
   }
 }
 
-// Join relPath under root, refusing any result that escapes root (path traversal backstop).
 export function safeJoin(root, relPath) {
   const base = path.resolve(root);
   const target = path.resolve(base, relPath);
@@ -53,58 +42,9 @@ export function safeJoin(root, relPath) {
   return target;
 }
 
-// Live HOME path for a home-anchored ("~/...") display destination; null for project-scoped
-// or otherwise non-home destinations that cannot be applied against a single HOME.
 export function resolveLivePath(displayDestination, homeRoot) {
   if (!displayDestination.startsWith("~/")) return null;
   return safeJoin(homeRoot, displayDestination.slice(2));
-}
-
-// --- live inspection (read-only) -------------------------------------------------------------
-
-function resolvedSymlinkTargets(livePath, linkTarget) {
-  const rawTarget = path.resolve(path.dirname(livePath), linkTarget);
-  const canonicalTarget = path.resolve(realpathSync(path.dirname(livePath)), linkTarget);
-  return [...new Set([rawTarget, canonicalTarget])];
-}
-
-function resolvesToRepoSource(resolvedTarget, source) {
-  if (resolvedTarget === repoPath(source)) return true;
-  const siblingRepoRelative = path.relative(path.dirname(REPO_ROOT), resolvedTarget).split(path.sep).slice(1).join("/");
-  return siblingRepoRelative === source;
-}
-
-export function repoMirrorSymlink(candidate, livePath) {
-  if (candidate.harness !== "omp" || !candidate.source) return false;
-  let stat;
-  try {
-    stat = lstatSync(livePath);
-  } catch {
-    return false;
-  }
-  if (!stat.isSymbolicLink()) return false;
-  const linkTarget = readlinkSync(livePath);
-  return resolvedSymlinkTargets(livePath, linkTarget).some((target) => resolvesToRepoSource(target, candidate.source));
-}
-
-// A symlink stranded by a repo layout move: it dangles (target missing) and its resolved
-// target lies inside this repo but is no longer the candidate's current source. Containment
-// under REPO_ROOT subsumes the sibling-repo-relative form repoMirrorSymlink accepts — any
-// link resolving to that form resolves under REPO_ROOT. Anything resolving outside the repo
-// is user property and never matches.
-export function staleRepoMirrorSymlink(candidate, livePath) {
-  if (candidate.harness !== "omp" || !candidate.source) return false;
-  let stat;
-  try {
-    stat = lstatSync(livePath);
-  } catch {
-    return false;
-  }
-  if (!stat.isSymbolicLink()) return false;
-  const linkTarget = readlinkSync(livePath);
-  const targets = resolvedSymlinkTargets(livePath, linkTarget);
-  if (targets.some((target) => resolvesToRepoSource(target, candidate.source) || pathExists(target))) return false;
-  return targets.some((target) => target.startsWith(REPO_ROOT + path.sep));
 }
 
 export function liveInspect(candidate, homeRoot, marker) {
@@ -112,7 +52,6 @@ export function liveInspect(candidate, homeRoot, marker) {
   try {
     livePath = resolveLivePath(candidate.destination, homeRoot);
   } catch {
-    // Unsafe (traversing/absolute) destination — the preflight reports it; never resolve it live.
     return { livePath: null, status: "unsafe-destination", overwriteRisk: "rejected (unsafe path)", ownership: "none" };
   }
   if (!livePath) {
@@ -122,53 +61,8 @@ export function liveInspect(candidate, homeRoot, marker) {
     return { livePath, status: "absent", overwriteRisk: "no existing file", ownership: "none" };
   }
   const marked = Boolean(marker.entries[candidate.destination]);
-  if (!marked) {
-    if (repoMirrorSymlink(candidate, livePath)) {
-      return {
-        livePath,
-        status: "repo-mirror-symlink",
-        overwriteRisk: "would not claim or replace without explicit OMP apply gate",
-        ownership: "repo-mirror",
-      };
-    }
-    if (staleRepoMirrorSymlink(candidate, livePath)) {
-      return {
-        livePath,
-        status: "stale-repo-mirror-symlink",
-        overwriteRisk: "would retarget to current source only with explicit OMP apply gate",
-        ownership: "repo-mirror",
-      };
-    }
+  if (!marked || lstatSync(livePath).isSymbolicLink()) {
     return { livePath, status: "user-file", overwriteRisk: "would not overwrite (existing non-marker file skipped)", ownership: "user-file" };
-  }
-  if (lstatSync(livePath).isSymbolicLink()) {
-    // Stale detection wins over marker state: a dangling link into the repo is the same
-    // layout-move wreckage whether or not a marker entry survives, and keeps one lane.
-    if (staleRepoMirrorSymlink(candidate, livePath)) {
-      return {
-        livePath,
-        status: "stale-repo-mirror-symlink",
-        overwriteRisk: "would retarget to current source only with explicit OMP apply gate",
-        ownership: "repo-mirror",
-      };
-    }
-    if (!repoMirrorSymlink(candidate, livePath)) {
-      return {
-        livePath,
-        status: "marker-symlink-retargeted",
-        overwriteRisk: "would not follow retargeted marker-owned symlink",
-        ownership: "marker-owned",
-      };
-    }
-    if (sha256(readFileSync(livePath)) === sha256(candidate.content)) {
-      return { livePath, status: "already-applied", overwriteRisk: "already applied (no change)", ownership: "marker-owned" };
-    }
-    return {
-      livePath,
-      status: "repo-mirror-content-mismatch",
-      overwriteRisk: "would not follow divergent repo-mirror symlink",
-      ownership: "marker-owned",
-    };
   }
   const current = sha256(readFileSync(livePath));
   if (current === sha256(candidate.content)) {
@@ -185,39 +79,13 @@ function recordMarker(marker, candidate, wantHash) {
   };
 }
 
-// Rewrite a stale repo-mirror link to the current source, relative form matching the links
-// render-nucleus creates (e.g. ../../loom/adapters/omp/source/config.yml), and claim the marker.
-// The relative hop is computed from the canonical live directory: the kernel resolves the link
-// from the real path, so a non-canonical HOME (e.g. macOS /var/folders → /private/var) would
-// otherwise yield a dangling target.
-function retargetStaleSymlink(candidate, livePath, marker, wantHash) {
-  const relativeTarget = path.relative(realpathSync(path.dirname(livePath)), repoPath(candidate.source));
-  rmSync(livePath);
-  symlinkSync(relativeTarget, livePath);
-  recordMarker(marker, candidate, wantHash);
-}
-
-export function requiresOmpRepoOwnedApproval(candidate) {
-  return candidate.harness === "omp" && OMP_REPO_OWNED_DESTINATIONS.has(candidate.destination);
-}
-
 export function requiredApproval(candidate, live) {
   if (!candidate.appliable) return "n/a (reported only)";
-  if (
-    requiresOmpRepoOwnedApproval(candidate) &&
-    (live.ownership === "repo-mirror" || live.ownership === "user-file")
-  ) {
-    return "strict-manual + --approve-omp-repo-owned";
-  }
-  // A Claude candidate is only ever appliable through the explicit strict-manual gate.
   if (candidate.harness === "claude") {
     return "strict-manual + --approve-claude-apply";
   }
   return "strict-manual";
 }
-
-
-// --- marker manifest -------------------------------------------------------------------------
 
 export function markerPath(homeRoot) {
   return path.join(homeRoot, MARKER_DIR, MARKER_FILE);
@@ -253,12 +121,6 @@ export function backupTimestamp() {
   return new Date().toISOString().replace(/[:.]/gu, "-");
 }
 
-// --- apply engine (create-missing-only / backup-on-drift / marker idempotency) ---------------
-
-// Pure apply loop shared by --write: creates missing live files, skips existing non-marker user
-// files unless the narrow OMP repo-owned approval gate is set, backs up + updates drifted
-// kit-owned markers, and records the marker. Mutates `marker.entries`; persisting the marker is
-// the caller's job. Returns { actions, backups }.
 export function applyCandidates(candidates, homeRoot, marker, options = {}) {
   const actions = [];
   const backups = [];
@@ -278,68 +140,14 @@ export function applyCandidates(candidates, homeRoot, marker, options = {}) {
       continue;
     }
     const marked = Boolean(marker.entries[candidate.destination]);
-    if (!marked) {
-      if (requiresOmpRepoOwnedApproval(candidate)) {
-        if (!options.approveOmpRepoOwned) {
-          actions.push({ destination: candidate.destination, action: "skipped", reason: "omp-approval-required", livePath });
-          continue;
-        }
-        if (repoMirrorSymlink(candidate, livePath)) {
-          if (sha256(readFileSync(livePath)) !== wantHash) {
-            actions.push({ destination: candidate.destination, action: "skipped", reason: "repo-mirror-content-mismatch", livePath });
-            continue;
-          }
-          recordMarker(marker, candidate, wantHash);
-          actions.push({ destination: candidate.destination, action: "claimed-repo-mirror-symlink", livePath });
-          continue;
-        }
-        if (staleRepoMirrorSymlink(candidate, livePath)) {
-          retargetStaleSymlink(candidate, livePath, marker, wantHash);
-          actions.push({ destination: candidate.destination, action: "retargeted-stale-repo-mirror-symlink", livePath });
-          continue;
-        }
-        if (lstatSync(livePath).isSymbolicLink()) {
-          actions.push({ destination: candidate.destination, action: "skipped", reason: "not-repo-mirror-symlink", livePath });
-          continue;
-        }
-        const backup = `${livePath}.loom-bak-${backupTimestamp()}`;
-        copyFileSync(livePath, backup);
-        writeFileSync(livePath, candidate.content);
-        recordMarker(marker, candidate, wantHash);
-        backups.push(backup);
-        actions.push({ destination: candidate.destination, action: "replaced-existing-omp", livePath, backup });
-        continue;
-      }
+    if (!marked || lstatSync(livePath).isSymbolicLink()) {
       actions.push({ destination: candidate.destination, action: "skipped", reason: "exists", livePath });
-      continue;
-    }
-    if (lstatSync(livePath).isSymbolicLink()) {
-      if (staleRepoMirrorSymlink(candidate, livePath)) {
-        // Same wreckage as the unmarked lane; the retarget stays behind the OMP apply gate.
-        if (!requiresOmpRepoOwnedApproval(candidate) || !options.approveOmpRepoOwned) {
-          actions.push({ destination: candidate.destination, action: "skipped", reason: "omp-approval-required", livePath });
-          continue;
-        }
-        retargetStaleSymlink(candidate, livePath, marker, wantHash);
-        actions.push({ destination: candidate.destination, action: "retargeted-stale-repo-mirror-symlink", livePath });
-        continue;
-      }
-      if (!repoMirrorSymlink(candidate, livePath)) {
-        actions.push({ destination: candidate.destination, action: "skipped", reason: "not-repo-mirror-symlink", livePath });
-        continue;
-      }
-      if (sha256(readFileSync(livePath)) !== wantHash) {
-        actions.push({ destination: candidate.destination, action: "skipped", reason: "repo-mirror-content-mismatch", livePath });
-        continue;
-      }
-      actions.push({ destination: candidate.destination, action: "already-applied", livePath });
       continue;
     }
     if (sha256(readFileSync(livePath)) === wantHash) {
       actions.push({ destination: candidate.destination, action: "already-applied", livePath });
       continue;
     }
-    // Kit-owned marker drifted from the rendered content: back up, then update.
     const backup = `${livePath}.loom-bak-${backupTimestamp()}`;
     copyFileSync(livePath, backup);
     writeFileSync(livePath, candidate.content);
@@ -349,4 +157,3 @@ export function applyCandidates(candidates, homeRoot, marker, options = {}) {
   }
   return { actions, backups };
 }
-

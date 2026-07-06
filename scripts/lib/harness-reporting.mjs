@@ -7,8 +7,6 @@ export const HARNESS_APPROVAL_POLICY =
 
 function ownershipBucket(entry) {
   if (entry.ownership === "marker-owned") return "marker-owned";
-  if (entry.liveStatus === "stale-repo-mirror-symlink") return "stale-repo-mirror-symlink";
-  if (entry.ownership === "repo-mirror") return "repo-mirror-symlink";
   if (entry.ownership === "user-file") return "existing-user-file";
   if (entry.liveStatus === "absent") return "missing";
   return entry.liveStatus;
@@ -16,7 +14,7 @@ function ownershipBucket(entry) {
 
 function nextOwner(entry) {
   if (entry.ownership === "marker-owned") return "marker-manifest";
-  if (entry.ownership === "repo-mirror" || entry.ownership === "user-file") return "explicit-omp-apply-gate";
+  if (entry.ownership === "user-file") return "operator-owned";
   if (entry.liveStatus === "absent" && entry.appliable) return "render-harness-nucleus";
   return "none";
 }

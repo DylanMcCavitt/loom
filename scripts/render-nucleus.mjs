@@ -28,7 +28,6 @@ import {
 const USAGE = [
   "Usage: node scripts/render-nucleus.mjs [options]",
   "  --write                    apply appliable candidates (strict-manual, create-missing-only)",
-  "  --approve-omp-repo-owned   with --write, explicitly claim repo-mirror OMP symlinks or replace existing OMP files",
   "  --approve-claude-apply     explicitly approve create-missing-only apply of adapt-disposition Claude candidates (strict-manual gate)",
   "  --json                     emit a machine-readable manifest instead of text",
   "  --home <dir>               resolve ~ live destinations under <dir> (default: $HOME)",
@@ -44,7 +43,6 @@ export function readArgs(argv) {
   const options = {
     write: false,
     json: false,
-    approveOmpRepoOwned: false,
     approveClaudeApply: false,
     home: null,
     ...DEFAULT_RENDER_NUCLEUS_OPTIONS,
@@ -69,10 +67,6 @@ export function readArgs(argv) {
     }
     if (arg === "--json") {
       options.json = true;
-      continue;
-    }
-    if (arg === "--approve-omp-repo-owned") {
-      options.approveOmpRepoOwned = true;
       continue;
     }
     if (arg === "--approve-claude-apply") {

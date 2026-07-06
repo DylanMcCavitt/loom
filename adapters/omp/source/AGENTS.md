@@ -1,4 +1,4 @@
-# Dylan's Oh My Pi Agent Setup
+# Oh My Pi Agent Setup
 
 ## Workflow kit
 
@@ -11,7 +11,7 @@ Use `~/.omp/agent/workflow-kit/` as the reusable workflow kit for global and per
 3. Read `docs/agents/issue-tracker.md`, `docs/agents/triage-labels.md`, and `docs/agents/domain.md` when present.
 4. Use a matching project skill from `.agents/skills/` when the task matches its description.
 5. Keep one issue/task to one branch/worktree to one PR unless the repo explicitly says otherwise.
-6. Verify behavior with the project’s documented commands before calling work complete.
+6. Verify behavior with the project's documented commands before calling work complete.
 7. Write any handoff as a temporary file (e.g. under `/tmp`), never committed to the repo — keep repos lean.
 
 ## Skill authoring
@@ -19,3 +19,8 @@ Use `~/.omp/agent/workflow-kit/` as the reusable workflow kit for global and per
 Global reusable skills live in `~/.agents/skills/`.
 Project-specific skills live in `<repo>/.agents/skills/`.
 Each skill must be one directory containing `SKILL.md` with `name` and `description` frontmatter.
+
+## Preferences
+
+- Prefer the project's documented verification commands over ad-hoc checks.
+- Keep harness notes and workflow standards in neutral, operator-facing language.

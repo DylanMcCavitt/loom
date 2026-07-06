@@ -45,7 +45,7 @@ const DEFAULT_MANIFEST = resourceManifestPath;
 const DEFAULT_PLAN = dryRunLinkPlanPath;
 const DEFAULT_CODEX_PLAN = codexPlanPath;
 const DEFAULT_CLAUDE_PLAN = claudePlanPath;
-const LINK_MODES = new Set(["candidate-symlink", "report-only"]);
+const LINK_MODES = new Set(["candidate-symlink", "candidate-copy", "report-only"]);
 const REQUIRED_LINK_FIELDS = [
   "id",
   "sourceHarness",
@@ -293,8 +293,8 @@ function validatePlan(plan, manifestInfo, codexInfo, claudeInfo, options) {
     if (!LINK_MODES.has(link.mode)) errors.push(`${label}: mode must be one of ${[...LINK_MODES].join(", ")}`);
     if (!DISPOSITIONS.has(link.disposition)) errors.push(`${label}: disposition must be one of ${[...DISPOSITIONS].join(", ")}`);
     if (link.disposition === "local-only") errors.push(`${label}: local-only resources cannot be candidate links`);
-    if (link.mode === "candidate-symlink" && !isNonEmptyString(link.proposedTarget)) {
-      errors.push(`${label}: candidate-symlink requires proposedTarget`);
+    if ((link.mode === "candidate-symlink" || link.mode === "candidate-copy") && !isNonEmptyString(link.proposedTarget)) {
+      errors.push(`${label}: ${link.mode} requires proposedTarget`);
     }
     if (link.mode === "report-only" && link.proposedTarget !== null && link.proposedTarget !== undefined) {
       errors.push(`${label}: report-only links must use proposedTarget null or omit it`);

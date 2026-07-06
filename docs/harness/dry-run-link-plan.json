@@ -11,31 +11,31 @@
       "id": "omp-global-agents-md",
       "sourceHarness": "omp",
       "sourceResource": "omp-user-project-resources",
-      "mode": "candidate-symlink",
+      "mode": "candidate-copy",
       "livePath": "~/.omp/agent/AGENTS.md",
       "proposedTarget": "repo:adapters/omp/source/AGENTS.md",
       "disposition": "track",
-      "notes": "Report the existing live path and planned repo-owned source only. Do not mutate the link in this issue."
+      "notes": "Copy tracked neutral defaults on first apply (create-missing-only). The live copy is operator-owned after apply; divergence from tracked defaults is expected."
     },
     {
       "id": "omp-global-rules-md",
       "sourceHarness": "omp",
       "sourceResource": "omp-user-project-resources",
-      "mode": "candidate-symlink",
+      "mode": "candidate-copy",
       "livePath": "~/.omp/agent/RULES.md",
       "proposedTarget": "repo:adapters/omp/source/RULES.md",
       "disposition": "track",
-      "notes": "Report the existing live path and planned repo-owned source only. Do not mutate the link in this issue."
+      "notes": "Copy tracked neutral defaults on first apply (create-missing-only). The live copy is operator-owned after apply; divergence from tracked defaults is expected."
     },
     {
       "id": "omp-global-config-yml",
       "sourceHarness": "omp",
       "sourceResource": "omp-user-project-resources",
-      "mode": "candidate-symlink",
+      "mode": "candidate-copy",
       "livePath": "~/.omp/agent/config.yml",
       "proposedTarget": "repo:adapters/omp/source/config.yml",
       "disposition": "track",
-      "notes": "Report the existing live path and planned repo-owned source only. Do not mutate the link in this issue."
+      "notes": "Copy tracked neutral defaults on first apply (create-missing-only). The live copy is operator-owned after apply; divergence from tracked defaults is expected."
     },
     {
       "id": "codex-shared-skills-root",

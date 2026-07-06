@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { appendFileSync, cpSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { appendFileSync, cpSync, lstatSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -413,66 +413,36 @@ test("dry-run resolves dispositions: track/adapt appliable, reference-only and l
   rmSync(home, { recursive: true, force: true });
 });
 
-test("dry-run reports OMP repo-mirror symlinks separately from marker ownership", () => {
+test("dry-run reports existing OMP files as operator-owned user files", () => {
+  const home = tempDir("render-home-");
+  try {
+    const agentDir = path.join(home, ".omp", "agent");
+    mkdirSync(agentDir, { recursive: true });
+    const source = new URL(`../${ompSourceRoot}/AGENTS.md`, import.meta.url).pathname;
+    writeFileSync(path.join(agentDir, "AGENTS.md"), readFileSync(source, "utf8"));
+    const { result, manifest } = runJson(["--home", home]);
+    assert.equal(result.status, 0, result.stderr);
+    const candidate = manifest.candidates.find((entry) => entry.destination === "~/.omp/agent/AGENTS.md");
+    assert.equal(candidate.liveStatus, "user-file");
+    assert.equal(candidate.ownership, "user-file");
+    const matrixRow = manifest.ownershipMatrix.find((entry) => entry.destination === "~/.omp/agent/AGENTS.md");
+    assert.deepEqual(matrixRow, { destination: "~/.omp/agent/AGENTS.md", observedLiveState: "user-file", bucket: "existing-user-file", nextOwner: "operator-owned" });
+  } finally { rmSync(home, { recursive: true, force: true }); }
+});
+
+test("dry-run reports legacy OMP symlinks as operator-owned user files", () => {
   const home = tempDir("render-home-");
   try {
     const agentDir = path.join(home, ".omp", "agent");
     mkdirSync(agentDir, { recursive: true });
     const source = new URL(`../${ompSourceRoot}/AGENTS.md`, import.meta.url).pathname;
     symlinkSync(source, path.join(agentDir, "AGENTS.md"));
-
-    const { result, manifest } = runJson(["--home", home]);
-    assert.equal(result.status, 0, result.stderr);
-
-    const candidate = manifest.candidates.find((entry) => entry.destination === "~/.omp/agent/AGENTS.md");
-    assert.equal(candidate.liveStatus, "repo-mirror-symlink");
-    assert.equal(candidate.ownership, "repo-mirror");
-    assert.match(candidate.overwriteRisk, /explicit OMP apply gate/u);
-    assert.equal(candidate.requiredApproval, "strict-manual + --approve-omp-repo-owned");
-
-    const matrixRow = manifest.ownershipMatrix.find((entry) => entry.destination === "~/.omp/agent/AGENTS.md");
-    assert.deepEqual(matrixRow, {
-      destination: "~/.omp/agent/AGENTS.md",
-      observedLiveState: "repo-mirror-symlink",
-      bucket: "repo-mirror-symlink",
-      nextOwner: "explicit-omp-apply-gate",
-    });
-  } finally {
-    rmSync(home, { recursive: true, force: true });
-  }
-});
-
-test("dry-run does not follow retargeted marker-owned OMP symlinks", () => {
-  const home = tempDir("render-home-");
-  try {
-    const agentDir = path.join(home, ".omp", "agent");
-    const markerDir = path.join(home, ".loom-harness");
-    const source = new URL(`../${ompSourceRoot}/AGENTS.md`, import.meta.url).pathname;
-    const live = path.join(agentDir, "AGENTS.md");
-    const retarget = path.join(home, "retarget-dir");
-    mkdirSync(agentDir, { recursive: true });
-    mkdirSync(markerDir, { recursive: true });
-    mkdirSync(retarget, { recursive: true });
-    symlinkSync(source, live);
-    writeFileSync(
-      path.join(markerDir, "applied-manifest.json"),
-      JSON.stringify({
-        schemaVersion: 1,
-        generatedBy: "test",
-        entries: { "~/.omp/agent/AGENTS.md": { sha256: "claimed", renderedFrom: "test", appliedAt: "2026-07-01T00:00:00.000Z" } },
-      }),
-    );
-    rmSync(live, { force: true });
-    symlinkSync(retarget, live);
-
     const { result, manifest } = runJson(["--home", home]);
     assert.equal(result.status, 0, result.stderr);
     const candidate = manifest.candidates.find((entry) => entry.destination === "~/.omp/agent/AGENTS.md");
-    assert.equal(candidate.liveStatus, "marker-symlink-retargeted");
-    assert.equal(candidate.ownership, "marker-owned");
-  } finally {
-    rmSync(home, { recursive: true, force: true });
-  }
+    assert.equal(candidate.liveStatus, "user-file");
+    assert.equal(candidate.ownership, "user-file");
+  } finally { rmSync(home, { recursive: true, force: true }); }
 });
 
 test("gate runs over rendered output: a forbidden provider key in a template fails the render", () => {
@@ -522,6 +492,11 @@ test("--write applies create-missing-only, records markers, and a second run is 
   const marker = JSON.parse(readFileSync(markerFile, "utf8"));
   assert.equal(Object.keys(marker.entries).length, 3);
   assert.equal(marker.generatedBy, "render-nucleus");
+  for (const destination of created) {
+    const liveRel = destination.replace(/^~\//u, "");
+    const live = path.join(home, liveRel);
+    assert.ok(!lstatSync(live).isSymbolicLink(), `${destination} must be copied, not linked`);
+  }
 
   // No applied artifact carries provider/model/auth/telemetry/profile keys or secrets.
   for (const rel of listFiles(home)) {
@@ -913,216 +888,32 @@ test("applyCandidates skips a pre-existing non-marker user file (create-missing-
   rmSync(home, { recursive: true, force: true });
 });
 
-test("applyCandidates requires explicit approval before claiming OMP repo-mirror symlinks", () => {
-  const home = tempDir("apply-home-");
-  const dest = "~/.omp/agent/AGENTS.md";
-  const source = new URL(`../${ompSourceRoot}/AGENTS.md`, import.meta.url).pathname;
-  const content = readFileSync(source, "utf8");
-  const live = path.join(home, ".omp", "agent", "AGENTS.md");
-  mkdirSync(path.dirname(live), { recursive: true });
-  symlinkSync(source, live);
-  const candidate = applyCandidate(dest, content, { source: `${ompSourceRoot}/AGENTS.md` });
-
-  const unapproved = applyCandidates([candidate], home, emptyMarker());
-  assert.equal(unapproved.actions[0].action, "skipped");
-  assert.equal(unapproved.actions[0].reason, "omp-approval-required");
-
-  const marker = emptyMarker();
-  const approved = applyCandidates([candidate], home, marker, { approveOmpRepoOwned: true });
-  assert.equal(approved.actions[0].action, "claimed-repo-mirror-symlink");
-  assert.equal(approved.backups.length, 0);
-  assert.ok(marker.entries[dest], "approved symlink claim records marker ownership");
-  assert.equal(readFileSync(live, "utf8"), content);
-
-  rmSync(home, { recursive: true, force: true });
-});
-
-test("applyCandidates does not claim divergent OMP repo-mirror symlinks", () => {
+test("applyCandidates skips pre-existing OMP symlinks as create-missing-only user files", () => {
   const home = tempDir("apply-home-");
   const dest = "~/.omp/agent/AGENTS.md";
   const source = new URL(`../${ompSourceRoot}/AGENTS.md`, import.meta.url).pathname;
   const live = path.join(home, ".omp", "agent", "AGENTS.md");
   mkdirSync(path.dirname(live), { recursive: true });
   symlinkSync(source, live);
-  const marker = emptyMarker();
-  const candidate = applyCandidate(dest, "DIFFERENT\n", { source: `${ompSourceRoot}/AGENTS.md` });
-
-  const result = applyCandidates([candidate], home, marker, { approveOmpRepoOwned: true });
-  assert.equal(result.actions[0].action, "skipped");
-  assert.equal(result.actions[0].reason, "repo-mirror-content-mismatch");
-  assert.equal(marker.entries[dest], undefined);
-  assert.equal(readFileSync(live, "utf8"), readFileSync(source, "utf8"));
-
-  rmSync(home, { recursive: true, force: true });
-});
-
-test("applyCandidates does not follow a claimed symlink after retargeting", () => {
-  const home = tempDir("apply-home-");
-  const dest = "~/.omp/agent/AGENTS.md";
-  const source = new URL(`../${ompSourceRoot}/AGENTS.md`, import.meta.url).pathname;
-  const live = path.join(home, ".omp", "agent", "AGENTS.md");
-  const other = path.join(home, "other.md");
-  mkdirSync(path.dirname(live), { recursive: true });
-  symlinkSync(source, live);
-  writeFileSync(other, "USER TARGET\n");
-  const marker = emptyMarker();
   const candidate = applyCandidate(dest, readFileSync(source, "utf8"), { source: `${ompSourceRoot}/AGENTS.md` });
-  applyCandidates([candidate], home, marker, { approveOmpRepoOwned: true });
-  rmSync(live, { force: true });
-  symlinkSync(other, live);
-
-  const result = applyCandidates([candidate], home, marker, { approveOmpRepoOwned: true });
+  const result = applyCandidates([candidate], home, emptyMarker());
   assert.equal(result.actions[0].action, "skipped");
-  assert.equal(result.actions[0].reason, "not-repo-mirror-symlink");
-  assert.equal(readFileSync(other, "utf8"), "USER TARGET\n", "retargeted symlink target must stay intact");
-
+  assert.equal(result.actions[0].reason, "exists");
+  assert.ok(lstatSync(live).isSymbolicLink());
   rmSync(home, { recursive: true, force: true });
 });
 
-// LOO-145: stale repo-mirror symlink lifecycle (layout move stranded the live link).
-// Former layout path inside this repo that no longer exists on disk.
-const staleRepoTarget = new URL("../omp/.omp/agent/AGENTS.md", import.meta.url).pathname;
-
-function staleLinkHome() {
-  const home = tempDir("apply-home-");
-  const live = path.join(home, ".omp", "agent", "AGENTS.md");
-  mkdirSync(path.dirname(live), { recursive: true });
-  symlinkSync(path.relative(path.dirname(live), staleRepoTarget), live);
-  return { home, live };
-}
-
-test("dry-run classifies a dangling into-repo OMP symlink as stale, not user-file, and writes nothing", () => {
-  const { home, live } = staleLinkHome();
-  try {
-    const before = readlinkSync(live);
-    const { result, manifest } = runJson(["--home", home]);
-    assert.equal(result.status, 0, result.stderr);
-
-    const candidate = manifest.candidates.find((entry) => entry.destination === "~/.omp/agent/AGENTS.md");
-    assert.equal(candidate.liveStatus, "stale-repo-mirror-symlink");
-    assert.equal(candidate.ownership, "repo-mirror");
-    assert.match(candidate.overwriteRisk, /explicit OMP apply gate/u);
-    assert.equal(candidate.requiredApproval, "strict-manual + --approve-omp-repo-owned");
-
-    const row = manifest.ownershipMatrix.find((entry) => entry.destination === "~/.omp/agent/AGENTS.md");
-    assert.deepEqual(row, {
-      destination: "~/.omp/agent/AGENTS.md",
-      observedLiveState: "stale-repo-mirror-symlink",
-      bucket: "stale-repo-mirror-symlink",
-      nextOwner: "explicit-omp-apply-gate",
-    });
-    assert.equal(readlinkSync(live), before, "dry-run must not touch the link");
-  } finally {
-    rmSync(home, { recursive: true, force: true });
-  }
-});
-
-test("applyCandidates retargets a stale OMP symlink only behind the explicit approval gate", () => {
-  const { home, live } = staleLinkHome();
-  const dest = "~/.omp/agent/AGENTS.md";
-  const source = new URL(`../${ompSourceRoot}/AGENTS.md`, import.meta.url).pathname;
-  const content = readFileSync(source, "utf8");
-  const candidate = applyCandidate(dest, content, { source: `${ompSourceRoot}/AGENTS.md` });
-
-  const before = readlinkSync(live);
-  const unapproved = applyCandidates([candidate], home, emptyMarker());
-  assert.equal(unapproved.actions[0].action, "skipped");
-  assert.equal(unapproved.actions[0].reason, "omp-approval-required");
-  assert.equal(readlinkSync(live), before, "unapproved write must not retarget");
-
-  const marker = emptyMarker();
-  const approved = applyCandidates([candidate], home, marker, { approveOmpRepoOwned: true });
-  assert.equal(approved.actions[0].action, "retargeted-stale-repo-mirror-symlink");
-  assert.equal(approved.backups.length, 0);
-  assert.equal(readFileSync(live, "utf8"), content, "link must resolve to the current source");
-  assert.ok(marker.entries[dest], "retarget records marker ownership");
-
-  const second = applyCandidates([candidate], home, marker, { approveOmpRepoOwned: true });
-  assert.equal(second.actions[0].action, "already-applied");
-
-  rmSync(home, { recursive: true, force: true });
-});
-
-test("a dangling symlink pointing outside the repo stays user property and is never retargeted", () => {
-  const home = tempDir("apply-home-");
-  const dest = "~/.omp/agent/AGENTS.md";
-  const live = path.join(home, ".omp", "agent", "AGENTS.md");
-  const outside = path.join(home, "gone", "user.md");
-  mkdirSync(path.dirname(live), { recursive: true });
-  symlinkSync(outside, live);
-  const source = new URL(`../${ompSourceRoot}/AGENTS.md`, import.meta.url).pathname;
-  const candidate = applyCandidate(dest, readFileSync(source, "utf8"), { source: `${ompSourceRoot}/AGENTS.md` });
-
-  const { result, manifest } = runJson(["--home", home]);
-  assert.equal(result.status, 0, result.stderr);
-  const reported = manifest.candidates.find((entry) => entry.destination === dest);
-  assert.equal(reported.liveStatus, "user-file");
-
-  const applied = applyCandidates([candidate], home, emptyMarker(), { approveOmpRepoOwned: true });
-  assert.equal(applied.actions[0].action, "skipped");
-  assert.equal(applied.actions[0].reason, "not-repo-mirror-symlink");
-  assert.equal(readlinkSync(live), outside, "user link must stay untouched");
-
-  rmSync(home, { recursive: true, force: true });
-});
-
-test("stale detection wins over a surviving marker entry and the gated retarget still applies", () => {
-  const { home, live } = staleLinkHome();
-  try {
-    const markerDir = path.join(home, ".loom-harness");
-    mkdirSync(markerDir, { recursive: true });
-    writeFileSync(
-      path.join(markerDir, "applied-manifest.json"),
-      JSON.stringify({
-        schemaVersion: 1,
-        generatedBy: "test",
-        entries: { "~/.omp/agent/AGENTS.md": { sha256: "claimed", renderedFrom: "test", appliedAt: "2026-07-01T00:00:00.000Z" } },
-      }),
-    );
-
-    const { result, manifest } = runJson(["--home", home]);
-    assert.equal(result.status, 0, result.stderr);
-    const candidate = manifest.candidates.find((entry) => entry.destination === "~/.omp/agent/AGENTS.md");
-    assert.equal(candidate.liveStatus, "stale-repo-mirror-symlink");
-    assert.equal(candidate.ownership, "repo-mirror");
-
-    const source = new URL(`../${ompSourceRoot}/AGENTS.md`, import.meta.url).pathname;
-    const content = readFileSync(source, "utf8");
-    const marker = { schemaVersion: 1, generatedBy: "test", entries: { "~/.omp/agent/AGENTS.md": { sha256: "claimed", renderedFrom: "test", appliedAt: "2026-07-01T00:00:00.000Z" } } };
-    const applied = applyCandidates(
-      [applyCandidate("~/.omp/agent/AGENTS.md", content, { source: `${ompSourceRoot}/AGENTS.md` })],
-      home,
-      marker,
-      { approveOmpRepoOwned: true },
-    );
-    assert.equal(applied.actions[0].action, "retargeted-stale-repo-mirror-symlink");
-    assert.equal(readFileSync(live, "utf8"), content);
-  } finally {
-    rmSync(home, { recursive: true, force: true });
-  }
-});
-
-test("applyCandidates backs up and replaces existing OMP files only with explicit approval", () => {
+test("applyCandidates skips pre-existing real OMP files (operator-owned)", () => {
   const home = tempDir("apply-home-");
   const dest = "~/.omp/agent/config.yml";
   const live = path.join(home, ".omp", "agent", "config.yml");
-  const content = "repo: true\n";
   mkdirSync(path.dirname(live), { recursive: true });
   writeFileSync(live, "USER OWNED\n");
-  const candidate = applyCandidate(dest, content, { source: `${ompSourceRoot}/config.yml` });
-
-  const unapproved = applyCandidates([candidate], home, emptyMarker());
-  assert.equal(unapproved.actions[0].action, "skipped");
-  assert.equal(unapproved.actions[0].reason, "omp-approval-required");
+  const candidate = applyCandidate(dest, "repo: true\n", { source: `${ompSourceRoot}/config.yml` });
+  const result = applyCandidates([candidate], home, emptyMarker());
+  assert.equal(result.actions[0].action, "skipped");
+  assert.equal(result.actions[0].reason, "exists");
   assert.equal(readFileSync(live, "utf8"), "USER OWNED\n");
-
-  const marker = emptyMarker();
-  const approved = applyCandidates([candidate], home, marker, { approveOmpRepoOwned: true });
-  assert.equal(approved.actions[0].action, "replaced-existing-omp");
-  assert.equal(readFileSync(live, "utf8"), content);
-  assert.equal(readFileSync(approved.actions[0].backup, "utf8"), "USER OWNED\n");
-  assert.ok(marker.entries[dest], "approved replacement records marker ownership");
-
   rmSync(home, { recursive: true, force: true });
 });
 

@@ -1,85 +1,55 @@
-providers: 
-  webSearch: codex
-theme: 
-  dark: dark-ocean
+# Applied once per machine (create-missing-only, copied not linked); the live copy is operator-owned after first apply.
 setupVersion: 1
-disabledProviders: 
-  - claude-plugins
-  - opencode
-disabledExtensions: 
-  - context-file:user:CLAUDE.md
-statusLine: 
+theme:
+  dark: dark-ocean
+display:
+  showTokenUsage: true
+statusLine:
   preset: full
   separator: pipe
   sessionAccent: true
-display: 
-  showTokenUsage: true
-  shimmer: kitt
-task: 
+readLineNumbers: true
+hideThinkingBlock: false
+colorBlindMode: false
+browser:
+  headless: true
+tui:
+  tight: false
+modelRoles:
+  # default: <provider>/<model>
+  default: null
+  # smol: <provider>/<model>
+  smol: null
+  # slow: <provider>/<model>
+  slow: null
+  # plan: <provider>/<model>
+  plan: null
+  # task: <provider>/<model>
+  task: null
+  # vision: <provider>/<model>
+  vision: null
+task:
   eager: preferred
-  agentModelOverrides: 
-    designer: cursor/claude-fable-5-medium:medium
-    explore: openai-codex/gpt-5.5:low
-    librarian: openai-codex/gpt-5.5
-    plan: cursor/claude-fable-5-high:high
-    reviewer: openai-codex/gpt-5.5:xhigh
-    sonic: cursor/composer-2.5
-    task: cursor/composer-2.5
-    Tester: openai-codex/gpt-5.5:medium
-mcp: 
+  agentModelOverrides: {}
+mcp:
   discoveryMode: true
-advisor: 
+checkpoint:
+  enabled: true
+github:
+  enabled: true
+inspect_image:
+  enabled: true
+advisor:
   enabled: true
   subagents: false
-github: 
-  enabled: true
-inspect_image: 
-  enabled: true
-checkpoint: 
-  enabled: true
-modelRoles: 
-  smol: openai-codex/gpt-5.5:xhigh
-  tiny: openai-codex/gpt-5.5:low
-  default: openai-codex/gpt-5.5:xhigh
-  plan: cursor/claude-fable-5-high:high
-  designer: cursor/claude-fable-5-medium:medium
-  vision: openai-codex/gpt-5.5:high
-  slow: openai-codex/gpt-5.5:xhigh
-  task: cursor/composer-2.5
-  advisor: openai-codex/gpt-5.5:off
-  commit: openai-codex/gpt-5.5:low
-dev: 
-  autoqa: 
+dev:
+  autoqa:
     consent: denied
-browser: 
-  headless: true
-colorBlindMode: true
-tui: 
-  tight: false
-hideThinkingBlock: false
-readLineNumbers: true
-retry: 
-  fallbackChains: 
-    cursor/claude-fable-5-high: 
-      - openai-codex/gpt-5.5
-    cursor/claude-fable-5-medium: 
-      - openai-codex/gpt-5.5
-    cursor/composer-2.5: 
-      - openai-codex/gpt-5.5
-codexResets: 
-  autoRedeem: "yes"
-recap: 
-  idleSeconds: 60
-enabledModels: 
-  - openai-codex/gpt-5.5
-  - cursor/composer-2.5
-  - cursor/claude-fable-5-low
-  - cursor/claude-fable-5-medium
-  - cursor/claude-fable-5-high
-cycleOrder: 
+defaultThinkingLevel: auto
+cycleOrder:
   - smol
   - default
   - slow
-defaultThinkingLevel: auto
-snapcompact: 
-  toolResults: true
+enabledModels: []
+disabledProviders: []
+disabledExtensions: []

@@ -109,11 +109,11 @@ test("checked-in dry-run plan covers OMP, Codex, and Claude candidates", () => {
   assert.deepEqual(harnesses, new Set(["omp", "codex", "claude"]));
   assert.ok(
     basePlan.candidateLinks.some((link) => (
-      link.mode === "candidate-symlink"
+      link.mode === "candidate-copy"
       && link.livePath === "~/.omp/agent/AGENTS.md"
       && link.proposedTarget === `repo:${ompSourceRoot}/AGENTS.md`
     )),
-    "expected one allowed OMP symlink candidate",
+    "expected one allowed OMP copy candidate",
   );
   assert.ok(
     basePlan.generatedConfigDestinations.some((destination) => destination.destination === "~/.codex/omp-harness.config.toml"),
