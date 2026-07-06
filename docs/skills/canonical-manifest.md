@@ -1,10 +1,14 @@
 # Canonical Skills Manifest
 
-Single source of truth for the harness skill nucleus. Built by consolidating three home roots
-(`~/.agents/skills`, `~/.codex/skills`, `~/.claude/skills`) into the repo `.agents/skills/`, then
-symlinking all three roots back to it. One copy per skill, no harness prefixes, reusable across harnesses.
+Historical consolidation manifest for harness skills. LOO-152 split ownership:
 
-- Physical dirs before: 161 (across 3 roots)  ->  canonical skills: 58 at build; later 60, then trimmed by the ADR 0003 Factorio-kit cutover (see Post-consolidation). The live set is whatever `.agents/skills/` holds; `validate-skills.mjs` is the gate.
+- **Repo-owned (11):** seven roster agents under `nucleus/skills/`, four kit utilities under
+  `nucleus/utilities/`, rendered to `.agents/skills/` by `node scripts/render-skills-compat.mjs`.
+- **Operator-local:** seventeen cited-engine utilities under `~/.agents/skills/` per
+  [`operator-local-manifest.md`](operator-local-manifest.md).
+
+Earlier builds consolidated three home roots (`~/.agents/skills`, `~/.codex/skills`, `~/.claude/skills`)
+into the repo before later cutovers. `validate-skills.mjs` gates the repo-owned surfaces.
 - Pruned (10): codex-issue-implementation, codex-workflow-sharpener, devenv, graduate, inspo, learn, loading, mocking, quick, vault-note
 
 ## Build rules (per skill)
@@ -56,3 +60,11 @@ symlinking all three roots back to it. One copy per skill, no harness prefixes, 
 
 - **Issue-lane prune (historical):** earlier consolidation removed `issue-bootstrap`/`issue-work`, leaving `issue-execution` as the single issue-lifecycle skill alongside `triage`/`to-issues`/`to-prd`.
 - **ADR 0003 Factorio-kit cutover:** the previous default planning lane is now retired in favor of the tracker-picked Factorio kit (see `factorio-kit.md`, the kit's manifest). Replaced: `to-prd`->`blueprint`, `to-issues`->`ghosts`, `triage`->`inserter`, `improve-codebase-architecture`->`main-bus`, `thread-closeout`+`gh-issue-thread-chain`->`rocket-launch`, `agent-recipes`+`issue-execution`->`roboports`. Dropped (curation): `caveman`, `doc`, `pdf`, `jupyter-notebook`, `excalidraw-diagrams`, `theme-factory`, `inbox-triage`, `summarize-youtube-videos`, `teach`, `orca-cli`, `orchestration`, `cmux-project-supervision`, `terminal-steering`, `session-tree-map`, `prototype` (re-themed as `map-seed`), and the five `html-*` skills. Kept as cited engines: `tdd`, `zoom-out`, `security-threat-model`/`-best-practices`/`-ownership-map`. The bootstrap trio (`repo-workflow-bootstrap`, `workflow-kit`, `setup-matt-pocock-skills`) -> `assembler`, now that `assembler` reached parity (LOO-19): their skill dirs, table rows, and the `repo-workflow-bootstrap` routing note are removed from this manifest.
+- **LOO-152 operator-local migration:** removed seventeen cited-engine utilities from tracked
+  `nucleus/utilities/` (`chrome-devtools`, `chronicle`, `computer-use`, `debug-tools`,
+  `deliverable-report`, `execute-plan`, `find-skills`, `grill-with-docs`, `openai-docs`,
+  `repo-triage`, `security-best-practices`, `security-ownership-map`, `security-threat-model`,
+  `skill-maintenance`, `swiftui-pro`, `tdd`, `write-a-skill`). Repo-owned utilities are now only
+  `assembler`, `prospect`, `space-age`, and `map-seed`. Live content for the moved utilities stays
+  operator-local; see [`operator-local-manifest.md`](operator-local-manifest.md).
+

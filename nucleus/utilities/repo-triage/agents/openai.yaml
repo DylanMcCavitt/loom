@@ -1,4 +1,0 @@
-interface:
-  display_name: "Repo Triage"
-  short_description: "Inspect repo state without editing"
-  default_prompt: "Use $repo-triage to inspect live repo, worktree, issue, and PR state without implementing."

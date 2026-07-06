@@ -1,4 +1,0 @@
-interface:
-  display_name: "Skill Maintenance"
-  short_description: "Audit and archive local skills safely"
-  default_prompt: "Use $skill-maintenance to audit local skills, validate them, and archive unused ones reversibly."

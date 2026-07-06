@@ -77,7 +77,7 @@ Scope a different live HOME with `--home <dir>` (default `$HOME`); see `node scr
 - [`docs/operator/`](docs/operator/) - operator-facing daily workflow and install/update flows.
 - [`docs/architecture/`](docs/architecture/) - compact architecture maps for Factory Nucleus and the harness bridge.
 - [`docs/harness/`](docs/harness/) - manifests, adapter plans, and bridge/reference context only; no active source templates or generated payloads.
-- [`.agents/skills/`](.agents/skills/) - rendered compatibility surface generated from `nucleus/skills/`; edit `nucleus/skills/` first.
+- [`.agents/skills/`](.agents/skills/) - rendered compatibility surface generated from `nucleus/skills/` and `nucleus/utilities/`; edit nucleus source first.
 - [`scripts/autoresearch.sh`](scripts/autoresearch.sh) - full-flow traceability benchmark script; `reference-only`.
 - [`.gitignore`](.gitignore) - excludes runtime state, local overlays, common credential files, logs, databases, sessions, blobs, and caches; `track`.
 
@@ -117,7 +117,6 @@ npm run check
 | Automation workflow benchmark | `node --test tests/automation-workflow-benchmark.test.mjs` |
 | Claude adapter plan | `node --test tests/claude-adapter-plan.test.mjs` |
 | Codex adapter plan | `node --test tests/codex-adapter-plan.test.mjs` |
-| Execute-plan skill | `node --test tests/execute-plan-skill.test.mjs` |
 | Harness manifest | `node --test tests/harness-manifest.test.mjs` |
 | Harness safety gate | `node --test tests/harness-safety-gate.test.mjs` |
 | Install command | `node --test tests/install-command.test.mjs` |

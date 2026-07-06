@@ -2,7 +2,7 @@
 
 Issues: LOO-96 base contract; LOO-97 delegation DAG; LOO-98 repair-pack loop; LOO-99 offline evals; LOO-100 OMP-prefix retirement; LOO-101 package rendering; LOO-102 scratch-HOME activation; LOO-103 evidence intake; LOO-104 deterministic checks; LOO-105 repo-local canonical source; LOO-154 roster consolidation (17 -> 7) with lens references. This document defines the canonical shared agent model and does not authorize native OMP/Codex/Claude role-agent files or real-HOME apply without HITL review.
 
-Source pattern: [Teaching agents product design at Vercel](https://vercel.com/blog/teaching-agents-product-design-at-vercel). Loom adapts that shape as one Vercel-shaped skill package per canonical nucleus agent under `nucleus/skills/{agent-name}/` (AGENTS.md, SKILL.md, references/, exemplars/). Non-roster utility skills live under `nucleus/utilities/`.
+Source pattern: [Teaching agents product design at Vercel](https://vercel.com/blog/teaching-agents-product-design-at-vercel). Loom adapts that shape as one Vercel-shaped skill package per canonical nucleus agent under `nucleus/skills/{agent-name}/` (AGENTS.md, SKILL.md, references/, exemplars/). Four kit utilities remain repo-owned under `nucleus/utilities/`; cited engines live operator-local under `~/.agents/skills/` per `docs/skills/operator-local-manifest.md`.
 
 ## Model
 

@@ -90,12 +90,14 @@
         "~/.codex/agents/",
         "~/.codex/skills/",
         "~/.agents/skills/",
-        "repo:nucleus/skills/"
+        "repo:nucleus/skills/",
+        "repo:nucleus/utilities/",
+        "repo:.agents/skills/"
       ],
       "discoverySource": "Codex and shared skill roots by directory name; individual skill deduplication is deferred.",
-      "intendedRepoTarget": "nucleus/skills/ canonical source, .agents/skills/ rendered compatibility surface, and docs/harness/codex-adapter-plan.md",
+      "intendedRepoTarget": "nucleus/skills/ roster, nucleus/utilities/ kit utilities, .agents/skills/ rendered compatibility surface, docs/harness/codex-adapter-plan.md, and docs/skills/operator-local-manifest.md",
       "disposition": "adapt",
-      "migrationNotes": "Adapt only explicit project skills and reusable agent guidance. Keep .agents/skills as the rendered compatibility surface; do not vendor plugin-provided skills or global caches as part of this manifest."
+      "migrationNotes": "LOO-152 slimmed repo-owned skills to eleven: seven roster agents plus four kit utilities. Seventeen cited-engine utilities moved operator-local to ~/.agents/skills/ (manifest only; no live write). Keep .agents/skills as the rendered compatibility surface; do not vendor plugin-provided skills or global caches as part of this manifest."
     },
     {
       "id": "codex-runtime-state",
@@ -172,13 +174,14 @@
         "~/.codex/skills/",
         "~/.claude/skills/",
         "repo:nucleus/skills/",
+        "repo:nucleus/utilities/",
         "repo:.agents/skills/",
         "~/.omp/agent/workflow-kit/"
       ],
       "discoverySource": "Known overlapping global, harness-specific, canonical repo, and rendered compatibility skill roots; this issue records categories only.",
       "intendedRepoTarget": "docs/harness/skill-root-audit.md (future issue #43)",
       "disposition": "reference-only",
-      "migrationNotes": "Do not deduplicate in issue #38. Future audit should compare names, triggers, and ownership without copying package/plugin caches."
+      "migrationNotes": "Do not deduplicate in issue #38. Future audit should compare names, triggers, and ownership without copying package/plugin caches. LOO-152 moved seventeen cited-engine utilities out of repo:nucleus/utilities/ to operator-local ~/.agents/skills/ per docs/skills/operator-local-manifest.md."
     },
     {
       "id": "codex-plugin-marketplace-and-source",
@@ -204,6 +207,18 @@
       "intendedRepoTarget": "distributions/loom-nucleus/.claude-plugin/marketplace.json",
       "disposition": "track",
       "migrationNotes": "Repo-scoped catalog listing the loom-nucleus entry with a relative source path. Rendered, gated, and reported by render-plugin-bridge; project-scoped, so it is never written to a live HOME path."
+    },
+    {
+      "id": "operator-local-utility-skills",
+      "sourceHarness": "cross-harness",
+      "resourceCategory": "operator-local utility skills",
+      "currentLivePath": [
+        "~/.agents/skills/"
+      ],
+      "discoverySource": "LOO-152 migration manifest at docs/skills/operator-local-manifest.md; seventeen cited-engine utilities removed from repo:nucleus/utilities/.",
+      "intendedRepoTarget": "docs/skills/operator-local-manifest.md",
+      "disposition": "reference-only",
+      "migrationNotes": "LOO-152 removed seventeen cited-engine utilities from repo:nucleus/utilities/. Live skill content stays operator-local under ~/.agents/skills/; the repo records names and paths in the manifest only."
     }
   ]
 }

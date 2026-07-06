@@ -43,9 +43,9 @@
       "sourceResource": "codex-agents-skills",
       "mode": "candidate-symlink",
       "livePath": "~/.agents/skills/",
-      "proposedTarget": "repo:nucleus/skills/",
+      "proposedTarget": "repo:.agents/skills/",
       "disposition": "adapt",
-      "notes": "Shared skill roots require explicit approval before any live link operation."
+      "notes": "Shared skill roots require explicit approval before any live link operation. Repo-owned surface is rendered to repo:.agents/skills/ from nucleus/skills/ plus four nucleus/utilities/ kit utilities (LOO-152)."
     },
     {
       "id": "codex-user-skills-root",

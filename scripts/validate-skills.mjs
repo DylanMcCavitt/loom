@@ -102,6 +102,11 @@ function safeRealpath(target) {
   }
 }
 
+function isInsidePath(parent, child) {
+  const relative = path.relative(parent, child);
+  return relative === "" || (!!relative && !relative.startsWith("..") && !path.isAbsolute(relative));
+}
+
 function nearestPackageName(start) {
   let dir = path.resolve(safeRealpath(start) ?? start);
   while (true) {
@@ -127,18 +132,26 @@ function isSamePackageSkillsRoot(globalRoot, skillsRoot) {
 
 function collectGlobalSkillNames(globalSkillsDirs, skillsRoot) {
   const names = new Set();
-  const skillsReal = safeRealpath(skillsRoot);
+  const localSkillRoots = [
+    skillsRoot,
+    path.resolve(DEFAULT_COMPAT_SKILLS_DIR),
+  ].map(safeRealpath).filter(Boolean);
   for (const dir of globalSkillsDirs) {
     const resolved = path.resolve(dir);
     if (!existsSync(resolved)) continue;
-    // Skip a global root that resolves to the skills dir itself (symlinked single source of truth).
+    // Skip global roots/entries that resolve back into this repo's canonical or
+    // compatibility skill surfaces; they are not external collision sources.
+    const resolvedReal = safeRealpath(resolved);
+    const sameLocalRoot = resolvedReal && localSkillRoots.some((root) => isInsidePath(root, resolvedReal));
     // The default ~/.agents/skills root may point at another worktree of this same package; that is
     // this repo's canonical skills, not an external collision source. Explicit test/global dirs still count.
     const defaultGlobalRoot = path.join(homedir(), ".agents", "skills");
     const sameDefaultPackage = resolved === defaultGlobalRoot && isSamePackageSkillsRoot(resolved, skillsRoot);
-    if (skillsReal && (safeRealpath(resolved) === skillsReal || sameDefaultPackage)) continue;
+    if (sameLocalRoot || sameDefaultPackage) continue;
     for (const entry of listEntries(resolved)) {
       if (!entry.isDirectory()) continue;
+      const entryReal = safeRealpath(path.join(resolved, entry.name));
+      if (entryReal && localSkillRoots.some((root) => isInsidePath(root, entryReal))) continue;
       const skillPath = path.join(resolved, entry.name, "SKILL.md");
       if (!existsSync(skillPath)) continue;
       const content = readFileSync(skillPath, "utf8");

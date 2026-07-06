@@ -64,7 +64,7 @@
       "coverageGaps": "references/coverage-gaps.md keeps missing standards visible instead of letting agents invent policy.",
       "lensReferences": "references/lens-{lens-name}.md carries variant guidance loaded only when the packet names that lens."
     },
-    "utilitySkills": "nucleus/utilities/{skill-name}/ holds non-roster utility skills outside this contract; they are validated as plain skills.",
+    "utilitySkills": "nucleus/utilities/{skill-name}/ holds the four repo-owned kit utilities (assembler, prospect, space-age, map-seed). Cited engines moved operator-local per docs/skills/operator-local-manifest.md.",
     "sharedReferences": [
       "delegation-dag.md",
       "review-and-proof.md",
