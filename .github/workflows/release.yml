@@ -1,0 +1,67 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run checks
+        run: npm run check
+
+      - name: Build release artifact
+        run: |
+          set -euo pipefail
+          STAGING="release-staging"
+          rm -rf "$STAGING"
+          mkdir -p "$STAGING/.agents/skills" "$STAGING/nucleus" "$STAGING/distributions/loom-nucleus"
+          cp -R .agents/skills/. "$STAGING/.agents/skills/"
+          cp -R nucleus/. "$STAGING/nucleus/"
+          cp -R distributions/loom-nucleus/. "$STAGING/distributions/loom-nucleus/"
+          cp LICENSE README.md "$STAGING/"
+          tar -czf "loom-pack-${GITHUB_REF_NAME}.tar.gz" -C "$STAGING" .
+
+      - name: Extract release notes
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          awk -v ver="$VERSION" '
+            $0 == "## " ver { found=1; print; next }
+            found && /^## / { exit }
+            found { print }
+          ' RELEASE-NOTES.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "Missing RELEASE-NOTES.md section for version ${VERSION}" >&2
+            exit 1
+          fi
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "loom-pack-${GITHUB_REF_NAME}.tar.gz" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" \
+              --title "Loom $GITHUB_REF_NAME" \
+              --notes-file release-notes.md \
+              "loom-pack-${GITHUB_REF_NAME}.tar.gz"
+          fi
