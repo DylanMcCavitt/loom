@@ -177,6 +177,23 @@ function collectRelativeFiles(root, current = root, files = []) {
   return files.sort();
 }
 
+
+const BUS_FIRST_HISTORY_FILE = "biters/references/lens-minimal-diff.md";
+
+function scanSkillContentPolicy(skillsRoots, errors) {
+  for (const skillsRoot of skillsRoots) {
+    const resolved = path.resolve(skillsRoot);
+    if (!existsSync(resolved)) continue;
+    for (const relativeFile of collectRelativeFiles(resolved)) {
+      const content = readFileSync(path.join(resolved, relativeFile), "utf8");
+      const displayPath = path.join(path.relative(process.cwd(), resolved), relativeFile);
+      if (content.includes("docs/harness/shared-nucleus-agents")) errors.push(`${displayPath}: must not reference docs/harness/shared-nucleus-agents; use nucleus/agents/shared-nucleus-agents`);
+      if (content.includes("bus-first") && relativeFile !== BUS_FIRST_HISTORY_FILE) errors.push(`${displayPath}: must not reference bus-first outside ${BUS_FIRST_HISTORY_FILE}`);
+      if (/LOO-\d+/u.test(content)) errors.push(`${displayPath}: must not reference Linear issue ids (LOO-*); keep tracker ids out of canonical skill source`);
+    }
+  }
+}
+
 function validateCompatSurface(skillsRoots, compatRoot, errors) {
   if (!existsSync(compatRoot) || !statSync(compatRoot).isDirectory()) {
     errors.push(`${path.relative(process.cwd(), compatRoot)}: expected rendered compatibility surface`);
@@ -282,6 +299,8 @@ export function validateSkills(options) {
   for (const skillsDir of skillsRoots) {
     checked += validateSkillsRoot(skillsDir, { errors, seenNames, globalNames });
   }
+
+  scanSkillContentPolicy([path.resolve(options.skillsDir)], errors);
 
   if (options.checkCompat) {
     validateCompatSurface(skillsRoots.map((dir) => path.resolve(dir)), path.resolve(options.compatSkillsDir), errors);

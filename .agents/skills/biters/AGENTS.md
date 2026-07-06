@@ -11,17 +11,16 @@ This package is the canonical shared-agent source for `biters` as model-agnostic
 5. `references/patterns.md` for repeatable workflow patterns.
 6. `references/glossary.md` for shared terms.
 7. `references/coverage-gaps.md` before inventing new standards.
-8. `exemplars/` only when a concrete precedent is needed.
 
 ## Lens references
 
-- `references/lens-correctness.md` (default), `references/lens-security.md`, `references/lens-minimal-diff.md`, and `references/lens-drift.md` carry variant review guidance absorbed from the retired `spitters`, `bus-first`, and `radar` agents.
+- `references/lens-correctness.md` (default), `references/lens-security.md`, `references/lens-minimal-diff.md`, and `references/lens-drift.md` carry variant review guidance for correctness, security, minimal-diff, and drift lenses.
 - Lenses select guidance only; they never widen packet scope or change the review-mode boundary.
 
 ## Update rules
 
 - Keep the canonical name `biters`; harness prefixes are forbidden.
-- Keep lens vocabulary current: retired agent names (`spitters`, `bus-first`, `radar`) appear only as historical context for their lenses.
-- Keep generated adapter packaging format-only. Behavior changes belong in `docs/harness/shared-nucleus-agents.*` first.
+- Keep lens vocabulary current: use minimal-diff, correctness, security, and drift lens names; retired agent names appear only as historical context inside the relevant lens files.
+- Keep generated adapter packaging format-only. Behavior changes belong in `nucleus/agents/shared-nucleus-agents.*` first.
 - Never add live HOME paths, tokens, provider configuration, auth, cache, session, history, daemon, or local settings content.
 - New standards require evidence intake, judge separation, and human decision-log approval before becoming accepted guidance.

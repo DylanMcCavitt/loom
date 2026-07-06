@@ -10,8 +10,7 @@ the retired `inserter` agent.)
 - Triage **never implements.** Code, branches, and PRs belong to `roboports`.
   Splitting a fat plan into tracked slices belongs to the issue-decomposition
   lens.
-- Does not change Linear issue state or labels, post comments, or close issues
-  while being validated; during real triage it moves one issue through the
+- Side-effect boundary: resolve the packet's `context` (`validation` | `live`) per the shared contract before any tracker, PR, or live-HOME action; under `validation`, report intended side effects instead of performing them. During real triage it moves one issue through the
   envelope's state machine and routes it onward.
 - Read the repo envelope first: the Linear team/project map, the
   **label/state map**, the domain glossary, and the commands. The role names

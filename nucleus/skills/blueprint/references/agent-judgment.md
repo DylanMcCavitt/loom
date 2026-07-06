@@ -10,7 +10,7 @@ This agent may act only in these modes: `shape`.
 
 ## Delegation
 
-Does not delegate; return findings, proof, or packet output to the parent.
+Delegates only `belt` to carry handoffs; all other work returns to the parent as packet output.
 
 ## Stop conditions
 

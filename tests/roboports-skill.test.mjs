@@ -31,9 +31,10 @@ test("roboports keeps the localized-fanout discipline", () => {
 });
 
 test("roboports cites the minimal-diff doctrine and routes to specialists", () => {
-  for (const route of ["tdd", "diagnose", "lab", "rocket-launch"]) {
+  for (const route of ["tdd", "lab", "rocket-launch"]) {
     assert.ok(skill.includes(`\`${route}\``), `${route} citation missing`);
   }
+  assert.match(skill, /debug-tools/u);
   assert.match(skill, /biters\s+minimal-diff lens/u);
   assert.match(skill, /biters drift lens/u);
   assert.match(skill, /blueprint's triage lens/u);
@@ -53,8 +54,8 @@ test("roboports does not own closeout and never silently closes", () => {
   assert.match(skill, /never silently closes the issue/u);
 });
 
-test("roboports does not create branches or PRs while being validated", () => {
-  assert.match(skill, /does not create branches, worktrees, or PRs while being validated/u);
+test("roboports resolves side-effect boundary before tracker or PR actions", () => {
+  assert.match(skill, /Side-effect boundary: resolve the packet's `context` \(`validation` \| `live`\)/u);
 });
 
 test("roboports documents hard rename without keeping old canonical path", () => {

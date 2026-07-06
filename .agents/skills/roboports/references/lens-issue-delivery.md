@@ -53,8 +53,11 @@ and a single lens.
 
 ## Specialist routing
 
-- Bug, failing check, exception, or regression: diagnose first — reproduce,
-  minimise, hypothesise — before patching.
+- Bug, failing check, exception, or regression: route to the operator-local
+  `debug-tools` skill's diagnose loop when installed (see
+  docs/skills/operator-local-manifest.md); otherwise run the
+  reproduce→minimise→hypothesise→instrument→fix→regression-test loop inline
+  before patching.
 - Proof-only evidence for implemented behavior: delegate to `lab` (the lab
   ui-proof lens for user-visible flows) before launch gates rely on it.
 - Drift between repo, tracker, and proof state: the biters drift lens checks

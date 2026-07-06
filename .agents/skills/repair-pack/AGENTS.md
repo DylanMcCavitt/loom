@@ -10,11 +10,10 @@ This package is the canonical shared-agent source for `repair-pack` as model-agn
 4. `references/patterns.md` for repeatable workflow patterns.
 5. `references/glossary.md` for shared terms.
 6. `references/coverage-gaps.md` before inventing new standards.
-7. `exemplars/` only when a concrete precedent is needed.
 
 ## Update rules
 
 - Keep the canonical name `repair-pack`; harness prefixes are forbidden.
-- Keep generated adapter packaging format-only. Behavior changes belong in `docs/harness/shared-nucleus-agents.*` first.
+- Keep generated adapter packaging format-only. Behavior changes belong in `nucleus/agents/shared-nucleus-agents.*` first.
 - Never add live HOME paths, tokens, provider configuration, auth, cache, session, history, daemon, or local settings content.
 - New standards require evidence intake, judge separation, and human decision-log approval before becoming accepted guidance.

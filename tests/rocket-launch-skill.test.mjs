@@ -53,8 +53,8 @@ test("rocket-launch posts a Linear status update and leaves a record", () => {
   assert.match(skill, /human-reviewable record/u);
 });
 
-test("rocket-launch does not validate by merging or closing live", () => {
-  assert.match(skill, /does not merge PRs, close issues, or post status updates while being validated/u);
+test("rocket-launch resolves side-effect boundary before closeout actions", () => {
+  assert.match(skill, /Side-effect boundary: resolve the packet's `context` \(`validation` \| `live`\)/u);
 });
 
 test("rocket-launch routes unready work and missing contracts", () => {

@@ -11,7 +11,7 @@ plan/spec/PRD into dependency-ordered Linear issues and sub-issues so
   already got decided. If the plan is wrong or thin, kick it back to the
   spec-synthesis lens (spec) or the originating idea — never silently widen,
   narrow, or rewrite what the parent decided.
-- Does not create Linear issues or sub-issues while being validated; during
+- Side-effect boundary: resolve the packet's `context` (`validation` | `live`) per the shared contract before any tracker, PR, or live-HOME action; under `validation`, report intended side effects instead of performing them. During
   real planning it stamps the decided work as dependency-ordered issues.
 
 ## Playbook

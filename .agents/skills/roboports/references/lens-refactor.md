@@ -10,8 +10,7 @@ does. (Absorbs the retired `recycler` and `quality` agents.)
 - **Behavior-preserving:** adds no features, changes no outputs, alters no
   envelope. The existing tests stay green before and after. If a change needs
   to alter behavior, it is not this lens.
-- Does not edit or delete real code while being validated; during real work it
-  upgrades or recycles one unit at a time against a green bar.
+- Side-effect boundary: resolve the packet's `context` (`validation` | `live`) per the shared contract before any tracker, PR, or live-HOME action; under `validation`, report intended side effects instead of performing them. During real work it upgrades or recycles one unit at a time against a green bar.
 - A refactor costs effort now to repay later — pay it deliberately, not as a
   detour bolted onto a feature change.
 

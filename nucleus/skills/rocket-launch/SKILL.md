@@ -7,7 +7,7 @@ description: Ship a ready change off-planet by enforcing the launch gates, mergi
 
 Ship a ready change off-planet. Enforce the launch gates, merge the PR, and let the bridge close the Linear issue, leaving a record a human can audit.
 
-This skill does not merge PRs, close issues, or post status updates while being validated. During real closeout it owns the ship step for one ready change: gate, merge, and confirm the bridge closed the issue.
+Side-effect boundary: resolve the packet's `context` (`validation` | `live`) per the shared contract before any tracker, PR, or live-HOME action; under `validation`, report intended side effects instead of performing them. During real closeout it owns the ship step for one ready change: gate, merge, and confirm the bridge closed the issue.
 
 ## The bridge
 

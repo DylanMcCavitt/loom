@@ -38,7 +38,7 @@ Use when fixes exactly one concrete review/proof finding from a fresh compact pa
 ## Standards or Rules
 
 - Required input packet fields: `file`, `symbol`, `scope`, `concrete risk`, `minimal expected fix`, `proof check`, `rule/source id`, `non-goals`, `allowed files`.
-- Required output packet fields: `changed files`, `proof rerun`, `bus-first recheck need`, `remaining risk`, `blocked reason`.
+- Required output packet fields: `changed files`, `proof rerun`, `minimal-diff recheck need`, `remaining risk`, `blocked reason`.
 - Non-goals:
 - Do not accept broad work
 - Do not fix adjacent cleanup
@@ -52,4 +52,4 @@ Report mode, target surface, loaded references, rule IDs, proof run, and unresol
 
 ## Skill Integrity
 
-This package is the canonical repo-local shared-agent package source for LOO-105. Update this package and the shared contract together; plugin bridge output must be rendered from this source, not hand-edited.
+This package is the canonical repo-local shared-agent package source. Update this package and the shared contract together; plugin bridge output must be rendered from this source, not hand-edited.

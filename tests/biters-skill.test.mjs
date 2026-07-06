@@ -31,10 +31,11 @@ test("biters lenses select guidance only and never widen scope", () => {
   assert.match(skill, /never widen packet scope/u);
 });
 
-test("biters records the absorbed retired reviewer agents", () => {
+test("biters records absorbed retired reviewer agents in lens guidance", () => {
+  const minimalDiffLens = readFileSync(new URL("../nucleus/skills/biters/references/lens-minimal-diff.md", import.meta.url), "utf8");
   assert.match(skill, /absorbed from the retired `spitters` agent/u);
-  assert.match(skill, /absorbed from the retired `bus-first` agent/u);
   assert.match(skill, /absorbed from the retired `radar` agent/u);
+  assert.match(minimalDiffLens, /retired `bus-first` agent/u);
 });
 
 test("biters reports findings by severity with a smallest fix", () => {

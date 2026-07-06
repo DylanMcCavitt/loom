@@ -27,7 +27,7 @@ The input packet may carry a `lens` field. A named lens loads `references/lens-<
 
 - `correctness` (default): general adversarial review — correctness bugs, regressions, maintainability, scope creep, missing tests. Loads `references/lens-correctness.md`.
 - `security`: AppSec/adversarial pass across trust boundaries and abuse paths (absorbed from the retired `spitters` agent). Loads `references/lens-security.md`.
-- `minimal-diff`: over-engineering and needless-abstraction tighten pass (absorbed from the retired `bus-first` agent). Loads `references/lens-minimal-diff.md`.
+- `minimal-diff`: over-engineering and needless-abstraction tighten pass. Loads `references/lens-minimal-diff.md`.
 - `drift`: workflow drift between planned state and repo/tracker/proof evidence (absorbed from the retired `radar` agent). Loads `references/lens-drift.md`.
 
 ## Decision Authority
@@ -65,4 +65,4 @@ Report mode, lens, target surface, loaded references, rule IDs, proof run, and u
 
 ## Skill Integrity
 
-This package is the canonical repo-local shared-agent package source for LOO-105. Update this package and the shared contract together; plugin bridge output must be rendered from this source, not hand-edited.
+This package is the canonical repo-local shared-agent package source. Update this package and the shared contract together; plugin bridge output must be rendered from this source, not hand-edited.

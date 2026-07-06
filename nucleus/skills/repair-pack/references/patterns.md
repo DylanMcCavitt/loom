@@ -14,6 +14,6 @@ Return these fields when applicable:
 
 - changed files
 - proof rerun
-- bus-first recheck need
+- minimal-diff recheck need
 - remaining risk
 - blocked reason

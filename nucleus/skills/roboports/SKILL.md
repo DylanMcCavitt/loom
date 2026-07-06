@@ -36,7 +36,7 @@ Available lenses:
 
 The rest of this entrypoint describes the default issue-delivery lens.
 
-This skill does not create branches, worktrees, or PRs while being validated.
+Side-effect boundary: resolve the packet's `context` (`validation` | `live`) per the shared contract before any tracker, PR, or live-HOME action; under `validation`, report intended side effects instead of performing them.
 During real work it owns one issue from context-gathering to a review-ready PR.
 
 ## The bridge
@@ -81,7 +81,7 @@ write scope** and a single lens.
   minimal-diff lens reviews against it): reuse before you write, ship the
   minimum that works, never cut validation/security/error-handling/accessibility.
 - Use `tdd` when the work is test-first / red-green-refactor.
-- Use `diagnose` when the issue is a bug, failing check, exception, or regression.
+- For bug, failing check, exception, or regression: route to the operator-local `debug-tools` skill's diagnose loop when installed (see docs/skills/operator-local-manifest.md); otherwise run the reproduce→minimise→hypothesise→instrument→fix→regression-test loop inline.
 - Route triage — classifying, prioritizing, or routing incoming work — to
   blueprint's triage lens. `roboports` only builds an already-tracked, ready
   issue; it does not triage.
