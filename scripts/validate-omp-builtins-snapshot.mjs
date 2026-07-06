@@ -5,7 +5,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { scanHarnessSafety } from "./lib/harness-safety.mjs";
 import { ompBuiltinsSnapshotRoot } from "./lib/layout.mjs";
-import { EXPECTED_AGENTS } from "./lib/omp-package-contract.mjs";
+import { EXPECTED_AGENTS, findMachineSpecificPathViolations } from "./lib/omp-package-contract.mjs";
 
 const USAGE = "Usage: node scripts/validate-omp-builtins-snapshot.mjs [--snapshot-dir <path>] [--check-live]";
 const DEFAULT_SNAPSHOT_DIR = ompBuiltinsSnapshotRoot;
@@ -78,6 +78,18 @@ function walkFiles(root) {
     }
   }
   return result.sort();
+}
+
+function validateNoMachineSpecificPaths(snapshotDir, errors) {
+  for (const filePath of walkFiles(snapshotDir)) {
+    if (!filePath.endsWith(".json")) continue;
+    const relative = path.relative(snapshotDir, filePath).split(path.sep).join("/");
+    const text = readFileSync(filePath, "utf8");
+    const violations = findMachineSpecificPathViolations(text);
+    if (violations.length === 0) continue;
+    const prefixes = [...new Set(violations.map(violation => violation.prefix))].join(", ");
+    errors.push(`${relative}: machine-specific path prefix detected (${prefixes})`);
+  }
 }
 
 function validateNoPrivateOrSecretText(snapshotDir, errors) {
@@ -306,6 +318,7 @@ try {
   validateCommands(commands, errors);
   validatePortabilityMatrix(commands, portabilityMatrix, errors);
   validateResourceIndex(resources, errors);
+  validateNoMachineSpecificPaths(snapshotDir, errors);
   validateNoPrivateOrSecretText(snapshotDir, errors);
   if (options.checkLive) runLiveDriftCheck(errors);
 

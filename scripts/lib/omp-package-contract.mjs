@@ -30,6 +30,58 @@ export const PACKAGE_LAYOUT = {
 
 // Marker preceding the builtin slash-command array inside `commandRegistry`.
 export const COMMAND_REGISTRY_MARKER = "const BUILTIN_SLASH_COMMAND_REGISTRY";
+// Portable snapshot sentinel for discovered package installs (tmp/bun-global/home paths).
+export const SNAPSHOT_EPHEMERAL_PACKAGE_ROOT = "<ephemeral-package-root>/package";
+
+// Machine-specific prefixes that must never appear in checked-in snapshot JSON.
+export const MACHINE_SPECIFIC_PATH_PREFIXES = Object.freeze([
+  "/tmp/",
+  "/private/tmp/",
+  "/Users/",
+  "/home/",
+  "~/.bun",
+  "C:\\",
+]);
+
+export function portablePackageSourcePaths() {
+  return {
+    packageRoot: SNAPSHOT_EPHEMERAL_PACKAGE_ROOT,
+    packageJsonPath: `${SNAPSHOT_EPHEMERAL_PACKAGE_ROOT}/package.json`,
+  };
+}
+
+export function portablePathUnderPackage(packageRoot, absolutePath) {
+  const resolvedRoot = path.resolve(packageRoot);
+  const resolvedPath = path.resolve(absolutePath);
+  const relative = path.relative(resolvedRoot, resolvedPath).split(path.sep).join("/");
+  if (!relative || relative.startsWith("..")) {
+    throw new Error(`snapshot path ${absolutePath} is outside package root ${packageRoot}`);
+  }
+  return `${SNAPSHOT_EPHEMERAL_PACKAGE_ROOT}/${relative}`;
+}
+
+export function findMachineSpecificPathViolations(text) {
+  const payload = typeof text === "string" ? text : JSON.stringify(text);
+  const violations = [];
+  for (const prefix of MACHINE_SPECIFIC_PATH_PREFIXES) {
+    let start = 0;
+    while (start < payload.length) {
+      const index = payload.indexOf(prefix, start);
+      if (index === -1) break;
+      violations.push({ prefix, index });
+      start = index + prefix.length;
+    }
+  }
+  return violations;
+}
+
+export function assertPortableSnapshotText(label, text) {
+  const violations = findMachineSpecificPathViolations(text);
+  if (violations.length === 0) return;
+  const prefixes = [...new Set(violations.map(violation => violation.prefix))].join(", ");
+  throw new Error(`${label}: refuses to emit machine-specific path prefixes (${prefixes})`);
+}
+
 
 export function contractStaleError(missing) {
   return new Error(

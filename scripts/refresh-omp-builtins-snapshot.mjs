@@ -12,11 +12,21 @@ import {
   writeFileSync,
 } from "node:fs";
 import { createHash } from "node:crypto";
-import { homedir, tmpdir } from "node:os";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { parseFrontmatter } from "./lib/frontmatter.mjs";
 import { ompBuiltinsSnapshotRoot } from "./lib/layout.mjs";
-import { COMMAND_REGISTRY_MARKER, EXPECTED_AGENTS, PACKAGE_LAYOUT, assertPackageLayout, assertRegistryMarker, discoverPackageRoot } from "./lib/omp-package-contract.mjs";
+import {
+  COMMAND_REGISTRY_MARKER,
+  EXPECTED_AGENTS,
+  PACKAGE_LAYOUT,
+  assertPackageLayout,
+  assertPortableSnapshotText,
+  assertRegistryMarker,
+  discoverPackageRoot,
+  portablePackageSourcePaths,
+  portablePathUnderPackage,
+} from "./lib/omp-package-contract.mjs";
 
 const USAGE = "Usage: node scripts/refresh-omp-builtins-snapshot.mjs [--write] [--snapshot-dir <path>]";
 const DEFAULT_SNAPSHOT_DIR = ompBuiltinsSnapshotRoot;
@@ -67,12 +77,10 @@ function stableJson(value) {
   return `${JSON.stringify(value, null, 2)}\n`;
 }
 
-function homeRelative(filePath) {
-  const home = homedir();
-  const resolved = path.resolve(filePath);
-  if (resolved === home) return "~";
-  if (resolved.startsWith(`${home}${path.sep}`)) return `~/${path.relative(home, resolved).split(path.sep).join("/")}`;
-  return resolved.split(path.sep).join("/");
+function portableStableJson(label, value) {
+  const text = stableJson(value);
+  assertPortableSnapshotText(label, text);
+  return text;
 }
 
 function assertSafeSnapshotDir(snapshotDir) {
@@ -99,8 +107,7 @@ function readPackageSource(packageRoot, cliVersionText) {
     packageName: pkg.name,
     packageVersion: pkg.version,
     cliVersion: cliVersionText,
-    packageRoot: homeRelative(packageRoot),
-    packageJsonPath: homeRelative(packageJsonPath),
+    ...portablePackageSourcePaths(),
   };
 }
 
@@ -297,7 +304,7 @@ function commandPortability(hasHandle, hasHandleTui) {
   return PORTABILITY_CLASSES.tuiOnly;
 }
 
-function buildCommandIndex(layout, source) {
+function buildCommandIndex(layout, source, packageRoot) {
   const registryPath = layout.commandRegistry;
   const availablePath = layout.availableCommands;
   const acpPath = layout.acpBuiltins;
@@ -340,9 +347,9 @@ function buildCommandIndex(layout, source) {
       { sourceType: "file", portabilityClass: "portable-file-command" },
     ],
     sourceFiles: [
-      homeRelative(registryPath),
-      homeRelative(availablePath),
-      homeRelative(acpPath),
+      portablePathUnderPackage(packageRoot, registryPath),
+      portablePathUnderPackage(packageRoot, availablePath),
+      portablePathUnderPackage(packageRoot, acpPath),
     ],
     counts: {
       total: commands.length,
@@ -450,7 +457,7 @@ function buildResourceIndex(layout, source, agents) {
 
 function writeSnapshot(snapshotDir, source, agents, commands, resources) {
   mkdirSync(snapshotDir, { recursive: true });
-  writeFileSync(path.join(snapshotDir, "source.json"), stableJson({
+  writeFileSync(path.join(snapshotDir, "source.json"), portableStableJson("source.json", {
     schemaVersion: 1,
     generatedForIssue: 39,
     source,
@@ -459,8 +466,8 @@ function writeSnapshot(snapshotDir, source, agents, commands, resources) {
     refreshCommand: "node scripts/refresh-omp-builtins-snapshot.mjs --write",
     dryRunCommand: "node scripts/refresh-omp-builtins-snapshot.mjs",
   }));
-  writeFileSync(path.join(snapshotDir, "commands.json"), stableJson(commands));
-  writeFileSync(path.join(snapshotDir, "resource-index.json"), stableJson(resources));
+  writeFileSync(path.join(snapshotDir, "commands.json"), portableStableJson("commands.json", commands));
+  writeFileSync(path.join(snapshotDir, "resource-index.json"), portableStableJson("resource-index.json", resources));
 }
 
 function compareSnapshot(snapshotDir, generated) {
@@ -503,9 +510,9 @@ function main() {
       throw new Error(`OMP bundled agent export missing expected agents: ${missingAgents.join(", ")}`);
     }
     const layout = assertPackageLayout(packageRoot);
-    const commands = buildCommandIndex(layout, source);
+    const commands = buildCommandIndex(layout, source, packageRoot);
     const resources = buildResourceIndex(layout, source, agents);
-    const sourceJson = stableJson({
+    const sourceJson = portableStableJson("source.json", {
       schemaVersion: 1,
       generatedForIssue: 39,
       source,
@@ -514,8 +521,8 @@ function main() {
       refreshCommand: "node scripts/refresh-omp-builtins-snapshot.mjs --write",
       dryRunCommand: "node scripts/refresh-omp-builtins-snapshot.mjs",
     });
-    const commandsJson = stableJson(commands);
-    const resourceIndexJson = stableJson(resources);
+    const commandsJson = portableStableJson("commands.json", commands);
+    const resourceIndexJson = portableStableJson("resource-index.json", resources);
 
     if (options.write) {
       copyAgents(targetDir, snapshotDir);

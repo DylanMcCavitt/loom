@@ -144,6 +144,7 @@ npm run check
 | Map seed skill | `node --test tests/map-seed-skill.test.mjs` |
 | Nucleus docs drift | `node --test tests/nucleus-docs-drift.test.mjs` |
 | OMP built-ins snapshot | `node --test tests/omp-builtins-snapshot.test.mjs` |
+| OMP built-ins snapshot portability | `node --test tests/omp-builtins-snapshot-portability.test.mjs` |
 | OMP contracts | `node --test tests/omp-contracts.test.mjs` |
 | Plugin bridge | `node --test tests/plugin-bridge.test.mjs` |
 | Prospect skill | `node --test tests/prospect-skill.test.mjs` |
