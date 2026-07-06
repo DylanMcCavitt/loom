@@ -103,6 +103,7 @@ npm run check
 | OMP snapshot live compare | `node scripts/validate-omp-builtins-snapshot.mjs --check-live` | Compares the snapshot against installed OMP metadata. |
 | OMP snapshot refresh | `node scripts/refresh-omp-builtins-snapshot.mjs` | Dry-runs an OMP built-ins refresh. |
 | OMP snapshot write refresh | `node scripts/refresh-omp-builtins-snapshot.mjs --write` | Regenerates the checked-in OMP snapshot after review. |
+| OMP snapshot drift radar | `node scripts/radar-snapshot-drift.mjs` | Advisory check: compares the pinned OMP package version in the snapshot against npm `latest` (always exits 0). |
 | Codex plan | `node scripts/validate-codex-adapter-plan.mjs` | Validates Codex adapter plan data, templates, mappings, and forbidden keys. |
 | Claude plan | `node scripts/validate-claude-adapter-plan.mjs` | Validates Claude adapter plan data, templates, mappings, and unsafe surfaces. |
 | Skills | `node scripts/validate-skills.mjs` | Validates repo skill shape, frontmatter, naming, and secret-like content. |
