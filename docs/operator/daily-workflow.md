@@ -4,6 +4,11 @@ Use this page when you are operating the workflow, not changing its internals.
 
 ## Start a project in a repo
 
+On a **fresh VM**, bootstrap the per-machine Factory Nucleus envelope first —
+see [envelope-bootstrap.md](./envelope-bootstrap.md) (`init-envelope` →
+`bind-tracker` → `doctor` / `scan` verify; envelope stays under `~/.loom/`,
+never committed).
+
 1. Inspect the repo without writing to it:
 
    ```sh
