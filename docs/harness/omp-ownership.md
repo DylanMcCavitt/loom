@@ -22,8 +22,8 @@ This document is the operator-facing ownership matrix for OMP-sourced surfaces i
 Runtime apply status is still reported separately by the renderer:
 
 - `user-file`: a live path exists and is not known to be loom-owned. The renderer skips it.
-- `repo-mirror`: a live symlink points into this repo. Claiming or retargeting it requires the explicit OMP repo-owned approval gate.
-- `marker-owned`: loom previously wrote the file and recorded the marker manifest. Drift is reported before any replacement.
+- `repo-mirror`: a live symlink points into this repo — a legacy state from pre-copy-mode installs. New applies never create these; converting or retargeting one requires the explicit OMP repo-owned approval gate. Existing mirrors can be converted to operator-owned copies (see the overlay-split conversion in `docs/operator/install-update.md`).
+- `marker-owned`: loom previously wrote the file (as a copy) and recorded the marker manifest. Live edits after apply are operator-owned; drift from the tracked default is expected and reported before any replacement.
 
 ## Operator decision points
 
