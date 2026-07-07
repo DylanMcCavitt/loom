@@ -43,6 +43,8 @@ never committed).
 - Proof only: `lab` (smoke-proof lens) collects evidence without expanding scope.
 - Ready to merge: `rocket-launch` enforces launch gates.
 
+Before step zero of any agent brief or loop iteration, run `npm run guard:worktree` from the intended checkout: a primary-checkout/non-default-branch failure means the agent must move into a linked worktree, a primary-dirty failure means the primary checkout has uncommitted changes that could bleed into linked worktrees, and a duplicate-branch failure means one issue branch is checked out in more than one worktree and one checkout must be removed or switched.
+
 ## Tracker picker rule
 
 Every repo starts with `tracker.provider: none`. The agent must ask which tracker

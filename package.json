@@ -11,6 +11,7 @@
     "bench": "node scripts/bench.mjs",
     "factory": "node scripts/factory-nucleus/factory.mjs",
     "doctor": "node scripts/doctor.mjs",
+    "guard:worktree": "node scripts/worktree-guard.mjs",
     "choose-tracker": "node scripts/factory-nucleus/factory.mjs choose-tracker",
     "render-nucleus": "node scripts/render-nucleus.mjs",
     "render": "node scripts/render-skills-compat.mjs",

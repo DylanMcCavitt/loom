@@ -141,6 +141,7 @@ npm run check
 | Shared nucleus agents | `node --test tests/shared-nucleus-agents.test.mjs` |
 | Skill validation | `node --test tests/skill-validation.test.mjs` |
 | Space age skill | `node --test tests/space-age-skill.test.mjs` |
+| Worktree guard | `node --test tests/worktree-guard.test.mjs` |
 
 ## Links
 
