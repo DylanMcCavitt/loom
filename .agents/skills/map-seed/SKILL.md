@@ -1,6 +1,10 @@
 ---
 name: map-seed
 description: Plans around fixed constraints, runs a fast throwaway prototype, retros what worked versus what didn't, then restarts carrying the learnings instead of polishing a doomed first run. Use when the user wants to prototype or de-risk a design before committing, work out the kinks under fixed or awkward constraints, or run a quick throwaway then iterate.
+metadata:
+  version: "0.1.0"
+  changelog: "0.1.0 - initial public release"
+
 ---
 
 # Map Seed

@@ -36,6 +36,25 @@ test("parses inline array values", () => {
   assert.deepEqual(parsed.values.tools, ["Read", "Grep", "Bash"]);
 });
 
+test("parses nested metadata string maps", () => {
+  const parsed = parseFrontmatter([
+    "---",
+    "name: tester",
+    "metadata:",
+    "  version: \"0.1.0\"",
+    "  changelog: \"0.1.0 - initial public release\"",
+    "---",
+    "# Body",
+    "",
+  ].join("\n"));
+
+  assert.deepEqual(parsed.values.metadata, {
+    version: "0.1.0",
+    changelog: "0.1.0 - initial public release",
+  });
+  assert.deepEqual(parsed.invalidLines, []);
+});
+
 test("parses block scalar values without treating continuation lines as keys", () => {
   const parsed = parseFrontmatter([
     "---",

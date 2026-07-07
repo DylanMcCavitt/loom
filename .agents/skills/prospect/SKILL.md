@@ -1,6 +1,10 @@
 ---
 name: prospect
 description: Lands a brand-new idea, feature, or initiative as tracked planning work and creates its Linear home before any spec or issues exist. Use when the user is starting a new idea, feature, or initiative from scratch and wants it captured as planning work before a spec or issues exist.
+metadata:
+  version: "0.1.0"
+  changelog: "0.1.0 - initial public release"
+
 ---
 
 # Prospect

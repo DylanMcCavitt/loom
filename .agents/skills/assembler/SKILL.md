@@ -1,6 +1,10 @@
 ---
 name: assembler
 description: Sets a repository up for the Factorio workflow kit or refreshes its envelope by reading the repo and generating the repo-local envelope every other kit skill binds to, plus the harness wiring and repo-specific skills and agents. Use when setting up a repo for the kit or refreshing its Linear team/project/label map, domain glossary, build/test/lint commands, PR/issue/doc templates, or repo-specific skills and agents.
+metadata:
+  version: "0.1.0"
+  changelog: "0.1.0 - initial public release"
+
 ---
 
 # Assembler

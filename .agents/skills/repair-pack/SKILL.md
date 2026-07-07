@@ -1,6 +1,10 @@
 ---
 name: repair-pack
 description: Use when fixing exactly one concrete review or proof finding from a fresh compact packet.
+metadata:
+  version: "0.1.0"
+  changelog: "0.1.0 - initial public release"
+
 ---
 
 # Repair Pack

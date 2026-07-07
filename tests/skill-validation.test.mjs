@@ -49,6 +49,13 @@ test("accepts valid one-level skills with concrete triggers", () => {
   assert.match(result.stdout, /Skill validation passed: 1 skill checked/u);
 });
 
+test("rejects missing and invalid skill metadata versions", () => {
+  const result = runValidation("bad-version");
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /missing metadata\.version/u);
+  assert.match(result.stderr, /metadata\.version must be valid semver/u);
+});
+
 test("rejects missing frontmatter", () => {
   const result = runValidation("bad-missing-frontmatter");
   assert.notEqual(result.status, 0);

@@ -1,6 +1,10 @@
 ---
 name: belt
 description: Handoff carrier that moves durable context between agents or threads with concise state, proof, risks, and next actions, covering handoff, thread-control, and resume flows through lenses. Use when writing a handoff, deciding whether to continue or start a new thread, or resuming a repo task from durable state.
+metadata:
+  version: "0.1.0"
+  changelog: "0.1.0 - initial public release"
+
 ---
 
 # Belt

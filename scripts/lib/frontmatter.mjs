@@ -16,6 +16,39 @@ function parseInlineValue(rawValue) {
   return stripQuotes(value);
 }
 
+function collectIndentedLines(lines, startIndex, baseIndent) {
+  const parts = [];
+  let continuation = startIndex;
+  for (; continuation < lines.length; continuation += 1) {
+    const next = lines[continuation];
+    if (!next.trim()) {
+      parts.push("");
+      continue;
+    }
+    if (next.length - next.trimStart().length <= baseIndent) break;
+    parts.push(next);
+  }
+  return { parts, continuation };
+}
+
+function parseNestedStringMap(lines, startIndex, baseIndent) {
+  const { parts, continuation } = collectIndentedLines(lines, startIndex, baseIndent);
+  const values = {};
+  const invalidLines = [];
+  for (let offset = 0; offset < parts.length; offset += 1) {
+    const rawLine = parts[offset];
+    if (!rawLine.trim()) continue;
+    const separator = rawLine.indexOf(":");
+    const key = separator === -1 ? "" : rawLine.slice(0, separator).trim();
+    const rawValue = separator === -1 ? "" : rawLine.slice(separator + 1).trim();
+    if (!/^[A-Za-z][A-Za-z0-9_-]*$/u.test(key) || rawValue === "" || /^[|>][+-]?$/u.test(rawValue)) {
+      invalidLines.push({ line: startIndex + offset + 2, text: rawLine });
+      continue;
+    }
+    values[key] = parseInlineValue(rawValue);
+  }
+  return { value: parts.some((line) => line.trim()) ? values : "", continuation, invalidLines };
+}
 export function parseFrontmatter(content) {
   const open = /^---\r?\n/u.exec(content);
   if (!open) return null;
@@ -52,21 +85,17 @@ export function parseFrontmatter(content) {
     }
 
     keys.push(key);
-    if (/^[|>][+-]?$/u.test(rawValue) || rawValue === "") {
+    if (/^[|>][+-]?$/u.test(rawValue)) {
       const baseIndent = rawLine.length - rawLine.trimStart().length;
-      const parts = [];
-      let continuation = index + 1;
-      for (; continuation < lines.length; continuation += 1) {
-        const next = lines[continuation];
-        if (!next.trim()) {
-          parts.push("");
-          continue;
-        }
-        if (next.length - next.trimStart().length <= baseIndent) break;
-        parts.push(next.trim());
-      }
-      values[key] = parts.join("\n").trim();
+      const { parts, continuation } = collectIndentedLines(lines, index + 1, baseIndent);
+      values[key] = parts.map((part) => part.trim()).join("\n").trim();
       index = continuation - 1;
+    } else if (rawValue === "") {
+      const baseIndent = rawLine.length - rawLine.trimStart().length;
+      const nested = parseNestedStringMap(lines, index + 1, baseIndent);
+      values[key] = nested.value;
+      invalidLines.push(...nested.invalidLines);
+      index = nested.continuation - 1;
     } else {
       values[key] = parseInlineValue(rawValue);
     }

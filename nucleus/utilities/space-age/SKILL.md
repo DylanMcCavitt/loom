@@ -1,6 +1,10 @@
 ---
 name: space-age
 description: Coordinates delivery beyond a single repo or environment — promoting an artifact through a CI/CD pipeline planet by planet and landing cross-repo changes in dependency order, reusing the per-hop launch gates. Use when work crosses one repo or one environment: CI/CD pipelines, releasing/promoting through environments, or coordinating a change across multiple repos/services.
+metadata:
+  version: "0.1.0"
+  changelog: "0.1.0 - initial public release"
+
 ---
 
 # Space Age

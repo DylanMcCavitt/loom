@@ -1,6 +1,10 @@
 ---
 name: blueprint
 description: The shape owner. Turns current context into a PRD/spec with acceptance criteria, non-goals, and a proof plan, and covers issue decomposition, architecture seams, research spikes, and tracker triage through lenses. Owns the kit's reusable PR, issue, project-doc, and PRD templates. Use for any shape-mode work - specs, breaking work into issues, planning structure, resolving unknowns, or triaging incoming issues.
+metadata:
+  version: "0.1.0"
+  changelog: "0.1.0 - initial public release"
+
 ---
 
 # Blueprint

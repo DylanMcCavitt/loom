@@ -75,6 +75,34 @@ function containsConcreteUseWhen(description) {
   return /\bUse (?:when|for)\b\s+\S+/u.test(description);
 }
 
+const SEMVER_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/u;
+
+function validateSkillMetadata(relSkillPath, metadata, errors) {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    errors.push(`${relSkillPath}: missing frontmatter metadata string map`);
+    return;
+  }
+
+  for (const [key, value] of Object.entries(metadata)) {
+    if (typeof value !== "string") {
+      errors.push(`${relSkillPath}: metadata.${key} must be a string`);
+    }
+  }
+
+  const version = typeof metadata.version === "string" ? metadata.version.trim() : "";
+  const changelog = typeof metadata.changelog === "string" ? metadata.changelog.trim() : "";
+  if (!version) {
+    errors.push(`${relSkillPath}: missing metadata.version`);
+  } else if (!SEMVER_PATTERN.test(version)) {
+    errors.push(`${relSkillPath}: metadata.version must be valid semver`);
+  }
+  if (!changelog) {
+    errors.push(`${relSkillPath}: missing metadata.changelog`);
+  } else if (version && !changelog.startsWith(`${version} - `)) {
+    errors.push(`${relSkillPath}: metadata.changelog must start with '${version} - '`);
+  }
+}
+
 function scanSecrets(filePath, content, errors) {
   const findings = scanHarnessSafety(filePath, content, { privateHome: false });
   for (const finding of findings) errors.push(finding.replace(/API-key\/token\/secret-looking text/u, "API-key/token-looking text"));
@@ -264,6 +292,7 @@ function validateSkillsRoot(skillsDir, { errors, seenNames, globalNames }) {
 
     const name = frontmatter.get("name")?.trim();
     const description = frontmatter.get("description")?.trim();
+    const metadata = frontmatter.get("metadata");
     if (!name) errors.push(`${relSkillPath}: missing frontmatter name`);
     if (!description) errors.push(`${relSkillPath}: missing frontmatter description`);
     if (name && name !== entry.name) {
@@ -272,6 +301,7 @@ function validateSkillsRoot(skillsDir, { errors, seenNames, globalNames }) {
     if (description && !containsConcreteUseWhen(description)) {
       errors.push(`${relSkillPath}: description must contain concrete 'Use when ...' trigger language`);
     }
+    validateSkillMetadata(relSkillPath, metadata, errors);
     if (name) {
       const previous = seenNames.get(name);
       if (previous) {

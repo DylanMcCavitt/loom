@@ -1,6 +1,10 @@
 ---
 name: roboports
 description: The implement coordinator. Runs one tracked Linear issue end-to-end as code — one issue to one branch/worktree to one PR — with localized subagent fanout and a minimal diff, and covers behavior-preserving refactors and measured performance work through lenses. Use when the user asks to start, continue, or ship one tracked issue, refactor without changing behavior, or optimize a proven bottleneck.
+metadata:
+  version: "0.1.0"
+  changelog: "0.1.0 - initial public release"
+
 ---
 
 # Roboports
