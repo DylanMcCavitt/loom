@@ -130,6 +130,7 @@ npm run check
 | Render harness nucleus | `node --test tests/render-harness-nucleus.test.mjs` |
 | Roboports skill | `node --test tests/roboports-skill.test.mjs` |
 | Rocket launch skill | `node --test tests/rocket-launch-skill.test.mjs` |
+| Retro packet | `node --test tests/retro-packet.test.mjs` |
 | Runtime adapter extension | `node --test tests/runtime-adapter-extension.test.mjs` |
 | Runtime adapter | `node --test tests/runtime-adapter.test.mjs` |
 | Shared agent contract validator | `node --test tests/shared-agent-contract-validator.test.mjs` |

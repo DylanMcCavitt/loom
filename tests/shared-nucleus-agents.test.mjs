@@ -278,41 +278,25 @@ test("stable rules and automation policy separate deterministic checks from judg
   assert.ok(contract.automationPolicy.evals.some((entry) => /holdout/u.test(entry)));
 });
 
-test("evidence intake separates collector, judge, and human review", () => {
-  assert.match(contract.evidenceIntake.collector, /without scoring or proposing rules/u);
-  assert.deepEqual(contract.evidenceIntake.collectorWorkflow.inputs, ["messages", "links", "files", "nearby context"]);
-  assert.ok(contract.evidenceIntake.collectorWorkflow.forbiddenActions.includes("score candidates"));
-  assert.ok(contract.evidenceIntake.collectorWorkflow.forbiddenActions.includes("propose rules"));
-  assert.match(contract.evidenceIntake.judge, /separates facts\/inferences\/open questions/u);
-  assert.equal(contract.evidenceIntake.judgeWorkflow.validatesSources, true);
-  assert.deepEqual(contract.evidenceIntake.judgeWorkflow.separates, ["facts", "inferences", "open questions"]);
-  assert.equal(contract.evidenceIntake.judgeWorkflow.candidateStatus, "pending");
-  assert.ok(contract.evidenceIntake.judgeWorkflow.forbiddenActions.includes("turn candidates into rules"));
-  assert.match(contract.evidenceIntake.humanReview, /rule, reference, exemplar, lint rule, eval, coverage gap, or no change/u);
-  assert.deepEqual(contract.evidenceIntake.humanReviewChoices, [
-    "rule",
-    "reference",
-    "exemplar",
-    "lint rule",
-    "eval",
-    "coverage gap",
-    "no change",
+test("evidence intake describes the practiced retro-packet core", () => {
+  assert.equal(contract.evidenceIntake.status, "practiced-core");
+  assert.equal(contract.evidenceIntake.candidatePacketHome, "nucleus/retro/pr-{number}/");
+  assert.match(contract.evidenceIntake.homeRationale, /not accepted skill guidance/u);
+  assert.deepEqual(contract.evidenceIntake.packetKinds, [
+    "decision-log",
+    "exemplar-candidate",
+    "rule-candidate",
+    "coverage-gap-candidate",
   ]);
-  for (const requirement of ["stable evidence", "explicit scope", "rationale", "exceptions", "approver"]) {
+  for (const field of ["schemaVersion", "kind", "status", "sourcePr", "scope", "rationale", "evidence", "targetFile", "checks", "humanReview"]) {
+    assert.ok(contract.evidenceIntake.packetRequiredFields.common.includes(field), `${field} must be required`);
+  }
+  for (const requirement of ["stable evidence", "explicit scope", "rationale", "exceptions", "human PR approval"]) {
     assert.ok(contract.evidenceIntake.acceptedChangeRequirements.includes(requirement), `${requirement} must be required`);
   }
-  assert.deepEqual(contract.evidenceIntake.decisionLogFormat.requiredFields, [
-    "scope",
-    "rationale",
-    "evidence",
-    "exceptions",
-    "approver",
-    "targetFile",
-    "checks",
-  ]);
-  for (const destination of ["rule", "reference", "exemplar", "lintRule", "eval", "coverageGap", "noChange"]) {
-    assert.ok(contract.evidenceIntake.destinationPolicy[destination], `${destination} must have a destination policy`);
-  }
+  assert.match(contract.evidenceIntake.humanReviewGate, /retro PR is the HITL gate/u);
+  assert.equal(contract.evidenceIntake.aspirationalDesign.status, "aspirational-not-enforced");
+  assert.match(contract.evidenceIntake.aspirationalDesign.summary, /no validator or tool treats that machine as live/u);
 });
 
 test("every agent has bounded packet-level contract fields and routed modes", () => {
@@ -377,7 +361,7 @@ test("contract slice records scratch activation gates without authorizing live H
   assert.match(contract.activation.verifier, /verify-loom-install\.mjs/u);
   assert.deepEqual(Object.keys(contract.activation.proofSurfaces), ["omp", "codex", "claude"]);
   assert.match(contract.activation.liveHomePromotionGate, /dry-run -> review -> explicit apply/u);
-  assert.match(contract.activation.evidenceDecisionOwner, /collector -> judge -> human review/u);
+  assert.match(contract.activation.evidenceDecisionOwner, /pending retro packet -> human PR review/u);
   assert.ok(contract.activation.deterministicChecksBeforeApply.includes("scripts/validate-shared-agent-packages.mjs"));
   assert.ok(contract.activation.deterministicChecksBeforeApply.includes("scripts/validate-shared-agent-evals.mjs"));
   assert.match(contract.activation.evalHarness, /scripts\/validate-shared-agent-evals\.mjs/u);

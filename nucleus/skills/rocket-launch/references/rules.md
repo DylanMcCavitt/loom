@@ -23,3 +23,15 @@ Bad example: Fixing adjacent findings not named in the packet.
 Good example: Returning one scoped finding with proof and residual risk.
 Assumptions: The active issue/PR is the parent boundary.
 Open decisions: none
+
+## rule/retro-writeback
+Status: accepted
+Scope: rocket-launch
+Rule: After a successful merge, run `node scripts/retro-packet.mjs --pr <merged-pr-number>` and treat the generated retro PR as the human-review gate for evidence write-back.
+Why: Launch is the point where proof, review, acceptance, and diff evidence are fresh enough to close the guidance feedback loop without editing accepted skills directly.
+Exceptions: If the retro generator fails, record the failure in the launch record and open a blocker instead of hand-editing accepted guidance.
+Source: nucleus/agents/shared-nucleus-agents.json#evidenceIntake
+Bad example: Merging a retro PR automatically or copying a generated rule candidate straight into `references/rules.md`.
+Good example: Opening the generated `nucleus/retro/pr-{number}/` packet PR and waiting for human review to accept, redirect, defer, or reject each candidate.
+Assumptions: `scripts/retro-packet.mjs` exists on the merged base branch.
+Open decisions: none

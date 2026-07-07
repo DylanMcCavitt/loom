@@ -2,8 +2,8 @@
 name: rocket-launch
 description: Ship a ready change off-planet by enforcing the launch gates, merging the PR, and letting the bridge close its Linear issue. Use when a change is ready to ship — merge the PR, run the review gate, and close out the Linear issue; not for opening a draft or work that is not ready (that stays with `roboports`).
 metadata:
-  version: "0.1.0"
-  changelog: "0.1.0 - initial public release"
+  version: "0.2.0"
+  changelog: "0.2.0 - retro write-back packet gates the post-merge evidence loop"
 
 ---
 
@@ -42,12 +42,14 @@ Once every gate is green:
 
 1. Merge the PR per the envelope's merge policy.
 2. Confirm the bridge closed the Linear issue (branch id + PR magic words). If it did not auto-close, repair the link rather than closing the issue by hand.
-3. Post a Linear status update (`save_status_update`) recording the ship: what merged, the gate outcomes, the proof, and the PR link.
-4. Leave a human-reviewable record: gates run and their results, the merge commit / PR link, and any follow-ups.
+3. Run `node scripts/retro-packet.mjs --pr <merged-pr-number>` from the repo after merge. The generator creates a pending retro packet branch/worktree, writes decision-log, exemplar, rule, and coverage-gap candidates under `nucleus/retro/pr-{number}/`, and prints the exact `gh pr create` command. Use `--pr-create` only when intentionally opening that retro PR.
+4. Treat human review of the retro PR as the HITL gate for evidence write-back. Do not auto-merge the retro PR, and do not edit accepted skills/rules/exemplars from retro content until review approves the narrow destination.
+5. Post a Linear status update (`save_status_update`) recording the ship: what merged, the gate outcomes, the proof, the PR link, and the retro packet PR/command.
+6. Leave a human-reviewable record: gates run and their results, the merge commit / PR link, the retro packet branch, and any follow-ups.
 
 ## Invariants
 
 - Never merges with a red gate.
 - Never silently closes the issue: closeout goes through the bridge (merge) and the acceptance check, recorded in a Linear status update.
 - Ships only what is ready — an unready change, a draft, or unfinished work routes back to `roboports`, never a forced merge.
-- Leaves a human-reviewable record of the gates and the merge.
+- Leaves a human-reviewable record of the gates, the merge, and the pending retro write-back packet.

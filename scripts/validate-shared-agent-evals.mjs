@@ -198,62 +198,32 @@ function checkEvidenceIntake(fixture) {
   }
 
   const contractIntake = contract.evidenceIntake;
-  for (const input of contractIntake.collectorWorkflow.inputs) {
-    if (!(packet.collector?.inputs ?? []).includes(input)) {
-      return fail(fixture, "application", `collector missing input: ${input}`);
+  if (contractIntake.status !== "practiced-core") {
+    return fail(fixture, "application", "evidence intake contract is not practiced core");
+  }
+  if (!packet.status || packet.status !== "pending-human-review") {
+    return fail(fixture, "application", "evidence intake packet not pending human review");
+  }
+  if (!contractIntake.packetKinds.includes(packet.kind)) {
+    return fail(fixture, "application", "unknown evidence intake packet kind");
+  }
+  const requiredFields = [
+    ...contractIntake.packetRequiredFields.common,
+    ...(contractIntake.packetRequiredFields[packet.kind] ?? []),
+  ];
+  for (const field of requiredFields) {
+    if (!Object.hasOwn(packet, field)) {
+      return fail(fixture, "application", `evidence intake packet missing ${field}`);
     }
   }
-  if (
-    (packet.collector?.actions ?? []).some((action) =>
-      contractIntake.collectorWorkflow.forbiddenActions.some((forbidden) =>
-        forbiddenActionMatches(action.toLowerCase(), forbidden),
-      ),
-    )
-  ) {
-    return fail(fixture, "application", "collector scored or proposed guidance");
+  if (!packet.targetFile.startsWith(contractIntake.candidatePacketHome.replace("{number}", String(packet.sourcePr?.number)).replace(/\/$/u, "/"))) {
+    return fail(fixture, "application", "evidence intake packet outside retro home");
   }
-  for (const part of contractIntake.judgeWorkflow.separates) {
-    if (!(packet.judge?.separates ?? []).includes(part)) {
-      return fail(fixture, "application", `judge missing ${part}`);
-    }
+  if (!Array.isArray(packet.evidence) || packet.evidence.length === 0) {
+    return fail(fixture, "application", "evidence intake packet missing evidence");
   }
-  if (packet.judge?.candidateStatus !== contractIntake.judgeWorkflow.candidateStatus) {
-    return fail(fixture, "application", "judge did not keep candidates pending");
-  }
-  if (
-    (packet.judge?.actions ?? []).some((action) =>
-      contractIntake.judgeWorkflow.forbiddenActions.some((forbidden) =>
-        forbiddenActionMatches(action.toLowerCase(), forbidden),
-      ),
-    )
-  ) {
-    return fail(fixture, "application", "judge performed forbidden action");
-  }
-
-  const destinationByChoice = {
-    rule: "rule",
-    reference: "reference",
-    exemplar: "exemplar",
-    "lint rule": "lintRule",
-    eval: "eval",
-    "coverage gap": "coverageGap",
-    "no change": "noChange",
-  };
-  const choice = packet.humanReview?.choice;
-  if (!contractIntake.humanReviewChoices.includes(choice)) {
-    return fail(fixture, "application", "unknown human review choice");
-  }
-  const expectedDestination = destinationByChoice[choice];
-  if (packet.humanReview?.destination !== expectedDestination) {
-    return fail(fixture, "application", "human review destination mismatch");
-  }
-  for (const field of contractIntake.decisionLogFormat.requiredFields) {
-    if (!Object.hasOwn(packet.decisionLog ?? {}, field)) {
-      return fail(fixture, "application", `decision log missing ${field}`);
-    }
-  }
-  if (!Object.hasOwn(contractIntake.destinationPolicy, expectedDestination)) {
-    return fail(fixture, "application", "unknown destination policy");
+  if (!Array.isArray(packet.checks) || packet.checks.length === 0) {
+    return fail(fixture, "application", "evidence intake packet missing checks");
   }
   return null;
 }

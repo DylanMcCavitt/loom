@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "entries": [
+    {
+      "schemaVersion": 1,
+      "kind": "rule-candidate",
+      "status": "accepted",
+      "sourcePr": {
+        "number": 215,
+        "title": "LOO-206: archive write-only docs",
+        "url": "https://github.com/DylanMcCavitt/loom/pull/215",
+        "mergedAt": "2026-07-07T14:17:52Z"
+      },
+      "scope": "belt",
+      "rationale": "missing candidate and target file should be rejected",
+      "evidence": [],
+      "checks": [],
+      "humanReview": "pending"
+    }
+  ]
+}

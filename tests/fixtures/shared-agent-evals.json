@@ -1187,7 +1187,7 @@
     "group": "evidence-intake-decision-log",
     "holdout": false,
     "request": {
-      "text": "Add shared evidence intake and decision-log contract without live collection",
+      "text": "Add a pending retro evidence packet without changing accepted guidance",
       "mode": "shape",
       "targetAgent": "blueprint"
     },
@@ -1200,9 +1200,9 @@
         "mode-specific references"
       ],
       "rulesApplied": [
-        "collector gathers only",
-        "judge keeps candidates pending",
-        "human chooses narrow destination"
+        "retro packets stay pending until human PR review",
+        "accepted rules still satisfy ruleSchema",
+        "candidate files stay under nucleus/retro/pr-{number}"
       ],
       "allowedChildren": [
         "belt"
@@ -1213,48 +1213,34 @@
           "mode",
           "scope",
           "loadedReferences",
-          "evidenceIntake",
-          "decisionLog"
+          "evidenceIntake"
         ],
         "bytes": 1400
       },
       "evidenceIntake": {
-        "collector": {
-          "inputs": [
-            "messages",
-            "links",
-            "files",
-            "nearby context"
-          ],
-          "actions": [
-            "gather evidence",
-            "preserve source handles"
-          ]
+        "schemaVersion": 1,
+        "kind": "coverage-gap-candidate",
+        "status": "pending-human-review",
+        "sourcePr": {
+          "number": 215,
+          "title": "LOO-206: archive write-only docs",
+          "url": "https://github.com/DylanMcCavitt/loom/pull/215",
+          "mergedAt": "2026-07-07T14:17:52Z"
         },
-        "judge": {
-          "separates": [
-            "facts",
-            "inferences",
-            "open questions"
-          ],
-          "candidateStatus": "pending"
-        },
-        "humanReview": {
-          "choice": "coverage gap",
-          "destination": "coverageGap"
-        },
-        "decisionLog": {
-          "scope": "shared evidence intake workflow",
-          "rationale": "source evidence is incomplete",
-          "evidence": [
-            "nucleus/agents/shared-nucleus-agents.md"
-          ],
-          "exceptions": "none",
-          "approver": "human reviewer",
-          "targetFile": "references/coverage-gaps.md",
-          "checks": [
-            "node --test tests/shared-agent-evals.test.mjs"
-          ]
+        "scope": "shared evidence intake workflow",
+        "rationale": "source evidence is incomplete",
+        "evidence": [
+          "nucleus/agents/shared-nucleus-agents.md"
+        ],
+        "targetFile": "nucleus/retro/pr-215/candidate-coverage-gap.json",
+        "checks": [
+          "node --test tests/shared-agent-evals.test.mjs"
+        ],
+        "humanReview": "review the generated retro PR before changing accepted guidance",
+        "candidate": {
+          "title": "Coverage gap candidate for evidence intake",
+          "gap": "Review whether the pending retro packet pattern needs accepted guidance after human review.",
+          "suggestedDestination": "nucleus/skills/blueprint/references/coverage-gaps.md"
         }
       },
       "proof": {

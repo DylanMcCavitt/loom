@@ -123,6 +123,6 @@ Rules use stable IDs (`## rule/{stable-id}`) citing status, scope, rule, why, ex
 
 ## Governance and activation
 
-Guidance changes follow the collector -> judge -> human review loop defined in `nucleus/agents/shared-nucleus-agents.json#evidenceIntake`; human review chooses rule, reference, exemplar, lint rule, eval, coverage gap, or no change, and accepted changes land in the narrowest relevant destination.
+Guidance changes follow the practiced retro-packet core in `nucleus/agents/shared-nucleus-agents.json#evidenceIntake`: generated packets stay pending under `nucleus/retro/pr-{number}/`, human PR review is the HITL gate, accepted rules still satisfy the enforced rule schema, and accepted guidance lands only after approval in the narrowest relevant skill destination. The older collector/judge/destination machine is aspirational design vocabulary, not live automation.
 
 Activation stays gated: **dry-run -> review -> explicit apply**. Scratch-HOME rendering via `scripts/render-plugin-bridge.mjs`, deterministic checks (`scripts/validate-shared-agent-packages.mjs`, `scripts/validate-shared-agent-evals.mjs`), and the plugin-bridge verifier must pass before any human-approved non-scratch HOME write. Full activation detail, superseded `omp-*` candidates, and historical issue context live in `docs/archive/shared-nucleus-agent-history.md` and the JSON contract.
