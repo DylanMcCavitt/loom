@@ -73,12 +73,8 @@ function walkMarkdown(relativePath, root = repoRoot, files = []) {
   return files;
 }
 
-function isHistoricalAllowed(relativePath, content) {
-  if (relativePath.startsWith("docs/decisions/")) return true;
-  if (relativePath.startsWith("docs/archive/")) return true;
-  return relativePath === "docs/archive/live-nucleus-inventory-2026-06-25.md"
-    && /Superseded historical snapshot/u.test(content)
-    && /Old paths below are preserved only as 2026-06-25 evidence/u.test(content);
+function isHistoricalAllowed(relativePath) {
+  return relativePath.startsWith("docs/decisions/");
 }
 
 function lineNumberForIndex(text, index) {

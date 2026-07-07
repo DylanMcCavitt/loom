@@ -911,7 +911,7 @@
     }
   ],
   "activation": {
-    "status": "plugin-bridge activation machinery retired by the skill-pack pivot (LOO-220); packages load directly from the canonical repo tree",
+    "status": "plugin-bridge activation machinery is retired; packages load directly from the canonical repo tree",
     "nativeAgentRendering": "not planned; shared packages ship as portable skills, not direct OMP/Codex/Claude role-agent files",
     "packageSource": "canonical repo-local Vercel-shaped package source under nucleus/skills/{agent-name}/",
     "evidenceDecisionOwner": "pending retro packet -> human PR review -> accepted guidance only after approval",

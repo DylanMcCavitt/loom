@@ -56,4 +56,4 @@ Report mode, target surface, loaded references, rule IDs, proof run, and unresol
 
 ## Skill Integrity
 
-This package is the canonical repo-local shared-agent package source. Update this package and the shared contract together; plugin bridge output must be rendered from this source, not hand-edited.
+This package is the canonical repo-local shared-agent package source. Update this package and the shared contract together; the `.agents/skills/` compatibility surface must be re-rendered from this source, not hand-edited.

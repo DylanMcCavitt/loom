@@ -30,7 +30,7 @@
             "docs": 2
           },
           "notablePaths": [
-            "docs/archive/README.md"
+            "docs/decisions/0002-loom-skill-library-no-project-layer.md"
           ]
         }
       },
@@ -73,7 +73,7 @@
             "docs": 2
           },
           "notablePaths": [
-            "docs/archive/README.md"
+            "docs/decisions/0002-loom-skill-library-no-project-layer.md"
           ]
         }
       },
@@ -121,7 +121,7 @@
             "docs": 2
           },
           "notablePaths": [
-            "docs/archive/README.md"
+            "docs/decisions/0002-loom-skill-library-no-project-layer.md"
           ]
         }
       },
@@ -168,7 +168,7 @@
             "docs": 2
           },
           "notablePaths": [
-            "docs/archive/README.md"
+            "docs/decisions/0002-loom-skill-library-no-project-layer.md"
           ]
         }
       },

@@ -32,6 +32,6 @@ Out of scope:
 
 **No secrets should ever be committed.** API keys, tokens, credentials, private home paths, and live session state belong in operator-local storage only.
 
-The skill validators (`scripts/validate-skills.mjs`) scan tracked source for secret-like content and forbidden runtime paths. `npm run check` runs these gates on every PR and release tag.
+The skill validators (`scripts/validate-skills.mjs`) scan the tracked skill sources for secret-like content and forbidden runtime paths. `npm run check` runs these gates on every PR and release tag.
 
 If you find a false negative (content that should be blocked but passes validation), please report it as a security advisory so the gate can be tightened.

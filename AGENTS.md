@@ -26,7 +26,7 @@ When work matches a canonical agent role (see the roster table in `nucleus/agent
 
 ## Hard rules
 
-- Dry-run first, always. No live writes to `~/.omp`, `~/.codex`, `~/.claude`, or real HOME without the explicit gated `--write` flow and human approval.
+- No live writes to `~/.omp`, `~/.codex`, `~/.claude`, or real HOME from this repo; any live-HOME change is an operator action with human approval.
 - `local-only` surfaces (auth, sessions, histories, caches, DBs, logs) must never be read into the repo or committed.
 - No secrets, private home paths, or runtime state in tracked source or plan data.
 - One issue, one branch/worktree, one PR. Linear is the tracker (LOO-* issues); prefix commits with the issue id, e.g. `LOO-151: ...`.

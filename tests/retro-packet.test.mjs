@@ -26,7 +26,7 @@ const fixturePr = {
   body: "## Summary\n- Move archive docs.\n## Test plan\n- [x] npm run check",
   labels: [],
   files: [
-    { path: "docs/archive/README.md", additions: 3, deletions: 0, changeType: "ADDED" },
+    { path: "docs/decisions/0002-loom-skill-library-no-project-layer.md", additions: 3, deletions: 0, changeType: "ADDED" },
     { path: "docs/operator/daily-workflow.md", additions: 1, deletions: 1, changeType: "MODIFIED" },
   ],
   mergedAt: "2026-07-07T14:17:52Z",

@@ -1,6 +1,6 @@
 # Loom
 
-Loom is a cross-harness agent pack: seven roster agents plus kit utilities shipped as portable Agent-Skills-shaped packages, with validators, a dry-run-gated installer, and drift radar. It is for operators running OMP, Codex, or Claude Code-class coding agents who want one repo-owned workflow nucleus without copying private runtime state.
+Loom is a cross-harness agent pack: seven roster agents plus kit utilities shipped as portable Agent-Skills-shaped packages, with validators and offline tests. It is for operators running OMP, Codex, or Claude Code-class coding agents who want one repo-owned workflow nucleus without copying private runtime state.
 
 ## Install per harness
 
