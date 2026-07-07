@@ -3,8 +3,8 @@
   "generatedForIssue": 39,
   "source": {
     "packageName": "@oh-my-pi/pi-coding-agent",
-    "packageVersion": "16.3.5",
-    "cliVersion": "omp/16.3.5",
+    "packageVersion": "16.3.11",
+    "cliVersion": "omp/16.3.11",
     "packageRoot": "<ephemeral-package-root>/package",
     "packageJsonPath": "<ephemeral-package-root>/package/package.json"
   },
@@ -614,14 +614,9 @@
             "sha256": "dc2e210c7d09e9f1c5abd5e71260c1d11a2f1ed7624b4ff9f715c5ec0f42e1bf"
           },
           {
-            "path": "src/prompts/system/title-system-marker.md",
+            "path": "src/prompts/system/title-system.md",
             "bytes": 1433,
             "sha256": "9ff60e5591fabdb5fd86cda722ac971c446901240a43b2430aef29c4478bb400"
-          },
-          {
-            "path": "src/prompts/system/title-system.md",
-            "bytes": 1371,
-            "sha256": "93ca15c7f3be2e01ba597525764e52184a2a6a1f438d6cca1212762afce2dc00"
           },
           {
             "path": "src/prompts/system/tool-call-loop-redirect.md",
@@ -660,12 +655,12 @@
           },
           {
             "path": "src/prompts/system/workflow-notice.md",
-            "bytes": 8823,
-            "sha256": "468f32caa0c1fcac81b09205abd25045fa135034b6dadf369515c8a79730a6e7"
+            "bytes": 9018,
+            "sha256": "6fee13d1cd197f6bb28354d50644f881ec249dc4c0fc8ae3baa2d6120f727f63"
           }
         ],
-        "bytes": 82781,
-        "combinedSha256": "b131b741e1914f950aa3eeda80644137baec4a68e6dfcd35a96a9843c4ecef95"
+        "bytes": 81605,
+        "combinedSha256": "0c0304f279ea9d4203afff9e5fd8da06d1d37979e4ea2d1f7fb8d171d5f628d4"
       },
       {
         "category": "tools",
@@ -697,8 +692,8 @@
           },
           {
             "path": "src/prompts/tools/bash.md",
-            "bytes": 3266,
-            "sha256": "588e25682e0660b4ddfd7b177f3c77ebd448faf33bf92dee5f0139298d353502"
+            "bytes": 3737,
+            "sha256": "12afc9c4439550d490e1fae8961f6637a346ba915d0c7159dff811737545dd79"
           },
           {
             "path": "src/prompts/tools/browser.md",
@@ -737,8 +732,8 @@
           },
           {
             "path": "src/prompts/tools/grep.md",
-            "bytes": 1038,
-            "sha256": "5dc3b66b0d9e1343b43ce7e6fd33a2162eb37514df8654d625a0ff94793a5c69"
+            "bytes": 1122,
+            "sha256": "cde1c19dc219d5355be06710ec2d0e32df9a97e0a46a68fd0cd2794b8e9d4eb4"
           },
           {
             "path": "src/prompts/tools/image-attachment-describe-system.md",
@@ -797,8 +792,8 @@
           },
           {
             "path": "src/prompts/tools/memory-edit.md",
-            "bytes": 466,
-            "sha256": "58c509e9f40b3ef7c9146d6ab2c8ecabe949fe8b27a193c6dbcacfa4ff8c6779"
+            "bytes": 821,
+            "sha256": "7b1cfece039b7f32010cf9a83c06be1f81ec2af1e792727d4990411da27e08ae"
           },
           {
             "path": "src/prompts/tools/patch.md",
@@ -812,8 +807,8 @@
           },
           {
             "path": "src/prompts/tools/recall.md",
-            "bytes": 431,
-            "sha256": "0e043205e5fd60fdc7995b082aeac8f19898827b653afe19e6d458f4fb911196"
+            "bytes": 656,
+            "sha256": "b6649605bfec9441cdbaacc4753be7a5403d8034492c0eae30f85293ca9087e3"
           },
           {
             "path": "src/prompts/tools/reflect.md",
@@ -876,8 +871,8 @@
             "sha256": "dc362d29885b8c128ce466bba2ed6e81e30665347efc8c6a78089a7166667e40"
           }
         ],
-        "bytes": 61611,
-        "combinedSha256": "5f58bb54521242ce33bb2038512f61195edfce750fd747b5e57da7549d057b1d"
+        "bytes": 62746,
+        "combinedSha256": "0793d853b7574d99cc72834ed2381dd18ffa92483772624137f9499802259a53"
       }
     ],
     "builtInRules": [

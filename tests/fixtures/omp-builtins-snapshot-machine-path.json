@@ -3,9 +3,9 @@
   "generatedForIssue": 39,
   "source": {
     "packageName": "@oh-my-pi/pi-coding-agent",
-    "packageVersion": "16.3.5",
-    "cliVersion": "omp/16.3.5",
-    "packageRoot": "/tmp/omp-16.3.5-pkg/package",
-    "packageJsonPath": "/tmp/omp-16.3.5-pkg/package/package.json"
+    "packageVersion": "16.3.11",
+    "cliVersion": "omp/16.3.11",
+    "packageRoot": "/tmp/omp-16.3.11-pkg/package",
+    "packageJsonPath": "/tmp/omp-16.3.11-pkg/package/package.json"
   }
 }

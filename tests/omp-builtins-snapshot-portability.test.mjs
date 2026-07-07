@@ -36,7 +36,7 @@ test("machine-specific path guard accepts ephemeral-package-root sentinel", () =
 });
 
 test("portable snapshot helpers normalize package paths under sentinel root", () => {
-  const packageRoot = "/tmp/omp-16.3.5-pkg/package";
+  const packageRoot = "/tmp/omp-16.3.11-pkg/package";
   assert.deepEqual(portablePackageSourcePaths(), {
     packageRoot: SNAPSHOT_EPHEMERAL_PACKAGE_ROOT,
     packageJsonPath: `${SNAPSHOT_EPHEMERAL_PACKAGE_ROOT}/package.json`,
@@ -48,7 +48,7 @@ test("portable snapshot helpers normalize package paths under sentinel root", ()
 });
 
 test("portable snapshot write guard refuses machine-specific JSON text", () => {
-  const leaked = JSON.stringify({ source: { packageRoot: "/tmp/omp-16.3.5-pkg/package" } }, null, 2);
+  const leaked = JSON.stringify({ source: { packageRoot: "/tmp/omp-16.3.11-pkg/package" } }, null, 2);
   assert.throws(
     () => assertPortableSnapshotText("source.json", leaked),
     /refuses to emit machine-specific path prefixes/u,

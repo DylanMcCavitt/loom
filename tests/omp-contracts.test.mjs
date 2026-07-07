@@ -7,6 +7,7 @@ import { test } from "node:test";
 import {
   COMMAND_REGISTRY_MARKER,
   PACKAGE_LAYOUT,
+  OMP_PACKAGE_CONTRACT_VERSION,
   PACKAGE_NAME,
   assertPackageLayout,
   assertRegistryMarker,
@@ -59,7 +60,7 @@ test("assertPackageLayout fails a moved layout with an actionable stale-contract
       () => assertPackageLayout(root),
       (error) => {
         assert.match(error.message, /contract may be stale/u);
-        assert.match(error.message, /omp\/16\.3\.5/u);
+        assert.match(error.message, new RegExp(OMP_PACKAGE_CONTRACT_VERSION.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "u"));
         assert.ok(error.message.includes(PACKAGE_LAYOUT.commandRegistry), "lists the missing registry file");
         assert.ok(error.message.includes(PACKAGE_LAYOUT.builtinRulesRoot), "lists the missing rules root");
         assert.match(error.message, /omp-package-contract\.mjs/u, "names the file to re-verify");

@@ -5,15 +5,15 @@
 // none of this — any omp refactor can move these files, so a miss must fail loudly with
 // what to re-verify instead of silently producing an empty snapshot.
 //
-// Observed upstream version: omp/16.3.5 (@oh-my-pi/pi-coding-agent 16.3.5).
+// Observed upstream version: omp/16.3.11 (@oh-my-pi/pi-coding-agent 16.3.11).
 
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 
-export const OMP_PACKAGE_CONTRACT_VERSION = "omp/16.3.5";
+export const OMP_PACKAGE_CONTRACT_VERSION = "omp/16.3.11";
 
-// Bundled agent set for omp/16.3.5.
+// Bundled agent set for omp/16.3.11.
 // `Tester` is capitalized; byte-sort puts it first.
 export const EXPECTED_AGENTS = ["Tester", "designer", "explore", "librarian", "plan", "reviewer", "sonic", "task"];
 
