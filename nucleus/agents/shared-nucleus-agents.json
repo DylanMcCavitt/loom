@@ -11,7 +11,7 @@
       "request mode is resolved before acting so reviews, proof, and implementation stay separate",
       "stable rules cite canonical sources, examples, exceptions, and coverage gaps",
       "mechanical checks belong in deterministic lint/eval fixtures; judgment stays in guidance with evidence",
-      "evidence intake is collector -> judge -> human approval before guidance changes"
+      "evidence write-back stores pending retro packets under nucleus/retro/ for human PR review before guidance changes"
     ]
   },
   "namingRules": {
@@ -175,99 +175,71 @@
     ]
   },
   "evidenceIntake": {
-    "collector": "gathers messages, links, files, and nearby context without scoring or proposing rules",
-    "collectorWorkflow": {
-      "inputs": [
-        "messages",
-        "links",
-        "files",
-        "nearby context"
-      ],
-      "nearbyContext": [
-        "active issue or PR scope",
-        "referenced agent, skill, rule, exemplar, eval, lint, or coverage-gap surface",
-        "adjacent shipped guidance needed to understand the excerpt"
-      ],
-      "forbiddenActions": [
-        "score candidates",
-        "rank candidates",
-        "propose rules",
-        "choose destinations",
-        "write accepted guidance"
-      ],
-      "output": "raw evidence packet with source handles, excerpts, timestamps or revisions when available, and unresolved context gaps"
-    },
-    "judge": "validates sources, separates facts/inferences/open questions, groups candidates, and keeps each candidate pending",
-    "judgeWorkflow": {
-      "validatesSources": true,
-      "separates": [
-        "facts",
-        "inferences",
-        "open questions"
-      ],
-      "groupsCandidatesBy": [
-        "agent",
-        "workflow",
-        "rule surface",
-        "destination surface",
-        "evidence theme"
-      ],
-      "candidateStatus": "pending",
-      "forbiddenActions": [
-        "accept candidates",
-        "reject candidates",
-        "score candidates",
-        "apply changes",
-        "turn candidates into rules"
-      ]
-    },
-    "humanReview": "chooses rule, reference, exemplar, lint rule, eval, coverage gap, or no change",
-    "humanReviewChoices": [
-      "rule",
-      "reference",
-      "exemplar",
-      "lint rule",
-      "eval",
-      "coverage gap",
-      "no change"
+    "status": "practiced-core",
+    "purpose": "capture source-grounded launch retros as pending review packets; accepted guidance still requires human PR approval before merge",
+    "candidatePacketHome": "nucleus/retro/pr-{number}/",
+    "homeRationale": "retro packets are evidence under nucleus but are not accepted skill guidance; this pending home avoids editing rule, exemplar, or coverage-gap destinations until human review chooses the narrow target",
+    "packetKinds": [
+      "decision-log",
+      "exemplar-candidate",
+      "rule-candidate",
+      "coverage-gap-candidate"
     ],
-    "decisionLogFormat": {
-      "requiredFields": [
+    "packetRequiredFields": {
+      "common": [
+        "schemaVersion",
+        "kind",
+        "status",
+        "sourcePr",
         "scope",
         "rationale",
         "evidence",
-        "exceptions",
-        "approver",
         "targetFile",
-        "checks"
+        "checks",
+        "humanReview"
       ],
-      "fields": {
-        "scope": "agent, workflow, mode, rule, or destination surface the decision covers",
-        "rationale": "why the human reviewer accepted, rejected, or deferred the candidate",
-        "evidence": "source links, file paths, excerpts, and fact/inference/open-question summary used for the decision",
-        "exceptions": "known cases where the decision should not apply, or none",
-        "approver": "human reviewer who made the choice",
-        "targetFile": "narrowest relevant destination file, or none for no-change decisions",
-        "checks": "targeted checks or review evidence required before merge"
-      }
+      "decision-log": [
+        "approver",
+        "exceptions"
+      ],
+      "exemplar-candidate": [
+        "candidate"
+      ],
+      "rule-candidate": [
+        "candidate"
+      ],
+      "coverage-gap-candidate": [
+        "candidate"
+      ]
     },
+    "guidanceChangePolicy": [
+      "retro packets stay pending until a human reviews the generated PR",
+      "accepted rules must satisfy the enforced ruleSchema",
+      "accepted exemplars, rules, and coverage gaps land in the narrowest relevant nucleus/skills/{agent-name}/ destination",
+      "the retro generator never merges PRs, edits accepted guidance directly, or applies changes to live HOME"
+    ],
     "acceptedChangeRequirements": [
       "stable evidence",
       "explicit scope",
       "rationale",
       "exceptions",
-      "approver",
+      "human PR approval",
       "target file chosen by narrowest relevant destination",
       "checks pass before merge"
     ],
-    "destinationPolicy": {
-      "rule": "agent-specific references/rules.md when a stable, enforceable guidance rule is accepted",
-      "reference": "agent-specific references/*.md when contextual guidance or source-grounded background is accepted",
-      "exemplar": "agent-specific exemplars/*.md when a concrete worked example best preserves the decision",
-      "lintRule": "deterministic check or lint surface only when the linter-vs-guidance rule passes",
-      "eval": "offline eval fixture when the decision should be regression-tested as behavior",
-      "coverageGap": "references/coverage-gaps.md when evidence is missing or a standard remains unresolved",
-      "noChange": "decision log only; no guidance, lint, eval, exemplar, or reference file changes"
+    "humanReviewGate": "the retro PR is the HITL gate; reviewers accept, redirect, defer, or reject each pending packet",
+    "aspirationalDesign": {
+      "status": "aspirational-not-enforced",
+      "summary": "collector, judge, decision-log, and destination automation remain design vocabulary only; no validator or tool treats that machine as live unless a future issue implements it",
+      "choices": [
+        "rule",
+        "reference",
+        "exemplar",
+        "lint rule",
+        "eval",
+        "coverage gap",
+        "no change"
+      ]
     }
   },
   "delegationPolicy": {
@@ -950,7 +922,7 @@
       "claude": "Claude plugin skills surface via adapters/plugin-bridge/loom-nucleus/.claude-plugin/plugin.json#skills"
     },
     "liveHomePromotionGate": "dry-run -> review -> explicit apply",
-    "evidenceDecisionOwner": "collector -> judge -> human review decision log",
+    "evidenceDecisionOwner": "pending retro packet -> human PR review -> accepted guidance only after approval",
     "deterministicChecksBeforeApply": [
       "scripts/validate-shared-agent-packages.mjs",
       "scripts/validate-shared-agent-evals.mjs",
@@ -959,7 +931,7 @@
     ],
     "evalHarness": "offline fixture harness at scripts/validate-shared-agent-evals.mjs and tests/fixtures/shared-agent-evals.json",
     "lintRules": "deterministic package checks at scripts/validate-shared-agent-packages.mjs",
-    "evidenceIntakeAutomation": "future automation; manual evidence intake and decision-log workflow until then",
+    "evidenceIntakeAutomation": "practiced core only: scripts/retro-packet.mjs writes pending nucleus/retro packets; collector/judge/destination automation is aspirational",
     "localOnlyRuntimeData": [
       "OMP auth, sessions, histories, caches, DBs, terminal state, logs, and local settings",
       "Codex auth, sessions, histories, caches, DBs, browser state, blobs, plugin caches, and local settings",

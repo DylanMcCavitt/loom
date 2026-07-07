@@ -60,21 +60,20 @@ test("holdout expected edits are not copied into guidance", () => {
   }
 });
 
-test("evidence intake eval rejects missing packets, judge automation, and mismatched destinations", () => {
+test("evidence intake eval rejects missing packets and malformed practiced-core packets", () => {
   const fixture = FIXTURES.find((candidate) => candidate.id === "evidence-intake-decision-log");
 
   const missingPacket = structuredClone(fixture);
   delete missingPacket.candidate.evidenceIntake;
   assert.match(checkFixture(missingPacket).message, /evidence intake packet missing/u);
 
-  const judgeAutomation = structuredClone(fixture);
-  judgeAutomation.candidate.evidenceIntake.judge.actions = ["apply changes"];
-  assert.match(checkFixture(judgeAutomation).message, /judge performed forbidden action/u);
+  const acceptedPacket = structuredClone(fixture);
+  acceptedPacket.candidate.evidenceIntake.status = "accepted";
+  assert.match(checkFixture(acceptedPacket).message, /not pending human review/u);
 
-  const wrongDestination = structuredClone(fixture);
-  wrongDestination.candidate.evidenceIntake.humanReview.choice = "rule";
-  wrongDestination.candidate.evidenceIntake.humanReview.destination = "coverageGap";
-  assert.match(checkFixture(wrongDestination).message, /human review destination mismatch/u);
+  const wrongHome = structuredClone(fixture);
+  wrongHome.candidate.evidenceIntake.targetFile = "nucleus/skills/blueprint/references/rules.md";
+  assert.match(checkFixture(wrongHome).message, /outside retro home/u);
 });
 
 test("eval groups align with the checked-in shared nucleus contract", () => {

@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "scripts/retro-packet.mjs",
+  "generatedAt": "2026-07-07T00:00:00.000Z",
+  "home": "nucleus/retro/pr-215",
+  "branch": "retro/pr-215-archive-write-only-docs",
+  "entries": [
+    {
+      "schemaVersion": 1,
+      "kind": "decision-log",
+      "status": "pending-human-review",
+      "sourcePr": {
+        "number": 215,
+        "title": "LOO-206: archive write-only docs",
+        "url": "https://github.com/DylanMcCavitt/loom/pull/215",
+        "mergedAt": "2026-07-07T14:17:52Z",
+        "author": "DylanMcCavitt",
+        "labels": [],
+        "baseRefName": "main",
+        "headRefName": "loo-206",
+        "diffSummary": {
+          "filesChanged": 2,
+          "additions": 4,
+          "deletions": 1,
+          "changeTypes": {
+            "MODIFIED": 1,
+            "RENAMED": 1
+          },
+          "topLevel": {
+            "docs": 2
+          },
+          "notablePaths": [
+            "docs/archive/README.md"
+          ]
+        }
+      },
+      "scope": "belt",
+      "rationale": "Record the launch-retro evidence packet for a merged PR; human review decides whether any candidate becomes accepted guidance.",
+      "evidence": [
+        "PR #215: LOO-206: archive write-only docs",
+        "https://github.com/DylanMcCavitt/loom/pull/215"
+      ],
+      "targetFile": "nucleus/retro/pr-215/decision-log.json",
+      "checks": [
+        "node scripts/retro-packet.mjs --pr 215"
+      ],
+      "humanReview": "review the generated retro PR; accept, redirect, defer, or reject this packet before changing accepted guidance",
+      "approver": "pending-human-review",
+      "exceptions": "none identified by deterministic extraction"
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "exemplar-candidate",
+      "status": "pending-human-review",
+      "sourcePr": {
+        "number": 215,
+        "title": "LOO-206: archive write-only docs",
+        "url": "https://github.com/DylanMcCavitt/loom/pull/215",
+        "mergedAt": "2026-07-07T14:17:52Z",
+        "author": "DylanMcCavitt",
+        "labels": [],
+        "baseRefName": "main",
+        "headRefName": "loo-206",
+        "diffSummary": {
+          "filesChanged": 2,
+          "additions": 4,
+          "deletions": 1,
+          "changeTypes": {
+            "MODIFIED": 1,
+            "RENAMED": 1
+          },
+          "topLevel": {
+            "docs": 2
+          },
+          "notablePaths": [
+            "docs/archive/README.md"
+          ]
+        }
+      },
+      "scope": "belt",
+      "rationale": "Preserve a concrete merged-PR pattern as a pending exemplar candidate without editing accepted exemplars directly.",
+      "evidence": [
+        "PR #215: LOO-206: archive write-only docs",
+        "https://github.com/DylanMcCavitt/loom/pull/215"
+      ],
+      "targetFile": "nucleus/retro/pr-215/candidate-exemplar.json",
+      "checks": [
+        "node scripts/retro-packet.mjs --pr 215"
+      ],
+      "humanReview": "review the generated retro PR; accept, redirect, defer, or reject this packet before changing accepted guidance",
+      "candidate": {
+        "title": "Merged PR exemplar: LOO-206: archive write-only docs",
+        "summary": [
+          "Move superseded docs into archive."
+        ],
+        "suggestedDestination": "nucleus/skills/belt/exemplars/pr-215.md"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "rule-candidate",
+      "status": "pending-human-review",
+      "sourcePr": {
+        "number": 215,
+        "title": "LOO-206: archive write-only docs",
+        "url": "https://github.com/DylanMcCavitt/loom/pull/215",
+        "mergedAt": "2026-07-07T14:17:52Z",
+        "author": "DylanMcCavitt",
+        "labels": [],
+        "baseRefName": "main",
+        "headRefName": "loo-206",
+        "diffSummary": {
+          "filesChanged": 2,
+          "additions": 4,
+          "deletions": 1,
+          "changeTypes": {
+            "MODIFIED": 1,
+            "RENAMED": 1
+          },
+          "topLevel": {
+            "docs": 2
+          },
+          "notablePaths": [
+            "docs/archive/README.md"
+          ]
+        }
+      },
+      "scope": "belt",
+      "rationale": "Extract a deterministic rule-shaped candidate from labels, title, and changed surfaces for human review.",
+      "evidence": [
+        "PR #215: LOO-206: archive write-only docs",
+        "https://github.com/DylanMcCavitt/loom/pull/215"
+      ],
+      "targetFile": "nucleus/retro/pr-215/candidate-rule.json",
+      "checks": [
+        "node scripts/retro-packet.mjs --pr 215"
+      ],
+      "humanReview": "review the generated retro PR; accept, redirect, defer, or reject this packet before changing accepted guidance",
+      "candidate": {
+        "id": "rule/pr-215-archive-write-only-docs",
+        "title": "Rule candidate from PR #215",
+        "rule": "Consider the archive-docs pattern before inventing a new workflow.",
+        "suggestedDestination": "nucleus/skills/belt/references/rules.md"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "coverage-gap-candidate",
+      "status": "pending-human-review",
+      "sourcePr": {
+        "number": 215,
+        "title": "LOO-206: archive write-only docs",
+        "url": "https://github.com/DylanMcCavitt/loom/pull/215",
+        "mergedAt": "2026-07-07T14:17:52Z",
+        "author": "DylanMcCavitt",
+        "labels": [],
+        "baseRefName": "main",
+        "headRefName": "loo-206",
+        "diffSummary": {
+          "filesChanged": 2,
+          "additions": 4,
+          "deletions": 1,
+          "changeTypes": {
+            "MODIFIED": 1,
+            "RENAMED": 1
+          },
+          "topLevel": {
+            "docs": 2
+          },
+          "notablePaths": [
+            "docs/archive/README.md"
+          ]
+        }
+      },
+      "scope": "belt",
+      "rationale": "Flag changed surface without an obvious accepted rule destination as a pending coverage-gap candidate.",
+      "evidence": [
+        "PR #215: LOO-206: archive write-only docs",
+        "https://github.com/DylanMcCavitt/loom/pull/215"
+      ],
+      "targetFile": "nucleus/retro/pr-215/candidate-coverage-gap.json",
+      "checks": [
+        "node scripts/retro-packet.mjs --pr 215"
+      ],
+      "humanReview": "review the generated retro PR; accept, redirect, defer, or reject this packet before changing accepted guidance",
+      "candidate": {
+        "title": "Coverage gap candidate from PR #215",
+        "gap": "Review whether archive docs revealed missing guidance for belt.",
+        "suggestedDestination": "nucleus/skills/belt/references/coverage-gaps.md"
+      }
+    }
+  ]
+}
