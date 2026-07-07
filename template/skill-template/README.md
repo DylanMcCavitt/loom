@@ -14,6 +14,6 @@ Then:
 2. Write a trigger-rich `description` with a concrete `Use when` or `Use for` clause.
 3. Add lens or deep guidance under `references/`.
 4. Add `evals/evals.json` before merging kit-facing skills.
-5. Run `npm run render` then `npm run check`.
+5. Run `npm run check`.
 
-This template is **not** scanned by `validate-skills.mjs` (only `skills/`, `skills/`, and `.agents/skills/` are gated).
+This template is **not** scanned by `validate-skills.mjs` (only the repo `skills/` root is gated).

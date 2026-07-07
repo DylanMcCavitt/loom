@@ -303,10 +303,16 @@ function rosterAgentNames(contractText) {
   return names;
 }
 
-function validateRosterContract(skillsDir, errors) {
-  if (!isCanonicalRepoSkillsDir(skillsDir)) return;
-  const contractPath = path.join(process.cwd(), sharedAgentContractMarkdownPath);
-  if (!existsSync(contractPath)) return;
+export function validateRosterContract(skillsDir, errors, options = {}) {
+  const {
+    contractPath = path.join(process.cwd(), sharedAgentContractMarkdownPath),
+    requireCanonical = true,
+  } = options;
+  if (requireCanonical && !isCanonicalRepoSkillsDir(skillsDir)) return;
+  if (!existsSync(contractPath)) {
+    errors.push(`${sharedAgentContractMarkdownPath}: missing — the canonical skills root requires the shared agent contract`);
+    return;
+  }
   const roster = rosterAgentNames(readFileSync(contractPath, "utf8"));
   if (!roster.length) {
     errors.push(`${sharedAgentContractMarkdownPath}: could not parse roster table`);
@@ -316,6 +322,14 @@ function validateRosterContract(skillsDir, errors) {
   for (const agentName of roster) {
     if (!existsSync(path.join(resolvedSkillsDir, agentName, "SKILL.md"))) {
       errors.push(`${sharedAgentContractMarkdownPath}: roster agent ${agentName} is not shipped under ${DEFAULT_SKILLS_DIR}/${agentName}/SKILL.md`);
+    }
+  }
+  const rosterSet = new Set(roster);
+  for (const entry of readdirSync(resolvedSkillsDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const isAgentPackage = existsSync(path.join(resolvedSkillsDir, entry.name, "AGENTS.md"));
+    if (isAgentPackage && !rosterSet.has(entry.name)) {
+      errors.push(`${DEFAULT_SKILLS_DIR}/${entry.name}: agent package (ships AGENTS.md) is missing from the ${sharedAgentContractMarkdownPath} roster table`);
     }
   }
 }
