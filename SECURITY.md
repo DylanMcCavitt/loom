@@ -14,13 +14,13 @@ We will acknowledge receipt and coordinate disclosure on a reasonable timeline.
 
 ## Scope
 
-This repository ships a **prompt pack** (skills, agent guidance, adapter plans) and **validation tooling** (renderers, dry-run gates, offline tests). There is no hosted runtime service, API, or production deployment in this repo.
+This repository ships a **prompt pack** (skills and agent guidance) and **validation tooling** (validators, offline tests). There is no hosted runtime service, API, or production deployment in this repo.
 
 In scope:
 
-- tracked skill and adapter source under `nucleus/`, `adapters/`, and `distributions/`
+- tracked skill source under `nucleus/`
 - CI validators and release workflows under `scripts/` and `.github/workflows/`
-- accidental secret leakage or unsafe write surfaces in render/apply tooling
+- accidental secret leakage in tracked source or validation tooling
 
 Out of scope:
 
@@ -32,6 +32,6 @@ Out of scope:
 
 **No secrets should ever be committed.** API keys, tokens, credentials, private home paths, and live session state belong in operator-local storage only.
 
-The harness safety gate (`scripts/dry-run-harness-safety-gate.mjs`) and skill validators (`scripts/validate-skills.mjs`) scan tracked source for secret-like content and forbidden runtime paths. `npm run check` runs these gates on every PR and release tag.
+The skill validators (`scripts/validate-skills.mjs`) scan tracked source for secret-like content and forbidden runtime paths. `npm run check` runs these gates on every PR and release tag.
 
 If you find a false negative (content that should be blocked but passes validation), please report it as a security advisory so the gate can be tightened.
