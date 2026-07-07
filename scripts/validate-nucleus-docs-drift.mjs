@@ -90,7 +90,8 @@ function walkMarkdown(relativePath, root = repoRoot, files = []) {
 
 function isHistoricalAllowed(relativePath, content) {
   if (relativePath.startsWith("docs/decisions/")) return true;
-  return relativePath === "docs/harness/live-nucleus-inventory-2026-06-25.md"
+  if (relativePath.startsWith("docs/archive/")) return true;
+  return relativePath === "docs/archive/live-nucleus-inventory-2026-06-25.md"
     && /Superseded historical snapshot/u.test(content)
     && /Old paths below are preserved only as 2026-06-25 evidence/u.test(content);
 }

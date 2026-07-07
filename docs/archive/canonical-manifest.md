@@ -5,7 +5,7 @@ Historical consolidation manifest for harness skills. LOO-152 split ownership:
 - **Repo-owned (11):** seven roster agents under `nucleus/skills/`, four kit utilities under
   `nucleus/utilities/`, rendered to `.agents/skills/` by `node scripts/render-skills-compat.mjs`.
 - **Operator-local:** seventeen cited-engine utilities under `~/.agents/skills/` per
-  [`operator-local-manifest.md`](operator-local-manifest.md).
+  [`operator-local-manifest.md`](../skills/operator-local-manifest.md).
 
 Earlier builds consolidated three home roots (`~/.agents/skills`, `~/.codex/skills`, `~/.claude/skills`)
 into the repo before later cutovers. `validate-skills.mjs` gates the repo-owned surfaces.
@@ -66,5 +66,5 @@ into the repo before later cutovers. `validate-skills.mjs` gates the repo-owned 
   `repo-triage`, `security-best-practices`, `security-ownership-map`, `security-threat-model`,
   `skill-maintenance`, `swiftui-pro`, `tdd`, `write-a-skill`). Repo-owned utilities are now only
   `assembler`, `prospect`, `space-age`, and `map-seed`. Live content for the moved utilities stays
-  operator-local; see [`operator-local-manifest.md`](operator-local-manifest.md).
+  operator-local; see [`operator-local-manifest.md`](../skills/operator-local-manifest.md).
 

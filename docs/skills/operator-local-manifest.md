@@ -41,5 +41,5 @@ Install and maintain them under `~/.agents/skills/<name>/` on the operator machi
 | `tdd` | `~/.agents/skills/tdd/` |
 | `write-a-skill` | `~/.agents/skills/write-a-skill/` |
 
-Historical consolidation context lives in [`canonical-manifest.md`](canonical-manifest.md).
+Historical consolidation context lives in [`canonical-manifest.md`](../archive/canonical-manifest.md).
 Roster routing and engine citations live in [`factorio-kit.md`](factorio-kit.md).

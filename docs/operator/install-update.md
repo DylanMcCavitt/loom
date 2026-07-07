@@ -32,7 +32,7 @@ for the concrete target HOME.
 ## Current live baseline
 
 The historical pre-cutover live inventory is recorded in
-[`docs/harness/live-nucleus-inventory-2026-06-25.md`](../harness/live-nucleus-inventory-2026-06-25.md).
+[`docs/archive/live-nucleus-inventory-2026-06-25.md`](../archive/live-nucleus-inventory-2026-06-25.md).
 It is superseded by ADR 0004 and the LOO-107..111 layout cutover; use it only as
 reference context. The current operator distinction:
 

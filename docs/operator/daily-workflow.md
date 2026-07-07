@@ -21,7 +21,7 @@ never committed).
    npm run factory -- init-envelope --root <repo>
    ```
 
-3. Pick the tracker for this repo. Loom does not choose for you:
+3. Pick the tracker for this repo. Loom does not choose for you — see [choose-a-tracker.md](./choose-a-tracker.md):
 
    ```sh
    npm run choose-tracker -- --root <repo>
