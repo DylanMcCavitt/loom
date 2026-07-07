@@ -19,6 +19,7 @@
     "smoke:live": "node --test tests/factory-nucleus-live-smoke.test.mjs",
     "runtime-adapter": "node scripts/runtime-adapter/server.mjs",
     "validate": "sh -c 'set -e; for f in scripts/validate-*.mjs; do node \"$f\"; done; node scripts/dry-run-harness-inventory.mjs; node scripts/dry-run-harness-safety-gate.mjs'",
+    "lint": "npm run validate",
     "check": "npm run validate && npm test",
     "loop": "node scripts/loop.mjs"
   }
