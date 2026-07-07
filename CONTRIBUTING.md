@@ -41,8 +41,6 @@ Every skill entrypoint needs YAML frontmatter with:
 
 - **`name`** — must equal the directory name (kebab-case, no harness prefixes).
 - **`description`** — one paragraph that includes a concrete **`Use when`** or **`Use for`** trigger. Validators reject vague descriptions without a real trigger phrase.
-- **`metadata.version`** — semver string for the skill package.
-- **`metadata.changelog`** — single ASCII line, `<version> - <summary>`.
 
 Example:
 
@@ -50,15 +48,10 @@ Example:
 ---
 name: my-skill
 description: Does X for Y workflows. Use when you need to Z with the active issue packet.
-metadata:
-  version: "0.1.0"
-  changelog: "0.1.0 - initial public release"
 ---
 ```
 
 Keep the `SKILL.md` body as the entrypoint. Move long guidance, lens variants, and tables into `references/` and load them progressively (named lens → `references/lens-<name>.md`).
-
-Treat `metadata.version` as the skill behavior version: bump it for any behavioral skill change, update the colocated `metadata.changelog` line in `SKILL.md` at the same time, and expect evals to compare current routing or instructions against prior versions to catch regressions.
 
 ### Progressive disclosure
 
