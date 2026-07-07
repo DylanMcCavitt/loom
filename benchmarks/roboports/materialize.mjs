@@ -86,6 +86,10 @@ export function materializeRoboportsSandbox({ dest, force = false, sourceDir = h
   fs.cpSync(path.join(sourceDir, 'checks'), path.join(destReal, '.bench', 'checks'), { recursive: true });
 
   git(['init', '--quiet'], destReal, 'git init');
+  fs.appendFileSync(
+    path.join(destReal, '.git', 'info', 'exclude'),
+    '\n# Loom benchmark runtime marker\n.bench/baseline.txt\n',
+  );
   git(['add', '-A'], destReal, 'git add');
   git(
     [

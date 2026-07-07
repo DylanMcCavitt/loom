@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
@@ -57,6 +57,9 @@ test("bench materialize creates a throwaway repo with tasks, checks, and green a
     const revParse = spawnSync("git", ["rev-parse", "HEAD"], { cwd: runDir, encoding: "utf8" });
     assert.equal(revParse.status, 0, revParse.stderr);
     assert.equal(revParse.stdout.trim(), baseline);
+    const status = spawnSync("git", ["status", "--short"], { cwd: runDir, encoding: "utf8" });
+    assert.equal(status.status, 0, status.stderr);
+    assert.equal(status.stdout, "");
 
     const anchors = spawnSync("npm", ["test"], { cwd: runDir, encoding: "utf8" });
     assert.equal(anchors.status, 0, anchors.stderr);
@@ -84,6 +87,36 @@ test("bench scoring is deterministic for a materialized baseline run", () => {
       assert.equal(scenario.score.scope, 0);
       assert.deepEqual(scenario.score.files, []);
     }
+
+    writeFileSync(path.join(runDir, "src", "inventory.js"), "\n// simulated task change\n", { flag: "a" });
+    const add = spawnSync("git", ["add", "-A"], { cwd: runDir, encoding: "utf8" });
+    assert.equal(add.status, 0, add.stderr);
+    const commit = spawnSync(
+      "git",
+      [
+        "-c",
+        "user.name=bench",
+        "-c",
+        "user.email=bench@localhost",
+        "commit",
+        "--quiet",
+        "--no-gpg-sign",
+        "-m",
+        "task: simulate add all",
+      ],
+      { cwd: runDir, encoding: "utf8" },
+    );
+    assert.equal(commit.status, 0, commit.stderr);
+
+    const scored = spawnSync(
+      process.execPath,
+      [".bench/checks/score.mjs", "--task", "01", "--base", first.baseline],
+      { cwd: runDir, encoding: "utf8" },
+    );
+    assert.equal(scored.status, 0, scored.stderr);
+    const task01Score = JSON.parse(scored.stdout);
+    assert.equal(task01Score.scope, 0);
+    assert.deepEqual(task01Score.files, ["src/inventory.js"]);
   } finally {
     cleanupRun(runDir);
   }
