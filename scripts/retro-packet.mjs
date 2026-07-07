@@ -115,9 +115,9 @@ export function summarizeDiff(files = []) {
 
 function inferScope(pr, diffSummary) {
   const paths = diffSummary.notablePaths.join(" ");
-  if (/nucleus\/skills\/rocket-launch/u.test(paths)) return "rocket-launch";
-  if (/nucleus\/skills\/roboports/u.test(paths)) return "roboports";
-  if (/nucleus\/skills\/blueprint/u.test(paths) || /docs\/decisions/u.test(paths)) return "blueprint";
+  if (/skills\/rocket-launch/u.test(paths)) return "rocket-launch";
+  if (/skills\/roboports/u.test(paths)) return "roboports";
+  if (/skills\/blueprint/u.test(paths) || /docs\/decisions/u.test(paths)) return "blueprint";
   if (/docs\/archive|handoff|resume/u.test(paths) || /archive|history/u.test(pr.title)) return "belt";
   if (/test|proof|validate/u.test(paths)) return "lab";
   return "shared-nucleus";
@@ -175,7 +175,7 @@ export function buildRetroPacket(pr, options = {}) {
   if (!pr.mergedAt) throw new Error(`PR #${pr.number} is not merged; retro write-back only accepts merged PRs`);
   const diffSummary = summarizeDiff(pr.files ?? []);
   const scope = options.scope ?? inferScope(pr, diffSummary);
-  const home = `nucleus/retro/pr-${pr.number}`;
+  const home = `retro/pr-${pr.number}`;
   const title = String(pr.title ?? `PR #${pr.number}`);
   const labels = normalizeLabels(pr.labels);
   const bodySummary = String(pr.body ?? "").split("\n").filter((line) => /^[-*] |^## /u.test(line.trim())).slice(0, 8);
@@ -199,7 +199,7 @@ export function buildRetroPacket(pr, options = {}) {
       candidate: {
         title: `Merged PR exemplar: ${title}`,
         summary: bodySummary.length > 0 ? bodySummary : [`Changed ${diffSummary.filesChanged} files with +${diffSummary.additions}/-${diffSummary.deletions}.`],
-        suggestedDestination: `nucleus/skills/${scope}/exemplars/pr-${pr.number}.md`,
+        suggestedDestination: `skills/${scope}/exemplars/pr-${pr.number}.md`,
       },
     }),
     commonEntry({
@@ -213,7 +213,7 @@ export function buildRetroPacket(pr, options = {}) {
         id: `rule/pr-${pr.number}-${slugify(title)}`,
         title: `Rule candidate from PR #${pr.number}`,
         rule: `When work matches ${labels.join(", ") || "the changed surfaces"}, consider the PR #${pr.number} pattern before inventing a new workflow.`,
-        suggestedDestination: `nucleus/skills/${scope}/references/rules.md`,
+        suggestedDestination: `skills/${scope}/references/rules.md`,
       },
     }),
     commonEntry({
@@ -226,7 +226,7 @@ export function buildRetroPacket(pr, options = {}) {
       candidate: {
         title: `Coverage gap candidate from PR #${pr.number}`,
         gap: `Review whether ${diffSummary.notablePaths.slice(0, 4).join(", ") || "the changed files"} revealed missing guidance for ${scope}.`,
-        suggestedDestination: `nucleus/skills/${scope}/references/coverage-gaps.md`,
+        suggestedDestination: `skills/${scope}/references/coverage-gaps.md`,
       },
     }),
   ];
@@ -257,8 +257,8 @@ export function validateEvidenceIntakeEntry(entry) {
   if (entry.status !== "pending-human-review") errors.push("status must be pending-human-review");
   if (!Array.isArray(entry.evidence) || entry.evidence.length === 0) errors.push("evidence must be a non-empty array");
   if (!Array.isArray(entry.checks) || entry.checks.length === 0) errors.push("checks must be a non-empty array");
-  if (!entry.targetFile?.startsWith(`nucleus/retro/pr-${entry.sourcePr?.number}/`)) {
-    errors.push("targetFile must stay under nucleus/retro/pr-{number}/");
+  if (!entry.targetFile?.startsWith(`retro/pr-${entry.sourcePr?.number}/`)) {
+    errors.push("targetFile must stay under retro/pr-{number}/");
   }
   if (entry.sourcePr && !entry.sourcePr.mergedAt) errors.push("sourcePr.mergedAt is required");
   if (entry.kind !== "decision-log" && typeof entry.candidate !== "object") errors.push("candidate must be an object");

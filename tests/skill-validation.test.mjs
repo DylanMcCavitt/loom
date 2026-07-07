@@ -8,8 +8,7 @@ import { test } from "node:test";
 const validator = new URL("../scripts/validate-skills.mjs", import.meta.url).pathname;
 const fixtures = new URL("fixtures/skills/", import.meta.url).pathname;
 const repoRoot = new URL("../", import.meta.url).pathname;
-const repoSkillsDir = new URL("../nucleus/skills", import.meta.url).pathname;
-const repoCompatSkillsDir = new URL("../.agents/skills", import.meta.url).pathname;
+const repoSkillsDir = new URL("../skills", import.meta.url).pathname;
 
 function runValidation(fixture, extraArgs = []) {
   return spawnSync(process.execPath, [
@@ -82,18 +81,13 @@ test("rejects names colliding with global skills", () => {
   assert.match(result.stderr, /collides with an existing global skill/u);
 });
 
-for (const { name, target } of [
-  { name: "canonical skills root", target: repoSkillsDir },
-  { name: "compatibility skills root", target: repoCompatSkillsDir },
-]) {
-  test(`ignores global skills dir that resolves to this repo's ${name}`, () => {
-    withSymlinkedGlobalSkillsRoot(target, (globalSkillsDir) => {
-      const result = runRepoValidation(globalSkillsDir);
-      assert.equal(result.status, 0, result.stderr);
-      assert.match(result.stdout, /Skill validation passed: \d+ skills checked/u);
-    });
+test("ignores global skills dir that resolves to this repo's canonical skills root", () => {
+  withSymlinkedGlobalSkillsRoot(repoSkillsDir, (globalSkillsDir) => {
+    const result = runRepoValidation(globalSkillsDir);
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /Skill validation passed: \d+ skills checked/u);
   });
-}
+});
 
 test("rejects API-key and token looking text", () => {
   const result = runValidation("bad-secret");

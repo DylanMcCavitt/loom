@@ -4,10 +4,10 @@ Loom is a cross-harness agent pack: seven roster agents plus kit utilities shipp
 
 ## Install per harness
 
-**Universal skill path (all harnesses).** Repo skills live under [`.agents/skills/`](.agents/skills/), rendered from [`nucleus/skills/`](nucleus/skills/) and [`nucleus/utilities/`](nucleus/utilities/) via `npm run render`. Symlink or copy one directory per skill into your harness skill root:
+**Universal skill path (all harnesses).** Repo skills live under [`skills/`](skills/) as the canonical source. Symlink or copy one directory per skill into your harness skill root:
 
 ```sh
-ln -s "$(pwd)/.agents/skills/blueprint" ~/.agents/skills/blueprint
+ln -s "$(pwd)/skills/blueprint" ~/.agents/skills/blueprint
 ```
 
 Harness-specific roots also work: `~/.codex/skills/<name>/`, `~/.claude/skills/<name>/`, or project-local `.agents/skills/<name>/`.
@@ -18,7 +18,7 @@ Harness-specific roots also work: `~/.codex/skills/<name>/`, `~/.claude/skills/<
 ```sh
 git clone https://github.com/DylanMcCavitt/loom.git && cd loom
 npm run check
-ln -s "$(pwd)/.agents/skills/blueprint" ~/.agents/skills/blueprint
+ln -s "$(pwd)/skills/blueprint" ~/.agents/skills/blueprint
 ```
 
 Invoke the `blueprint` skill in your harness (shape/spec work). Roster agents: `belt`, `biters`, `blueprint`, `lab`, `repair-pack`, `roboports`, `rocket-launch`. Kit utilities: `assembler`, `prospect`, `space-age`, `map-seed`.
@@ -27,16 +27,16 @@ Invoke the `blueprint` skill in your harness (shape/spec work). Roster agents: `
 
 | Harness | Skill root | Install route | Status |
 | --- | --- | --- | --- |
-| OMP | `~/.agents/skills/` (shared); repo [`.agents/skills/`](.agents/skills/) | Per-skill symlink or copy from the rendered compatibility surface | Rendered skills effective in shared skill roots |
-| Codex | `~/.codex/skills/`, `~/.agents/skills/` | Per-skill symlink or copy from [`.agents/skills/`](.agents/skills/) | Skills available through skill roots |
-| Claude Code | `~/.claude/skills/`, `~/.agents/skills/` | Per-skill symlink or copy from [`.agents/skills/`](.agents/skills/) | Skills available through skill roots |
+| OMP | `~/.agents/skills/` (shared); repo [`skills/`](skills/) | Per-skill symlink or copy from `skills/<name>` | Skills available through skill roots |
+| Codex | `~/.codex/skills/`, `~/.agents/skills/` | Per-skill symlink or copy from [`skills/`](skills/) | Skills available through skill roots |
+| Claude Code | `~/.claude/skills/`, `~/.agents/skills/` | Per-skill symlink or copy from [`skills/`](skills/) | Skills available through skill roots |
 
 ## Glossary
 
 | Term | Meaning |
 | --- | --- |
 | Loom | This repo and the cross-harness agent pack it ships |
-| nucleus | Canonical source under [`nucleus/`](nucleus/) (agents, skills, utilities, schemas) |
+| nucleus | Cross-harness workflow model shipped as canonical skill packages under [`skills/`](skills/) |
 
 ## Validators and tests
 
@@ -53,7 +53,6 @@ npm run check
 | Test | `npm test` | Runs the full Node test suite |
 | Bench | `npm run bench` | Runs the benchmark harness |
 | Worktree guard | `npm run guard:worktree` | Confirms agent work starts in the intended checkout |
-| Render skills compat | `npm run render` | Regenerates `.agents/skills/` from nucleus after edits |
 | Loop | `npm run loop` | Runs the operator loop entrypoint |
 | Skills | `node scripts/validate-skills.mjs` | Skill shape, frontmatter, naming, secret-like content |
 | Docs drift | `node scripts/validate-nucleus-docs-drift.mjs` | README identity, command docs, roster, and table sync |

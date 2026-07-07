@@ -31,9 +31,9 @@ jobs:
           set -euo pipefail
           STAGING="release-staging"
           rm -rf "$STAGING"
-          mkdir -p "$STAGING/.agents/skills" "$STAGING/nucleus"
-          cp -R .agents/skills/. "$STAGING/.agents/skills/"
-          cp -R nucleus/. "$STAGING/nucleus/"
+          mkdir -p "$STAGING/skills" "$STAGING/docs"
+          cp -R skills/. "$STAGING/skills/"
+          cp docs/agent-contract.md "$STAGING/docs/"
           cp LICENSE README.md "$STAGING/"
           tar -czf "loom-pack-${GITHUB_REF_NAME}.tar.gz" -C "$STAGING" .
 

@@ -1,22 +1,18 @@
 #!/usr/bin/env node
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { homedir } from "node:os";
-import { compatSkillsRoot, nucleusSkillsRoot, nucleusUtilitiesRoot } from "./lib/layout.mjs";
+import { sharedAgentContractMarkdownPath, skillsRoot } from "./lib/layout.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseFrontmatter as parseMarkdownFrontmatter } from "./lib/frontmatter.mjs";
 import { scanHarnessSafety } from "./lib/harness-safety.mjs";
 
-const DEFAULT_SKILLS_DIR = nucleusSkillsRoot;
-const DEFAULT_COMPAT_SKILLS_DIR = compatSkillsRoot;
+const DEFAULT_SKILLS_DIR = skillsRoot;
 const USAGE = `Usage: node scripts/validate-skills.mjs [--skills-dir <dir>] [--global-skills-dir <dir>] [--reserved-name <name>]`;
 
 function readArgs(argv) {
   const options = {
     skillsDir: DEFAULT_SKILLS_DIR,
-    extraSkillsDirs: [nucleusUtilitiesRoot],
-    compatSkillsDir: DEFAULT_COMPAT_SKILLS_DIR,
-    checkCompat: true,
     globalSkillsDirs: [],
     reservedNames: new Set(),
   };
@@ -33,8 +29,6 @@ function readArgs(argv) {
     }
     if (arg === "--skills-dir") {
       options.skillsDir = next;
-      options.extraSkillsDirs = [];
-      options.checkCompat = false;
     } else if (arg === "--global-skills-dir") {
       options.globalSkillsDirs.push(next);
     } else if (arg === "--reserved-name") {
@@ -162,13 +156,12 @@ function collectGlobalSkillNames(globalSkillsDirs, skillsRoot) {
   const names = new Set();
   const localSkillRoots = [
     skillsRoot,
-    path.resolve(DEFAULT_COMPAT_SKILLS_DIR),
   ].map(safeRealpath).filter(Boolean);
   for (const dir of globalSkillsDirs) {
     const resolved = path.resolve(dir);
     if (!existsSync(resolved)) continue;
-    // Skip global roots/entries that resolve back into this repo's canonical or
-    // compatibility skill surfaces; they are not external collision sources.
+    // Skip global roots/entries that resolve back into this repo's canonical
+    // skill surface; they are not an external collision source.
     const resolvedReal = safeRealpath(resolved);
     const sameLocalRoot = resolvedReal && localSkillRoots.some((root) => isInsidePath(root, resolvedReal));
     // The default ~/.agents/skills root may point at another worktree of this same package; that is
@@ -207,7 +200,10 @@ function collectRelativeFiles(root, current = root, files = []) {
 
 
 const BUS_FIRST_HISTORY_FILE = "biters/references/lens-minimal-diff.md";
-const OLD_SHARED_NUCLEUS_PATH = ["docs", "harness", "shared-nucleus-agents"].join("/");
+const OLD_SHARED_NUCLEUS_PATHS = Object.freeze([
+  ["docs", "harness", "shared-nucleus-agents"].join("/"),
+  ["nucleus", "agents", "shared-nucleus-agents"].join("/"),
+]);
 
 function scanSkillContentPolicy(skillsRoots, errors) {
   for (const skillsRoot of skillsRoots) {
@@ -216,41 +212,15 @@ function scanSkillContentPolicy(skillsRoots, errors) {
     for (const relativeFile of collectRelativeFiles(resolved)) {
       const content = readFileSync(path.join(resolved, relativeFile), "utf8");
       const displayPath = path.join(path.relative(process.cwd(), resolved), relativeFile);
-      if (content.includes(OLD_SHARED_NUCLEUS_PATH)) errors.push(`${displayPath}: must not reference ${OLD_SHARED_NUCLEUS_PATH}; use nucleus/agents/shared-nucleus-agents`);
+      for (const oldSharedPath of OLD_SHARED_NUCLEUS_PATHS) {
+        if (content.includes(oldSharedPath)) errors.push(`${displayPath}: must not reference ${oldSharedPath}; use ${sharedAgentContractMarkdownPath}`);
+      }
       if (content.includes("bus-first") && relativeFile !== BUS_FIRST_HISTORY_FILE) errors.push(`${displayPath}: must not reference bus-first outside ${BUS_FIRST_HISTORY_FILE}`);
       if (/LOO-\d+/u.test(content)) errors.push(`${displayPath}: must not reference Linear issue ids (LOO-*); keep tracker ids out of canonical skill source`);
     }
   }
 }
 
-function validateCompatSurface(skillsRoots, compatRoot, errors) {
-  if (!existsSync(compatRoot) || !statSync(compatRoot).isDirectory()) {
-    errors.push(`${path.relative(process.cwd(), compatRoot)}: expected rendered compatibility surface`);
-    return;
-  }
-  const canonicalSources = new Map();
-  for (const root of skillsRoots) {
-    if (!existsSync(root)) continue;
-    for (const relativeFile of collectRelativeFiles(root)) {
-      canonicalSources.set(relativeFile, root);
-    }
-  }
-  const canonicalFiles = [...canonicalSources.keys()].sort();
-  const compatFiles = collectRelativeFiles(compatRoot);
-  const rootLabels = skillsRoots.map((root) => path.relative(process.cwd(), root)).join(" and ");
-  if (JSON.stringify(canonicalFiles) !== JSON.stringify(compatFiles)) {
-    errors.push(`${path.relative(process.cwd(), compatRoot)}: rendered compatibility surface must contain exactly the files in ${rootLabels}`);
-    return;
-  }
-  for (const relativeFile of canonicalFiles) {
-    const sourceRoot = canonicalSources.get(relativeFile);
-    const canonical = readFileSync(path.join(sourceRoot, relativeFile));
-    const compat = readFileSync(path.join(compatRoot, relativeFile));
-    if (!canonical.equals(compat)) {
-      errors.push(`${path.join(path.relative(process.cwd(), compatRoot), relativeFile)}: rendered compatibility file differs from ${path.join(path.relative(process.cwd(), sourceRoot), relativeFile)}`);
-    }
-  }
-}
 
 function validateSkillsRoot(skillsDir, { errors, seenNames, globalNames }) {
   const skillsRoot = path.resolve(skillsDir);
@@ -268,7 +238,7 @@ function validateSkillsRoot(skillsDir, { errors, seenNames, globalNames }) {
     if (entry.name.startsWith(".")) continue;
     const skillDir = path.join(skillsRoot, entry.name);
     if (!entry.isDirectory()) {
-      errors.push(`${path.relative(process.cwd(), skillDir)}: only skill directories are allowed directly under nucleus/skills`);
+      errors.push(`${path.relative(process.cwd(), skillDir)}: only skill directories are allowed directly under skills/`);
       continue;
     }
 
@@ -282,7 +252,7 @@ function validateSkillsRoot(skillsDir, { errors, seenNames, globalNames }) {
     for (const filePath of collectFiles(skillDir)) {
       scanSecrets(path.relative(process.cwd(), filePath), readFileSync(filePath, "utf8"), errors);
       if (filePath.endsWith(`${path.sep}SKILL.md`) && path.dirname(filePath) !== skillDir) {
-        errors.push(`${path.relative(process.cwd(), filePath)}: SKILL.md must be exactly one level under nucleus/skills/<name>/`);
+        errors.push(`${path.relative(process.cwd(), filePath)}: SKILL.md must be exactly one level under skills/<name>/`);
       }
     }
 
@@ -319,10 +289,41 @@ function validateSkillsRoot(skillsDir, { errors, seenNames, globalNames }) {
   return checked;
 }
 
+function isCanonicalRepoSkillsDir(skillsDir) {
+  return path.resolve(skillsDir) === path.resolve(process.cwd(), DEFAULT_SKILLS_DIR);
+}
+
+function rosterAgentNames(contractText) {
+  const rosterSection = contractText.match(/## Roster\n\n[\s\S]*?(?=\n## |\n*$)/u)?.[0] ?? "";
+  const names = [];
+  for (const line of rosterSection.split("\n")) {
+    const match = line.match(/^\| `([^`]+)` \|/u);
+    if (match) names.push(match[1]);
+  }
+  return names;
+}
+
+function validateRosterContract(skillsDir, errors) {
+  if (!isCanonicalRepoSkillsDir(skillsDir)) return;
+  const contractPath = path.join(process.cwd(), sharedAgentContractMarkdownPath);
+  if (!existsSync(contractPath)) return;
+  const roster = rosterAgentNames(readFileSync(contractPath, "utf8"));
+  if (!roster.length) {
+    errors.push(`${sharedAgentContractMarkdownPath}: could not parse roster table`);
+    return;
+  }
+  const resolvedSkillsDir = path.resolve(skillsDir);
+  for (const agentName of roster) {
+    if (!existsSync(path.join(resolvedSkillsDir, agentName, "SKILL.md"))) {
+      errors.push(`${sharedAgentContractMarkdownPath}: roster agent ${agentName} is not shipped under ${DEFAULT_SKILLS_DIR}/${agentName}/SKILL.md`);
+    }
+  }
+}
+
 export function validateSkills(options) {
   const errors = [];
   const seenNames = new Map();
-  const skillsRoots = [options.skillsDir, ...(options.extraSkillsDirs ?? [])];
+  const skillsRoots = [options.skillsDir];
   const globalNames = collectGlobalSkillNames(options.globalSkillsDirs, path.resolve(options.skillsDir));
   for (const reserved of options.reservedNames) globalNames.add(reserved);
 
@@ -332,10 +333,7 @@ export function validateSkills(options) {
   }
 
   scanSkillContentPolicy([path.resolve(options.skillsDir)], errors);
-
-  if (options.checkCompat) {
-    validateCompatSurface(skillsRoots.map((dir) => path.resolve(dir)), path.resolve(options.compatSkillsDir), errors);
-  }
+  validateRosterContract(options.skillsDir, errors);
 
   return { checked, errors };
 }

@@ -14,6 +14,6 @@ This package is the canonical shared-agent source for `rocket-launch` as model-a
 ## Update rules
 
 - Keep the canonical name `rocket-launch`; harness prefixes are forbidden.
-- Keep generated adapter packaging format-only. Behavior changes belong in `nucleus/agents/shared-nucleus-agents.*` first.
+- Keep generated adapter packaging format-only. Behavior changes belong in `docs/agent-contract.md` first.
 - Never add live HOME paths, tokens, provider configuration, auth, cache, session, history, daemon, or local settings content.
-- New standards require pending retro evidence under `nucleus/retro/`, a satisfied rule schema for accepted rules, and human PR approval before becoming accepted guidance; collector/judge automation is aspirational until implemented.
+- New standards require pending retro evidence under `retro/`, a satisfied rule schema for accepted rules, and human PR approval before becoming accepted guidance; collector/judge automation is aspirational until implemented.

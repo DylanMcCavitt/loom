@@ -1,9 +1,8 @@
 # Operator-local utility skills manifest
 
-LOO-152 slimmed the repo-owned nucleus to **11 skills**: seven roster agents under
-`nucleus/skills/` plus four kit utilities under `nucleus/utilities/`. The seventeen
-cited-engine utilities below moved out of tracked Loom source to the operator-local
-skills root at `~/.agents/skills/`.
+LOO-152 slimmed the repo-owned skill set to **11 skills** under the flat canonical
+`skills/` tree. The seventeen cited-engine utilities below moved out of tracked
+Loom source to the operator-local skills root at `~/.agents/skills/`.
 
 Repo-side migration only: this manifest records ownership and live paths. It does
 **not** copy skill content into the repo and does **not** write live `~/.agents`.
@@ -12,9 +11,7 @@ Repo-side migration only: this manifest records ownership and live paths. It doe
 
 | root | dirs |
 |---|---|
-| `nucleus/skills/` | `belt`, `biters`, `blueprint`, `lab`, `repair-pack`, `roboports`, `rocket-launch` |
-| `nucleus/utilities/` | `assembler`, `prospect`, `space-age`, `map-seed` |
-| `.agents/skills/` | rendered compatibility copy of the rows above (`node scripts/render-skills-compat.mjs`) |
+| `skills/` | `assembler`, `belt`, `biters`, `blueprint`, `lab`, `map-seed`, `prospect`, `repair-pack`, `roboports`, `rocket-launch`, `space-age` |
 
 ## Operator-local utilities (17)
 

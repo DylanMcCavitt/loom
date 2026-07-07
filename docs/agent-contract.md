@@ -2,7 +2,7 @@
 
 This document defines the canonical shared agent model and does not authorize native OMP/Codex/Claude role-agent files or real-HOME apply without HITL review.
 
-Source pattern: [Teaching agents product design at Vercel](https://vercel.com/blog/teaching-agents-product-design-at-vercel). Loom adapts that shape as one Vercel-shaped skill package per canonical nucleus agent under `nucleus/skills/{agent-name}/` (AGENTS.md, SKILL.md, references/, exemplars/). Four kit utilities remain repo-owned under `nucleus/utilities/`; cited engines live operator-local under `~/.agents/skills/` per `docs/skills/operator-local-manifest.md`.
+Source pattern: [Teaching agents product design at Vercel](https://vercel.com/blog/teaching-agents-product-design-at-vercel). Loom adapts that shape as one Vercel-shaped skill package per canonical agent under `skills/{agent-name}/` (AGENTS.md, SKILL.md, references/, exemplars/). Four kit utilities are repo-owned in the same `skills/` tree; cited engines live operator-local under `~/.agents/skills/` per `docs/skills/operator-local-manifest.md`.
 
 ## Model
 
@@ -51,7 +51,7 @@ One agent per mode; behavioral variants are lens references inside the agent pac
 
 ## Pipeline DAG
 
-The delegation matrix is replaced by one pipeline; per-agent child lists live in `agentDelegation` in `nucleus/agents/shared-nucleus-agents.json`.
+The delegation matrix is replaced by one pipeline; per-agent child lists are the pipeline edges below.
 
 ```text
 blueprint -> belt
@@ -75,7 +75,7 @@ Global policy:
 
 ## Repair-pack finding-fix loop
 
-`repair-pack` supports only `repair` mode. It may delegate only the named `prove` check to `lab`, with max one child level. It may not spawn review agents, start broad workflow delegation, render native agent files, or live-apply to HOME. Package: `nucleus/skills/repair-pack/`.
+`repair-pack` supports only `repair` mode. It may delegate only the named `prove` check to `lab`, with max one child level. It may not spawn review agents, start broad workflow delegation, render native agent files, or live-apply to HOME. Package: `skills/repair-pack/`.
 
 Every repair request uses a finding packet with these required fields: file, symbol, scope, concrete risk, minimal expected fix, proof check, rule/source id, non-goals, and allowed files. Missing fields are a blocker, not permission to widen the work.
 
@@ -111,7 +111,7 @@ When `context` is absent, assume `live` and state the assumption in the output p
 
 ## Packet contract
 
-Every agent receives a bounded input packet and returns a bounded output packet; machine-readable fields live in `nucleus/agents/shared-nucleus-agents.json`. Common invariants:
+Every agent receives a bounded input packet and returns a bounded output packet. Common invariants:
 
 - report mode, lens, target surface, loaded references, rule IDs, proof run, and unresolved coverage gaps;
 - no live HOME apply;
@@ -123,6 +123,6 @@ Rules use stable IDs (`## rule/{stable-id}`) citing status, scope, rule, why, ex
 
 ## Governance and activation
 
-Guidance changes follow the practiced retro-packet core in `nucleus/agents/shared-nucleus-agents.json#evidenceIntake`: generated packets stay pending under `nucleus/retro/pr-{number}/`, human PR review is the HITL gate, accepted rules still satisfy the enforced rule schema, and accepted guidance lands only after approval in the narrowest relevant skill destination. The older collector/judge/destination machine is aspirational design vocabulary, not live automation.
+Guidance changes follow the practiced retro-packet core: generated packets (scripts/retro-packet.mjs) stay pending under `retro/pr-{number}/`, human PR review is the HITL gate, accepted rules still satisfy the enforced rule schema, and accepted guidance lands only after approval in the narrowest relevant skill destination. The older collector/judge/destination machine is aspirational design vocabulary, not live automation.
 
-Activation machinery (plugin-bridge rendering, shared-agent package/eval validators) is retired: packages load directly from the canonical repo tree, and any live-HOME write still requires explicit HITL approval. Superseded `omp-*` candidates and historical issue context live in the JSON contract.
+Activation machinery (plugin-bridge rendering, shared-agent package/eval validators) is retired: packages load directly from the canonical repo tree, and any live-HOME write still requires explicit HITL approval. Superseded `omp-*` candidates and historical issue context live in repo history.

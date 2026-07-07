@@ -77,13 +77,13 @@ test("retro packet builder writes schema-valid nucleus files", () => {
     const packet = buildRetroPacket(fixturePr, { generatedAt: "2026-07-07T00:00:00.000Z" });
     const written = writeRetroPacketFiles(packet, { root }).written;
     assert.deepEqual(written, [
-      "nucleus/retro/pr-215/decision-log.json",
-      "nucleus/retro/pr-215/candidate-exemplar.json",
-      "nucleus/retro/pr-215/candidate-rule.json",
-      "nucleus/retro/pr-215/candidate-coverage-gap.json",
-      "nucleus/retro/pr-215/pr-body.md",
+      "retro/pr-215/decision-log.json",
+      "retro/pr-215/candidate-exemplar.json",
+      "retro/pr-215/candidate-rule.json",
+      "retro/pr-215/candidate-coverage-gap.json",
+      "retro/pr-215/pr-body.md",
     ]);
-    const saved = JSON.parse(readFileSync(path.join(root, "nucleus/retro/pr-215/candidate-rule.json"), "utf8"));
+    const saved = JSON.parse(readFileSync(path.join(root, "retro/pr-215/candidate-rule.json"), "utf8"));
     assert.equal(validateEvidenceIntakeEntry(saved).ok, true);
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -129,7 +129,7 @@ test("retro packet generator commits packet files and prints a runnable PR comma
     assert.ok(bodyPath, commandLine);
     assert.equal(path.isAbsolute(bodyPath), true);
     assert.equal(existsSync(bodyPath), true);
-    assert.equal(path.relative(worktreeRoot, bodyPath).split(path.sep).join("/"), "nucleus/retro/pr-215/pr-body.md");
+    assert.equal(path.relative(worktreeRoot, bodyPath).split(path.sep).join("/"), "retro/pr-215/pr-body.md");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

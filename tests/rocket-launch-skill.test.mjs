@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-const skill = readFileSync(new URL("../nucleus/skills/rocket-launch/SKILL.md", import.meta.url), "utf8");
+const skill = readFileSync(new URL("../skills/rocket-launch/SKILL.md", import.meta.url), "utf8");
 
 test("rocket-launch has the required trigger", () => {
   assert.match(skill, /name: rocket-launch/u);

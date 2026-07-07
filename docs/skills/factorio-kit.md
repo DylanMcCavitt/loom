@@ -8,7 +8,7 @@ merge. Decisions are recorded in [ADR 0003](../decisions/0003-factorio-workflow-
 The tracker choice is explicit before binding planning work for a repo.
 
 This manifest is the build envelope, not an active adapter template. Its roster
-is validated against committed `nucleus/skills/` by `npm run check`. Each skill is
+is validated against committed `skills/` by `npm run check`. Each skill is
 authored eval-first: write its `evals.json` and content-envelope test, then
 iterate `SKILL.md` until both pass.
 
@@ -414,7 +414,7 @@ active responsibilities.
   `security-threat-model`, `security-best-practices`, `security-ownership-map`,
   `debug-tools`, plus other non-workflow skills listed in
   [`operator-local-manifest.md`](operator-local-manifest.md).
-- **Repo-owned kit utilities (`nucleus/utilities/`):** `assembler`, `prospect`, `space-age`, `map-seed`.
+- **Repo-owned kit utilities (`skills/`):** `assembler`, `prospect`, `space-age`, `map-seed`.
 - For each retired skill: delete its dir, drop/rewrite its `*-skill.test.mjs`,
   remove its `canonical-manifest.md` row, and update the README test tables.
 

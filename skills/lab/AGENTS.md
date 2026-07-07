@@ -21,6 +21,6 @@ This package is the canonical shared-agent source for `lab` as model-agnostic gu
 
 - Keep the canonical name `lab`; harness prefixes are forbidden.
 - Keep lens vocabulary current: retired names (`spidertron`, `proof-pass`) appear only as historical context for their lenses.
-- Keep generated adapter packaging format-only. Behavior changes belong in `nucleus/agents/shared-nucleus-agents.*` first.
+- Keep generated adapter packaging format-only. Behavior changes belong in `docs/agent-contract.md` first.
 - Never add live HOME paths, tokens, provider configuration, auth, cache, session, history, daemon, or local settings content.
 - New standards require evidence intake, judge separation, and human decision-log approval before becoming accepted guidance.

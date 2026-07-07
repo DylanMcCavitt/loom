@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-const skill = readFileSync(new URL("../nucleus/skills/biters/SKILL.md", import.meta.url), "utf8");
+const skill = readFileSync(new URL("../skills/biters/SKILL.md", import.meta.url), "utf8");
 
 test("biters frontmatter name matches the directory", () => {
   assert.match(skill, /^name: biters$/mu);
@@ -32,7 +32,7 @@ test("biters lenses select guidance only and never widen scope", () => {
 });
 
 test("biters records absorbed retired reviewer agents in lens guidance", () => {
-  const minimalDiffLens = readFileSync(new URL("../nucleus/skills/biters/references/lens-minimal-diff.md", import.meta.url), "utf8");
+  const minimalDiffLens = readFileSync(new URL("../skills/biters/references/lens-minimal-diff.md", import.meta.url), "utf8");
   assert.match(skill, /absorbed from the retired `spitters` agent/u);
   assert.match(skill, /absorbed from the retired `radar` agent/u);
   assert.match(minimalDiffLens, /retired `bus-first` agent/u);

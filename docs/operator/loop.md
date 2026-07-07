@@ -12,7 +12,7 @@ Use this runbook to execute one self-improving Loom iteration. It restates the d
 
 ## Roster links
 
-Use the shared roster vocabulary from [`nucleus/agents/shared-nucleus-agents.md`](../../nucleus/agents/shared-nucleus-agents.md): `blueprint`, `roboports`, `biters`, `lab`, `rocket-launch`, and `belt`. Select lenses in the packet; do not duplicate skill instructions in this runbook.
+Use the shared roster vocabulary from [`docs/agent-contract.md`](../agent-contract.md): `blueprint`, `roboports`, `biters`, `lab`, `rocket-launch`, and `belt`. Select lenses in the packet; do not duplicate skill instructions in this runbook.
 
 ## Plan
 

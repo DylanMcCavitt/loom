@@ -41,4 +41,4 @@ When the packet carries a `lens` field:
 
 ## Skill integrity
 
-Update this package together with any contract it specializes. For shared roster agents, keep `nucleus/agents/shared-nucleus-agents.*` as the behavior source of truth and render adapter output — never hand-edit generated distributions.
+Update this package together with any contract it specializes. For shared roster agents, keep `docs/agent-contract.md` as the behavior source of truth and render adapter output — never hand-edit generated distributions.

@@ -18,7 +18,7 @@ This repository ships a **prompt pack** (skills and agent guidance) and **valida
 
 In scope:
 
-- tracked skill source under `nucleus/`
+- tracked skill source under `skills/`
 - CI validators and release workflows under `scripts/` and `.github/workflows/`
 - accidental secret leakage in tracked source or validation tooling
 

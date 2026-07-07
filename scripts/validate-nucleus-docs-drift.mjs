@@ -9,7 +9,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { nucleusSkillsRoot, nucleusUtilitiesRoot } from "./lib/layout.mjs";
+import { skillsRoot } from "./lib/layout.mjs";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
@@ -129,33 +129,31 @@ function factorioTableSkills(manifest) {
   return skills;
 }
 
-function shippedSkillNames(root = repoRoot, skillsRoot = nucleusSkillsRoot) {
+function shippedSkillNames(root = repoRoot, repoSkillsRoot = skillsRoot) {
   const names = new Set();
-  for (const candidateRoot of [skillsRoot, nucleusUtilitiesRoot]) {
-    const dir = path.join(root, candidateRoot);
-    if (!existsSync(dir)) continue;
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      if (entry.isDirectory() && existsSync(path.join(dir, entry.name, "SKILL.md"))) names.add(entry.name);
-    }
+  const dir = path.join(root, repoSkillsRoot);
+  if (!existsSync(dir)) return names;
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.isDirectory() && existsSync(path.join(dir, entry.name, "SKILL.md"))) names.add(entry.name);
   }
   return names;
 }
 
-export function validateFactorioKitRoster({ root = repoRoot, manifestPath = "docs/skills/factorio-kit.md", skillsRoot = nucleusSkillsRoot } = {}) {
+export function validateFactorioKitRoster({ root = repoRoot, manifestPath = "docs/skills/factorio-kit.md", skillsRoot: repoSkillsRoot = skillsRoot } = {}) {
   const manifest = readText(manifestPath, root);
   const failures = [];
   if (!/build envelope, not an active adapter template/u.test(manifest)) {
     failures.push(`${manifestPath}: must explicitly label factorio-kit.md as a build manifest, not active adapter source`);
   }
-  if (!/validated against committed `nucleus\/skills\/` by `npm run check`/u.test(manifest)) {
-    failures.push(`${manifestPath}: must document that the roster is validated against committed nucleus/skills`);
+  if (!/validated against committed `skills\/` by `npm run check`/u.test(manifest)) {
+    failures.push(`${manifestPath}: must document that the roster is validated against committed skills/`);
   }
 
   const roster = factorioTableSkills(manifest);
-  const shipped = shippedSkillNames(root, skillsRoot);
+  const shipped = shippedSkillNames(root, repoSkillsRoot);
   if (!roster.length) failures.push(`${manifestPath}: could not parse Skill table roster`);
   for (const skill of roster) {
-    if (!shipped.has(skill)) failures.push(`${manifestPath}: roster skill ${skill} is not shipped under ${skillsRoot}/${skill}/SKILL.md`);
+    if (!shipped.has(skill)) failures.push(`${manifestPath}: roster skill ${skill} is not shipped under ${repoSkillsRoot}/${skill}/SKILL.md`);
   }
   return failures;
 }

@@ -1,11 +1,11 @@
 # Skill template
 
-Copy this directory when authoring a new skill package. It mirrors the Vercel-shaped layout used by `nucleus/skills/*` roster agents.
+Copy this directory when authoring a new skill package. It mirrors the Vercel-shaped layout used by `skills/*` roster agents.
 
 ```sh
-cp -R template/skill-template nucleus/skills/<your-skill>
+cp -R template/skill-template skills/<your-skill>
 # or for a kit utility:
-cp -R template/skill-template nucleus/utilities/<your-skill>
+cp -R template/skill-template skills/<your-skill>
 ```
 
 Then:
@@ -16,4 +16,4 @@ Then:
 4. Add `evals/evals.json` before merging kit-facing skills.
 5. Run `npm run render` then `npm run check`.
 
-This template is **not** scanned by `validate-skills.mjs` (only `nucleus/skills/`, `nucleus/utilities/`, and `.agents/skills/` are gated).
+This template is **not** scanned by `validate-skills.mjs` (only `skills/`, `skills/`, and `.agents/skills/` are gated).

@@ -69,4 +69,4 @@ Report mode, lens, target surface, loaded references, rule IDs, proof run, and u
 
 ## Skill Integrity
 
-This package is the canonical repo-local shared-agent package source. Update this package and the shared contract together; the `.agents/skills/` compatibility surface must be re-rendered from this source, not hand-edited.
+This package is the canonical repo-local shared-agent package source. Update this package and the shared contract together; edit it in place — the tree is canonical with no rendered copy.

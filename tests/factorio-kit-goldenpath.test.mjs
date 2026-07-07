@@ -3,8 +3,8 @@ import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 import { createWorld } from "./fixtures/mock-linear-github.mjs";
 
-const skillsRoot = new URL("../nucleus/skills/", import.meta.url);
-const utilitiesRoot = new URL("../nucleus/utilities/", import.meta.url);
+const skillsRoot = new URL("../skills/", import.meta.url);
+const utilitiesRoot = new URL("../skills/", import.meta.url);
 const MVP = ["prospect", "blueprint", "roboports", "biters", "lab", "repair-pack", "rocket-launch", "belt", "assembler"];
 const KIT = [...MVP, "space-age", "map-seed"];
 const MOVED_OPERATOR_LOCAL = [
@@ -23,7 +23,7 @@ function skillUrl(name, file) {
 }
 
 const manifest = readFileSync(new URL("../docs/skills/factorio-kit.md", import.meta.url), "utf8");
-const assemblerSkill = readFileSync(new URL("../nucleus/utilities/assembler/SKILL.md", import.meta.url), "utf8");
+const assemblerSkill = readFileSync(new URL("../skills/assembler/SKILL.md", import.meta.url), "utf8");
 const adr0003 = readFileSync(new URL("../docs/decisions/0003-factorio-workflow-kit.md", import.meta.url), "utf8");
 
 // ---- Golden path: idea -> spec -> ghosts -> roboports -> rocket-launch ----
@@ -143,17 +143,17 @@ test("workflow docs use post-cutover content-envelope terminology", () => {
 test("renamed and absorbed skills have no duplicate canonical old paths", () => {
   for (const retired of ["dispatch", "robots", "inserter", "ghosts", "radar", "proof-pass", "bus-first", "main-bus", "science-pack", "research", "spitters", "spidertron", "recycler", "quality", "modules"]) {
     assert.equal(existsSync(new URL(`${retired}/SKILL.md`, skillsRoot)), false, `${retired} must not remain in nucleus/skills`);
-    assert.equal(existsSync(new URL(`${retired}/SKILL.md`, utilitiesRoot)), false, `${retired} must not remain in nucleus/utilities`);
+    assert.equal(existsSync(new URL(`${retired}/SKILL.md`, utilitiesRoot)), false, `${retired} must not remain in skills tree`);
   }
   assert.ok(existsSync(new URL("roboports/SKILL.md", skillsRoot)), "roboports skill missing");
 });
 
-test("operator-local utilities are not tracked under nucleus/utilities", () => {
+test("operator-local utilities are not tracked under skills tree", () => {
   for (const name of MOVED_OPERATOR_LOCAL) {
     assert.equal(
       existsSync(new URL(`${name}/SKILL.md`, utilitiesRoot)),
       false,
-      `${name} must not remain in nucleus/utilities after LOO-152`,
+      `${name} must not remain in skills tree after LOO-152`,
     );
   }
   for (const name of ["assembler", "prospect", "space-age", "map-seed"]) {

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generatedBy": "scripts/retro-packet.mjs",
   "generatedAt": "2026-07-07T00:00:00.000Z",
-  "home": "nucleus/retro/pr-215",
+  "home": "retro/pr-215",
   "branch": "retro/pr-215-archive-write-only-docs",
   "entries": [
     {
@@ -40,7 +40,7 @@
         "PR #215: LOO-206: archive write-only docs",
         "https://github.com/DylanMcCavitt/loom/pull/215"
       ],
-      "targetFile": "nucleus/retro/pr-215/decision-log.json",
+      "targetFile": "retro/pr-215/decision-log.json",
       "checks": [
         "node scripts/retro-packet.mjs --pr 215"
       ],
@@ -83,7 +83,7 @@
         "PR #215: LOO-206: archive write-only docs",
         "https://github.com/DylanMcCavitt/loom/pull/215"
       ],
-      "targetFile": "nucleus/retro/pr-215/candidate-exemplar.json",
+      "targetFile": "retro/pr-215/candidate-exemplar.json",
       "checks": [
         "node scripts/retro-packet.mjs --pr 215"
       ],
@@ -93,7 +93,7 @@
         "summary": [
           "Move superseded docs into archive."
         ],
-        "suggestedDestination": "nucleus/skills/belt/exemplars/pr-215.md"
+        "suggestedDestination": "skills/belt/exemplars/pr-215.md"
       }
     },
     {
@@ -131,7 +131,7 @@
         "PR #215: LOO-206: archive write-only docs",
         "https://github.com/DylanMcCavitt/loom/pull/215"
       ],
-      "targetFile": "nucleus/retro/pr-215/candidate-rule.json",
+      "targetFile": "retro/pr-215/candidate-rule.json",
       "checks": [
         "node scripts/retro-packet.mjs --pr 215"
       ],
@@ -140,7 +140,7 @@
         "id": "rule/pr-215-archive-write-only-docs",
         "title": "Rule candidate from PR #215",
         "rule": "Consider the archive-docs pattern before inventing a new workflow.",
-        "suggestedDestination": "nucleus/skills/belt/references/rules.md"
+        "suggestedDestination": "skills/belt/references/rules.md"
       }
     },
     {
@@ -178,7 +178,7 @@
         "PR #215: LOO-206: archive write-only docs",
         "https://github.com/DylanMcCavitt/loom/pull/215"
       ],
-      "targetFile": "nucleus/retro/pr-215/candidate-coverage-gap.json",
+      "targetFile": "retro/pr-215/candidate-coverage-gap.json",
       "checks": [
         "node scripts/retro-packet.mjs --pr 215"
       ],
@@ -186,7 +186,7 @@
       "candidate": {
         "title": "Coverage gap candidate from PR #215",
         "gap": "Review whether archive docs revealed missing guidance for belt.",
-        "suggestedDestination": "nucleus/skills/belt/references/coverage-gaps.md"
+        "suggestedDestination": "skills/belt/references/coverage-gaps.md"
       }
     }
   ]
