@@ -54,6 +54,14 @@ test("rejects missing and invalid skill metadata versions", () => {
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /missing metadata\.version/u);
   assert.match(result.stderr, /metadata\.version must be valid semver/u);
+  assert.match(result.stderr, /bad-leading-zero-prerelease\/SKILL\.md: metadata\.version must be valid semver/u);
+  assert.match(result.stderr, /bad-leading-zero-dotted-prerelease\/SKILL\.md: metadata\.version must be valid semver/u);
+});
+
+test("accepts valid semver prerelease identifiers", () => {
+  const result = runValidation("good-prerelease");
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Skill validation passed: 3 skills checked/u);
 });
 
 test("rejects missing frontmatter", () => {
