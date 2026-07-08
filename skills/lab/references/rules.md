@@ -3,13 +3,13 @@
 ## rule/canonical-name
 Status: accepted
 Scope: lab
-Rule: Use the canonical shared name `lab` in packages and adapter manifests; do not use `omp-`, `codex-`, or `claude-` prefixes.
+Rule: Use the canonical shared name `lab` everywhere the package is referenced; do not use `omp-`, `codex-`, or `claude-` prefixes.
 Why: Shared nucleus behavior must stay portable across harnesses.
-Exceptions: Historical fixtures may mention superseded OMP-prefixed candidates when marked as historical context.
+Exceptions: Historical context may mention superseded candidates only when marked as historical context.
 Source: docs/agent-contract.md#namingRules
 Bad example: `omp-lab`
 Good example: `lab`
-Assumptions: Adapter renderers translate format only.
+Assumptions: Names are canonical and identical in every harness.
 Open decisions: none
 
 ## rule/packet-boundary

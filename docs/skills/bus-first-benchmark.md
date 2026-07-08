@@ -1,3 +1,6 @@
+> Historical methodology record: the `bus-first` skill is absorbed into `biters`'
+> `minimal-diff` lens; `benchmarks/roboports/` carries the live two-arm shape.
+
 # `bus-first` minimal-diff benchmark
 
 The doctrine's claim is falsifiable: with `bus-first` active, an agent produces a

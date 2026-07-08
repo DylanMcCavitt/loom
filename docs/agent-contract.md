@@ -8,7 +8,7 @@ Source pattern: [Teaching agents product design at Vercel](https://vercel.com/bl
 
 - Skills remain routing, playbooks, triggers, guardrails, references, exemplars, and stable rules.
 - Agents are delegated specialists that execute bounded work packets selected by request mode, source routing, and lens.
-- Harness adapters may translate file format or frontmatter only; names, behavior contracts, routing, references, and packets stay canonical.
+- Every harness loads the same package bytes; names, behavior contracts, routing, references, and packets stay canonical.
 - Deterministic checks handle mechanical rules; judgment stays in agent guidance with evidence, assumptions, exceptions, and coverage gaps.
 
 ## Naming rules

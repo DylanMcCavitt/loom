@@ -2,8 +2,8 @@
 name: assembler
 description: Sets a repository up for the Factorio workflow kit or refreshes its envelope by reading the repo and generating the repo-local envelope every other kit skill binds to, plus the harness wiring and repo-specific skills and agents. Use when setting up a repo for the kit or refreshing its Linear team/project/label map, domain glossary, build/test/lint commands, PR/issue/doc templates, or repo-specific skills and agents.
 metadata:
-  version: "0.1.0"
-  changelog: "0.1.0 - initial public release"
+  version: "0.2.0"
+  changelog: "0.2.0 - envelope contract simplified to repo-local Markdown only"
 
 ---
 
@@ -22,7 +22,7 @@ Canonical source: `.agents/envelope/` in the target repo. It contains four human
 - `commands.md` — the real build / test / lint / run commands and the default branch.
 - `templates/` — repo-local PR / issue / doc templates, stamped from `blueprint`'s canonical `templates/`.
 
-This Markdown envelope is the **single binding point**. The local Factory Nucleus state file at `~/.loom/factory-nucleus/<id>/envelope/envelope.yaml` is a generated/validated mirror for schema/runtime checks, not a second source to edit. Every kit skill reads it instead of hardcoding a tracker. See [ENVELOPE.md](ENVELOPE.md) for the full shape of each binding.
+This Markdown envelope is the **single binding point**. `.agents/envelope/` is the repo-local contract every kit skill reads instead of hardcoding a tracker; there is no runtime mirror or second source to edit. See [ENVELOPE.md](ENVELOPE.md) for the full shape of each binding.
 
 ## Repo wiring
 
@@ -37,13 +37,13 @@ Synthesize the tooling the envelope implies but the generic kit cannot carry —
 1. **Read the repo.** Detect stack, default branch, build/test/lint/run commands, existing docs/ADRs, `AGENTS.md`/`CLAUDE.md`, and any prior `.agents/envelope/`. Use `list_teams`, `list_projects`, `list_issue_labels`, and `list_issue_statuses` to discover the Linear mapping.
 2. **Ask only for the gaps.** Confirm the team/project and the label-to-state mapping the tools cannot infer. Never ask for anything the repo or Linear already answers.
 3. **Generate, create-missing-only.** Write each envelope file that is absent; never clobber one that exists. Stamp `templates/` from `blueprint`'s canonical `templates/`, substituting the repo's real names; never copy placeholders verbatim. Wire the `## Agent skills` block. Scaffold the repo-specific skills/agents the envelope implies.
-4. **Verify.** Cross-check the Markdown bindings agree, the generated YAML mirror validates when present, and the envelope is complete before declaring the repo ready; see [VERIFY.md](VERIFY.md). A refresh proposes a diff and asks before overwriting.
+4. **Verify.** Cross-check the Markdown bindings agree and the envelope is complete before declaring the repo ready; see [VERIFY.md](VERIFY.md). A refresh proposes a diff and asks before overwriting.
 
 ## Invariants
 
 - **Never writes secrets.** No tokens, keys, or credentialed URLs ever land in the envelope — record where a secret lives (the env var name), never its value.
 - **Create-missing-only.** Generation never overwrites an existing envelope file; a refresh is an explicit, confirmed diff.
-- **Single binding point.** `.agents/envelope/` is the author-owned source for repo facts; the YAML file under `~/.loom/factory-nucleus/<id>/envelope/` is only its generated/validated mirror.
+- **Single binding point.** `.agents/envelope/` is the author-owned Markdown-only source for repo facts; there is no generated runtime mirror or second source.
 - **Minimal diff.** Stamp the least that makes the kit work and cite `biters`' minimal-diff lens — never scaffold a file, skill, or agent no workflow reads.
 
 ## Routing

@@ -1,6 +1,6 @@
 # Belt package governance
 
-This package is the canonical shared-agent source for `belt` as model-agnostic guidance across adapters.
+This package is the canonical shared-agent source for `belt`: one portable package every harness loads as-is.
 
 ## Load order
 
@@ -21,6 +21,6 @@ This package is the canonical shared-agent source for `belt` as model-agnostic g
 
 - Keep the canonical name `belt`; harness prefixes are forbidden.
 - Keep lens vocabulary current: retired skill names (`handoff`, `thread-control`, `resume-thread`) appear only as historical context for their lenses.
-- Keep generated adapter packaging format-only. Behavior changes belong in `docs/agent-contract.md` first.
+- Keep behavior changes paired: update the canonical package and `docs/agent-contract.md` together.
 - Never add live HOME paths, tokens, provider configuration, auth, cache, session, history, daemon, or local settings content.
 - New standards require evidence intake, judge separation, and human decision-log approval before becoming accepted guidance.

@@ -1,6 +1,6 @@
 # Lab package governance
 
-This package is the canonical shared-agent source for `lab` as model-agnostic guidance across adapters.
+This package is the canonical shared-agent source for `lab`: one portable package every harness loads as-is.
 
 ## Load order
 
@@ -21,6 +21,6 @@ This package is the canonical shared-agent source for `lab` as model-agnostic gu
 
 - Keep the canonical name `lab`; harness prefixes are forbidden.
 - Keep lens vocabulary current: retired names (`spidertron`, `proof-pass`) appear only as historical context for their lenses.
-- Keep generated adapter packaging format-only. Behavior changes belong in `docs/agent-contract.md` first.
+- Keep behavior changes paired: update the canonical package and `docs/agent-contract.md` together.
 - Never add live HOME paths, tokens, provider configuration, auth, cache, session, history, daemon, or local settings content.
 - New standards require evidence intake, judge separation, and human decision-log approval before becoming accepted guidance.

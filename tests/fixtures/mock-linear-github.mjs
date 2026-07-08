@@ -90,7 +90,7 @@ export function createWorld() {
     merge(prNumber, gates) {
       const pr = github.prs.get(prNumber);
       if (!pr) throw new Error(`unknown PR ${prNumber}`);
-      const required = ["tests", "review", "acceptance", "ci", "busFirst"];
+      const required = ["tests", "review", "acceptance", "ci", "minimalDiff"];
       const red = required.filter((g) => gates[g] !== true);
       if (red.length) {
         const err = new Error(`refused: red gate(s) ${red.join(",")}`);

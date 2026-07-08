@@ -43,4 +43,4 @@ capture.
 
 ## Open questions / further notes
 
-Anything unresolved. If a genuine unknown blocks the spec, route to `research` first.
+Anything unresolved. If a genuine unknown blocks the spec, route to `blueprint`'s `research-spike` lens first.

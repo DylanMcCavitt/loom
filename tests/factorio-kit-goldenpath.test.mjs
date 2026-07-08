@@ -43,13 +43,13 @@ test("golden path: dependency-ordered ghosts, branch carries id, merge closes vi
 
   // rocket-launch: a red gate refuses the merge; the issue stays open.
   assert.throws(
-    () => api.merge(pr1, { tests: true, review: true, acceptance: true, ci: false, busFirst: true }),
+    () => api.merge(pr1, { tests: true, review: true, acceptance: true, ci: false, minimalDiff: true }),
     /red gate\(s\) ci/u,
   );
   assert.equal(api.issue("ABC-1").state, "in_review");
 
   // all gates green -> merge -> bridge closes ABC-1.
-  api.merge(pr1, { tests: true, review: true, acceptance: true, ci: true, busFirst: true });
+  api.merge(pr1, { tests: true, review: true, acceptance: true, ci: true, minimalDiff: true });
   assert.equal(api.issue("ABC-1").state, "done");
 });
 
@@ -61,7 +61,7 @@ test("golden path: a blocked ghost cannot launch before its blocker is done", ()
 
   const pr2 = api.openPr("ABC-2", "feat/ABC-2-sync");
   assert.throws(
-    () => api.merge(pr2, { tests: true, review: true, acceptance: true, ci: true, busFirst: true }),
+    () => api.merge(pr2, { tests: true, review: true, acceptance: true, ci: true, minimalDiff: true }),
     /open blockers ABC-1/u,
   );
 });
@@ -79,7 +79,7 @@ test("bridge invariant: a merge without the PR closing keyword does not close th
   api.createIssue({ key: "ABC-7", project });
   // Branch carries the id, but the PR body has NO closing keyword.
   const pr = api.openPr("ABC-7", "feat/ABC-7-cache", "wip: cache layer");
-  const merged = api.merge(pr, { tests: true, review: true, acceptance: true, ci: true, busFirst: true });
+  const merged = api.merge(pr, { tests: true, review: true, acceptance: true, ci: true, minimalDiff: true });
   assert.equal(merged.merged, true); // the merge still lands the code
   assert.notEqual(api.issue("ABC-7").state, "done"); // but the bridge does not auto-close
 });
@@ -114,22 +114,25 @@ test("every eval-bearing kit skill ships evals with positive + negative coverage
   }
 });
 
-test("manifest gives canonical contracts for kept pipeline proof skills", () => {
-  for (const name of ["radar", "proof-pass"]) {
-    const section = manifest.match(new RegExp(`### \`${name}\`[\\s\\S]*?(?=\\n### \`|\\n## )`, "u"))?.[0] ?? "";
-    assert.ok(section, `${name}: missing manifest contract section`);
-    for (const label of ["**Trigger:**", "**Does", "**Invariants:**", "**Eval cases:**"]) {
-      assert.ok(section.includes(label), `${name}: missing ${label}`);
-    }
+test("manifest maps absorbed skills to lenses instead of live contracts", () => {
+  const historical = manifest.match(/## Historical: absorbed skills[\s\S]*?(?=\n## |\n*$)/u)?.[0] ?? "";
+  assert.ok(historical, "missing Historical: absorbed skills section");
+  assert.match(historical, /not live routing targets/u);
+  for (const [retired, absorber] of [["radar", "biters"], ["proof-pass", "lab"], ["bus-first", "biters"], ["ghosts", "blueprint"]]) {
+    const line = historical.split("\n").find((l) => l.includes(`\`${retired}\``));
+    assert.ok(line, `${retired}: missing from historical mapping`);
+    assert.ok(line.includes(`\`${absorber}\``) || historical.includes(`\`${absorber}\``), `${retired}: mapping does not name ${absorber}`);
+  }
+  for (const retired of ["radar", "proof-pass", "bus-first", "ghosts"]) {
+    assert.equal(manifest.includes(`### \`${retired}\``), false, `${retired}: still has a live contract section`);
   }
 });
 
-test("envelope docs keep Markdown source and YAML mirror in one binding model", () => {
-  assert.match(assemblerSkill, /\.agents\/envelope\/` in the target repo/u);
-  assert.match(assemblerSkill, /generated\/validated mirror/u);
-  assert.match(assemblerSkill, /not a second source to edit/u);
+test("envelope docs bind through repo-local Markdown with no runtime mirror", () => {
+  assert.match(assemblerSkill, /single binding point/u);
+  assert.match(assemblerSkill, /no runtime mirror or second source/u);
   assert.match(manifest, /\.agents\/envelope\/` Markdown/u);
-  assert.match(manifest, /~\/\.loom\/factory-nucleus\/<id>\/envelope\/envelope\.yaml/u);
+  assert.equal(/~\/\.loom\/factory-nucleus/u.test(manifest), false, "manifest still cites the deleted factory-nucleus mirror");
   assert.match(adr0003, /\.agents\/envelope\/`/u);
   assert.match(adr0003, /not a\s+second binding point/u);
 });

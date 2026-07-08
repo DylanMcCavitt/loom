@@ -68,6 +68,9 @@ function readFrontmatterData(filePath, content, errors) {
 function containsConcreteUseWhen(description) {
   return /\bUse (?:when|for)\b\s+\S+/u.test(description);
 }
+const SKILL_NAME_PATTERN = /^(?=.{1,64}$)[a-z0-9]+(?:-[a-z0-9]+)*$/u;
+const MAX_DESCRIPTION_LENGTH = 1024;
+
 
 const SEMVER_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/u;
 
@@ -264,8 +267,16 @@ function validateSkillsRoot(skillsDir, { errors, seenNames, globalNames }) {
     const name = frontmatter.get("name")?.trim();
     const description = frontmatter.get("description")?.trim();
     const metadata = frontmatter.get("metadata");
-    if (!name) errors.push(`${relSkillPath}: missing frontmatter name`);
-    if (!description) errors.push(`${relSkillPath}: missing frontmatter description`);
+    if (!name) {
+      errors.push(`${relSkillPath}: missing frontmatter name`);
+    } else if (!SKILL_NAME_PATTERN.test(name)) {
+      errors.push(`${relSkillPath}: frontmatter name must be 1-64 chars of lowercase/digit runs separated by single hyphens (no leading/trailing/consecutive hyphens)`);
+    }
+    if (!description) {
+      errors.push(`${relSkillPath}: missing frontmatter description`);
+    } else if (description.length > MAX_DESCRIPTION_LENGTH) {
+      errors.push(`${relSkillPath}: frontmatter description must be at most ${MAX_DESCRIPTION_LENGTH} characters`);
+    }
     if (name && name !== entry.name) {
       errors.push(`${relSkillPath}: frontmatter name '${name}' must match directory '${entry.name}'`);
     }

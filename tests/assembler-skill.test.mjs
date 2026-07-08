@@ -31,7 +31,8 @@ test("assembler holds the create-missing-only and no-secrets invariants", () => 
 
 test("assembler is the single binding point other skills read", () => {
   assert.match(skill, /single binding point/u);
-  assert.match(skill, /Every kit skill reads it/u);
+  assert.match(skill, /every kit skill reads/u);
+  assert.match(skill, /no runtime mirror or second source/u);
 });
 
 test("assembler routes issue creation and spec content elsewhere", () => {

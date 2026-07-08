@@ -69,4 +69,4 @@ Report mode, lens, target surface, loaded references, rule IDs, proof run, and u
 
 ## Skill Integrity
 
-This package is the canonical repo-local shared-agent package source. Update this package and the shared contract together; edit it in place — the tree is canonical with no rendered copy.
+This package is the canonical source; update the package and shared contract together, and edit it in place.

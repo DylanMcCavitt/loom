@@ -1,6 +1,6 @@
 # Biters package governance
 
-This package is the canonical shared-agent source for `biters` as model-agnostic guidance across adapters.
+This package is the canonical shared-agent source for `biters`: one portable package every harness loads as-is.
 
 ## Load order
 
@@ -21,6 +21,6 @@ This package is the canonical shared-agent source for `biters` as model-agnostic
 
 - Keep the canonical name `biters`; harness prefixes are forbidden.
 - Keep lens vocabulary current: use minimal-diff, correctness, security, and drift lens names; retired agent names appear only as historical context inside the relevant lens files.
-- Keep generated adapter packaging format-only. Behavior changes belong in `docs/agent-contract.md` first.
+- Keep behavior changes paired: update the canonical package and `docs/agent-contract.md` together.
 - Never add live HOME paths, tokens, provider configuration, auth, cache, session, history, daemon, or local settings content.
 - New standards require evidence intake, judge separation, and human decision-log approval before becoming accepted guidance.

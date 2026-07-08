@@ -1,6 +1,6 @@
 # Rocket Launch package governance
 
-This package is the canonical shared-agent source for `rocket-launch` as model-agnostic guidance across adapters.
+This package is the canonical shared-agent source for `rocket-launch`: one portable package every harness loads as-is.
 
 ## Load order
 
@@ -14,6 +14,6 @@ This package is the canonical shared-agent source for `rocket-launch` as model-a
 ## Update rules
 
 - Keep the canonical name `rocket-launch`; harness prefixes are forbidden.
-- Keep generated adapter packaging format-only. Behavior changes belong in `docs/agent-contract.md` first.
+- Keep behavior changes paired: update the canonical package and `docs/agent-contract.md` together.
 - Never add live HOME paths, tokens, provider configuration, auth, cache, session, history, daemon, or local settings content.
-- New standards require pending retro evidence under `retro/`, a satisfied rule schema for accepted rules, and human PR approval before becoming accepted guidance; collector/judge automation is aspirational until implemented.
+- New standards require retro packets generated with `scripts/retro-packet.mjs` under `retro/pr-{number}/`, a satisfied rule schema for accepted rules, and human PR approval before becoming accepted guidance.
