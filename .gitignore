@@ -38,3 +38,6 @@ blobs/
 # App-managed skill runtime state written via the symlinked skills dir
 # (e.g. Codex .system built-ins: skill-creator, plugin-creator, imagegen).
 skills/.system/
+
+# Generated model-judge scorecards (npm run bench -- --judge output).
+retro/judge-scorecard-*

@@ -5,6 +5,8 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { materializeRoboportsSandbox } from '../benchmarks/roboports/materialize.mjs';
+import { offlineSkipNotice, resolveJudgeConfig, runJudge } from '../benchmarks/judge/judge.mjs';
+import { runAblation } from '../benchmarks/ablation/ablate.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -59,8 +61,13 @@ function usage() {
     '  npm run bench -- --list',
     '  npm run bench -- --materialize <dir> [--force]',
     '  npm run bench -- --score <runDir>',
+    '  npm run bench -- --judge [skill]',
+    '  npm run bench -- --ablate <skill> [--dest <dir>] [--force]',
     '',
-    'Model-in-the-loop benchmark arms are manual; this CLI only lists, materializes, and scores.',
+    'Deterministic modes (list/materialize/score) never call models.',
+    'Model-in-the-loop modes (judge/ablate) are opt-in: they read LOOM_JUDGE_API_KEY,',
+    'LOOM_JUDGE_MODEL, and LOOM_JUDGE_BASE_URL (or LOOM_JUDGE_MOCK), skip with exit 0',
+    'when unset, and are never part of npm run check or CI.',
   ].join('\n');
 }
 
@@ -166,7 +173,46 @@ export function materialize(dest, { force = false } = {}) {
   return materializeRoboportsSandbox({ dest, force, sourceDir, loomRoot: repoRoot });
 }
 
-export function main(argv = process.argv.slice(2)) {
+export async function judgeMode({ skill = null, env = process.env, fetchImpl = fetch } = {}) {
+  const config = resolveJudgeConfig(env);
+  if (!config.enabled) {
+    console.log(offlineSkipNotice('--judge'));
+    return null;
+  }
+  const result = await runJudge({ repoRoot, skill, env, fetchImpl });
+  console.log(`judge scorecard (json): ${result.jsonPath}`);
+  console.log(`judge scorecard (md): ${result.mdPath}`);
+  for (const entry of result.scorecard.skills) {
+    console.log(`  ${entry.skill}: total ${entry.total}/20, trim candidates: ${entry.trim_candidates.length}`);
+  }
+  return result;
+}
+
+export function ablateMode({ skill, dest = null, force = false, env = process.env } = {}) {
+  const config = resolveJudgeConfig(env);
+  if (!config.enabled) {
+    console.log(offlineSkipNotice('--ablate'));
+    return null;
+  }
+  const result = runAblation({
+    repoRoot,
+    skill,
+    dest,
+    force,
+    materializeFn: (variantDest, options) => materialize(variantDest, options),
+    scoreFn: (runDir) => scoreRun(runDir),
+  });
+  console.log(`ablation workspaces: ${result.destRoot}`);
+  console.log(`ablation manifest: ${result.manifestPath}`);
+  console.log(`trim source: ${result.manifest.trim_source}`);
+  for (const variant of result.manifest.variants) {
+    console.log(`  ${variant.variant}: ${variant.skill_lines} skill lines, baseline correct ${variant.baseline_outcome.correct_count}/${result.manifest.variants[0].baseline_outcome.scenarios.length}`);
+  }
+  console.log('arms not run: drive each workspace with a worker model, then npm run bench -- --score <workspace>');
+  return result;
+}
+
+export async function main(argv = process.argv.slice(2)) {
   if (argv.length === 0 || argv.includes('--help') || argv.includes('-h')) {
     console.log(usage());
     return;
@@ -198,13 +244,39 @@ export function main(argv = process.argv.slice(2)) {
     return;
   }
 
+  if (argv[0] === '--judge') {
+    const skill = argv[1] ?? null;
+    if (skill && skill.startsWith('--')) die(`unknown argument: ${skill}`);
+    if (argv.length > 2) die(`unknown argument(s): ${argv.slice(2).join(' ')}`);
+    await judgeMode({ skill });
+    return;
+  }
+
+  if (argv[0] === '--ablate') {
+    const skill = argv[1];
+    if (!skill || skill.startsWith('--')) die('--ablate requires <skill>');
+    let dest = null;
+    let force = false;
+    const rest = argv.slice(2);
+    for (let index = 0; index < rest.length; index += 1) {
+      if (rest[index] === '--dest') {
+        dest = rest[++index];
+        if (!dest) die('--dest requires <dir>');
+      } else if (rest[index] === '--force') {
+        force = true;
+      } else {
+        die(`unknown argument: ${rest[index]}`);
+      }
+    }
+    ablateMode({ skill, dest, force });
+    return;
+  }
+
   die(usage(), 2);
 }
 
 if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
-  try {
-    main();
-  } catch (error) {
+  main().catch((error) => {
     die(`bench: ${error.message}`);
-  }
+  });
 }
