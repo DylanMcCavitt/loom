@@ -1,0 +1,41 @@
+{
+  "skill_name": "belt",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Write a handoff for the next agent so they can pick this work up cold.",
+      "expected_output": "Activates belt with the default handoff lens (lens-handoff.md): compacts the current work into a durable handoff document with concise state, changed files, proof, risks, blockers, and next actions, plus resume command/context for a fresh agent. Stays within the active issue/PR/workflow packet, includes no transcripts by default, and never omits blockers. Does not implement code.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Should I keep going in this thread or start fresh in a new one?",
+      "expected_output": "Activates belt with the thread-control lens (lens-thread-control.md): weighs the current thread's state against the remaining work and decides whether to continue in place or start a new thread, and when a fresh thread wins, produces the compact carry-over context (state, proof, risks, next action) the new thread needs. Decision and carrier output only — no code edits, no scope widening beyond the packet.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Pick this repo task back up from where the last session left off — reorient before touching anything.",
+      "expected_output": "Activates belt with the resume lens (lens-resume.md): re-orients in the existing repo task from durable state — the tracked issue, branch, changed files, prior proof, and open blockers — before any edits, and returns the resume context and next action. Does not start implementing; it re-establishes ground truth first.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "wirte a handofff doc so the next agnet can contnue this wrok",
+      "expected_output": "Despite the typos, activates belt with the handoff lens and interprets it as writing a durable handoff for the next agent: compact state, changed files, proof summary, risks, blockers, and resume command/context, scoped to the active packet and with blockers never omitted.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Triage the incoming bugs and plan what the next milestone should cover.",
+      "expected_output": "Does NOT activate belt; routes to blueprint for triage and planning of incoming work. Belt only carries durable context between agents or threads — it does not classify, prioritize, or plan tracked issues.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "The change request is approved — merge it and close out the tracked issue.",
+      "expected_output": "Does NOT activate belt; routes to rocket-launch to run the launch gate and record merge/closeout evidence, with the tracker bridge owning issue closure. Belt never merges PRs or closes tracked issues — it may only carry a handoff at the transition.",
+      "files": []
+    }
+  ]
+}

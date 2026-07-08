@@ -14,8 +14,8 @@ const MOVED_OPERATOR_LOCAL = [
   "skill-maintenance", "swiftui-pro", "tdd", "write-a-skill",
 ];
 const OPERATOR_LOCAL_ENGINES = new Set(["tdd", "diagnose", "debug-tools"]);
-// Roster agent packages carry lens references instead of trigger evals.
-const EVAL_SKILLS = KIT.filter((name) => !["lab", "repair-pack", "belt"].includes(name));
+// Every kit skill ships trigger evals (LOO-228 added belt, lab, repair-pack).
+const EVAL_SKILLS = [...KIT];
 
 function skillUrl(name, file) {
   const inSkills = new URL(`${name}/${file}`, skillsRoot);

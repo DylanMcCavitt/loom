@@ -1,0 +1,41 @@
+{
+  "skill_name": "lab",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Prove the retry backoff actually works — run the checks and capture the output as evidence.",
+      "expected_output": "Activates lab with the default command-proof lens (lens-command-proof.md): runs the named commands/tests against the behavior claim, records commands run, observed results, and artifacts, and reports any untested branches. Proof-only — it does not implement fixes, mock behavior, or claim coverage it did not test.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Verify the new settings page renders and the dark-mode toggle persists — click through it in the browser and grab screenshots.",
+      "expected_output": "Activates lab with the ui-proof lens (lens-ui-proof.md): drives the browser/desktop UI workflow end to end, exercises the settings page and toggle persistence, and captures user-visible evidence (screenshots/recordings) as artifacts, reporting observed results and untested branches. Evidence collection only — no code changes and no scope widening beyond the packet.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Before we call this PR done, smoke test the whole flow end to end and grade what actually works.",
+      "expected_output": "Activates lab with the smoke-proof lens (lens-smoke-proof.md): runs an end-to-end smoke pass over the live/local behavior, grades proof classes for what was exercised, and returns commands run, observed results, artifacts, and untested branches. It proves and grades behavior only — merge/closeout decisions stay with rocket-launch and the tracker bridge.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "porve the fix wroks — rerun the cheks and capure the evidnce",
+      "expected_output": "Despite the typos, activates lab with the command-proof lens and interprets it as proving the fix works: reruns the named checks against the behavior claim and captures command output and artifacts as evidence, reporting observed results and untested branches without implementing anything.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Review this PR before merge — hunt for bugs, regressions, and security holes.",
+      "expected_output": "Does NOT activate lab; routes to biters for the adversarial review pass (correctness and security lenses) that returns findings ordered by severity. Lab only collects proof for a stated behavior claim — it does not review diffs or hunt for bugs.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "Implement the caching layer from the tracked issue and get it to a review-ready PR.",
+      "expected_output": "Does NOT activate lab; routes to roboports to implement the tracked issue end to end on one branch with a review-ready PR/change request. Lab proves implemented behavior with evidence — it never implements fixes or features itself.",
+      "files": []
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "skill_name": "repair-pack",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Review flagged one finding: parseConfig in src/config.js can dereference null when the file is empty. Apply the minimal fix and rerun the named check.",
+      "expected_output": "Activates repair-pack in repair mode: takes the compact packet (file, symbol, scope, concrete risk, minimal expected fix, proof check, allowed files), applies the smallest fix for exactly this one finding, reruns the named proof check, and returns changed files, proof rerun result, minimal-diff recheck need, and remaining risk. It does not fix adjacent cleanup or widen beyond the allowed files.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Fix exactly this one proof finding: the retry loop in fetchUsers never backs off. Scope is that function only; the proof check is the retry unit test.",
+      "expected_output": "Activates repair-pack in repair mode: fixes only the named backoff defect inside fetchUsers within the allowed scope, reruns the named retry unit test as the proof check (delegating only that named check to lab if needed, max one child level), and reports changed files, proof rerun, and remaining risk. One finding per packet — no broad work, no adjacent refactoring.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "one reveiw findng to repare: missing input validaton in the upload handler — smallest fix plz, then rerun the check",
+      "expected_output": "Despite the typos, activates repair-pack in repair mode and interprets it as one compact finding-fix loop: adds the missing input validation in the upload handler as the minimal expected fix, stays inside the packet's scope and allowed files, reruns the named proof check, and returns changed files, proof rerun, minimal-diff recheck need, and remaining risk.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Take the offline-mode tracked issue and implement it end to end through a review-ready change request.",
+      "expected_output": "Does NOT activate repair-pack; routes to roboports for full issue implementation on one branch/worktree with a review-ready PR/change request. Repair-pack accepts only one concrete review or proof finding from a fresh compact packet — it rejects broad work.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Review this diff and tell me everything that's wrong with it.",
+      "expected_output": "Does NOT activate repair-pack; routes to biters to run the review pass and produce findings ordered by severity. Repair-pack sits downstream of review: it fixes exactly one already-identified finding per packet and never performs the review itself or spawns review agents.",
+      "files": []
+    }
+  ]
+}

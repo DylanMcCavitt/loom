@@ -2,8 +2,8 @@
 name: repair-pack
 description: Use when fixing exactly one concrete review or proof finding from a fresh compact packet.
 metadata:
-  version: "0.2.0"
-  changelog: "0.2.0 - duplicated governance boilerplate removed"
+  version: "0.2.1"
+  changelog: "0.2.1 - add trigger eval corpus for the single finding-fix loop"
 
 ---
 

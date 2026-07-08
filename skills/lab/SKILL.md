@@ -2,8 +2,8 @@
 name: lab
 description: Proof specialist that runs proof-only validation and records behavior evidence without expanding scope, covering command, UI, and smoke proof through lenses. Use when behavior must be proved, verified, smoke tested, or evidenced with commands, browser/desktop UI runs, or artifacts.
 metadata:
-  version: "0.2.0"
-  changelog: "0.2.0 - duplicated governance boilerplate removed"
+  version: "0.2.1"
+  changelog: "0.2.1 - add trigger eval corpus for command, UI, and smoke proof activation"
 
 ---
 
