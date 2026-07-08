@@ -1,6 +1,6 @@
 # {{ISSUE_TITLE}}
 
-> Linear issue description. blueprint's issue-decomposition lens stamps this from the spec — one tracer-bullet
+> Tracked-issue description. blueprint's issue-decomposition lens stamps this from the spec — one tracer-bullet
 > slice that cuts through every layer and is demoable on its own.
 
 ## Context
@@ -25,7 +25,7 @@ Why this slice exists and the spec section it implements (in glossary terms).
 ## Execution
 
 - Mode: {{HITL | AFK}}
-- Branch: carries this issue's Linear id so the PR auto-links and the merge
+- Branch: carries this issue's tracker id so the PR auto-links and the merge
   auto-closes the issue.
 
 ## Proof

@@ -2,8 +2,8 @@
 name: lab
 description: Proof specialist that runs proof-only validation and records behavior evidence without expanding scope, covering command, UI, and smoke proof through lenses. Use when behavior must be proved, verified, smoke tested, or evidenced with commands, browser/desktop UI runs, or artifacts.
 metadata:
-  version: "0.1.0"
-  changelog: "0.1.0 - initial public release"
+  version: "0.2.0"
+  changelog: "0.2.0 - duplicated governance boilerplate removed"
 
 ---
 
@@ -60,7 +60,3 @@ The input packet may carry a `lens` field. A named lens loads `references/lens-<
 ## Review Output
 
 Report mode, lens, target surface, loaded references, rule IDs, proof run, and unresolved coverage gaps.
-
-## Skill Integrity
-
-This package is the canonical source; update the package and shared contract together, and edit it in place.

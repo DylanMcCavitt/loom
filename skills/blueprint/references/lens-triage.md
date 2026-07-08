@@ -1,6 +1,6 @@
 # Blueprint lens: triage
 
-Loaded when the packet names `lens: triage`. Routes each incoming Linear issue
+Loaded when the packet names `lens: triage`. Routes each incoming tracked issue
 to the right place — classify it as bug or enhancement, move it through the
 envelope's triage state machine, and decide what is ready to pick up. (Absorbs
 the retired `inserter` agent.)
@@ -12,7 +12,7 @@ the retired `inserter` agent.)
   lens.
 - Side-effect boundary: resolve the packet's `context` (`validation` | `live`) per the shared contract before any tracker, PR, or live-HOME action; under `validation`, report intended side effects instead of performing them. During real triage it moves one issue through the
   envelope's state machine and routes it onward.
-- Read the repo envelope first: the Linear team/project map, the
+- Read the repo envelope first: the tracker team/project map, the
   **label/state map**, the domain glossary, and the commands. The role names
   below are *canonical roles* — never hardcode a label or state string; resolve
   every role through the envelope map before calling `save_issue`. Every

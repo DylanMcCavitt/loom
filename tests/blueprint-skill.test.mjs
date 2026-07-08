@@ -28,8 +28,8 @@ test("blueprint specs in the repo domain glossary read from the envelope", () =>
   assert.match(skill, /read the envelope/u);
 });
 
-test("blueprint publishes the spec as a Linear document via save_document", () => {
-  assert.match(skill, /Linear \*\*document\*\*/u);
+test("blueprint publishes the spec as a tracker document via save_document", () => {
+  assert.match(skill, /tracker \*\*document\*\*/u);
   assert.match(skill, /`save_document`/u);
 });
 

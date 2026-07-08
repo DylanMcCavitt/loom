@@ -18,7 +18,7 @@ test("assembler generates the repo-local envelope bindings", () => {
 
 test("assembler stamps templates from blueprint and carries the bridge", () => {
   assert.match(skill, /stamped from `blueprint`'s/u);
-  assert.match(skill, /branch carries the Linear issue id/u);
+  assert.match(skill, /branch carries the tracked issue id/u);
   assert.match(skill, /auto-closes the issue on merge/u);
 });
 

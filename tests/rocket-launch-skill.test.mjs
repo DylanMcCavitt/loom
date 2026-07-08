@@ -8,9 +8,9 @@ test("rocket-launch has the required trigger", () => {
   assert.match(skill, /name: rocket-launch/u);
   assert.match(
     skill,
-    /description: Ship a ready change off-planet by enforcing the launch gates, merging the PR, and letting the bridge close its Linear issue\./u,
+    /description: Ship a ready change off-planet by enforcing the launch gates, merging the PR, and letting the bridge close its tracked issue\./u,
   );
-  assert.match(skill, /Use when a change is ready to ship — merge the PR, run the review gate, and close out the Linear issue/u);
+  assert.match(skill, /Use when a change is ready to ship — merge the PR, run the review gate, and close out the tracked issue/u);
 });
 
 test("rocket-launch enforces the full launch gate list", () => {
@@ -18,8 +18,8 @@ test("rocket-launch enforces the full launch gate list", () => {
   assert.match(skill, /\*\*Tests\*\* — targeted tests for the changed behavior pass/u);
   assert.match(skill, /Use `lab` with the `command-proof`, `smoke-proof`, or `ui-proof` lens as appropriate/u);
   assert.match(skill, /\*\*Review\*\* — at least one `biters` `correctness` lens review is clean, or its findings are fixed/u);
-  assert.match(skill, /\*\*Acceptance\*\* — every Linear acceptance criterion is checked/u);
-  assert.match(skill, /\*\*CI\*\* — GitHub CI is green/u);
+  assert.match(skill, /\*\*Acceptance\*\* — every tracked acceptance criterion is checked/u);
+  assert.match(skill, /\*\*CI\*\* — CI is green/u);
   assert.match(skill, /\*\*Minimal diff\*\* — a `biters` `minimal-diff` lens pass over the diff/u);
 });
 
@@ -38,18 +38,18 @@ test("rocket-launch never merges with a red gate", () => {
 });
 
 test("rocket-launch closes the issue through the bridge", () => {
-  assert.match(skill, /branch name carries the Linear issue id and the PR's magic words auto-close that issue on merge/u);
-  assert.match(skill, /Confirm the bridge closed the Linear issue/u);
+  assert.match(skill, /branch name carries the tracked issue id and the PR's magic words auto-close that issue on merge/u);
+  assert.match(skill, /Confirm the bridge closed the tracked issue/u);
   assert.match(skill, /merge the PR and verify the bridge closed the issue/u);
 });
 
 test("rocket-launch never silently closes the issue", () => {
   assert.match(skill, /Never silently closes the issue/u);
-  assert.match(skill, /never close the Linear issue by hand to fake a ship/u);
+  assert.match(skill, /never close the tracked issue by hand to fake a ship/u);
 });
 
-test("rocket-launch posts a Linear status update and leaves a record", () => {
-  assert.match(skill, /Post a Linear status update/u);
+test("rocket-launch posts a tracker status update and leaves a record", () => {
+  assert.match(skill, /Post a tracker status update/u);
   assert.match(skill, /human-reviewable record/u);
 });
 

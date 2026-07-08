@@ -4,19 +4,19 @@
     {
       "id": 1,
       "prompt": "Ship the offline-mode PR.",
-      "expected_output": "Activates rocket-launch: runs every launch gate (targeted tests pass via lab lens command-proof/smoke-proof/ui-proof as appropriate, a biters correctness lens is clean or findings are fixed, all Linear acceptance criteria checked, GitHub CI green, a biters minimal-diff lens pass) and only then merges the PR, lets the branch/PR bridge auto-close the Linear issue, and posts a Linear status update with a human-reviewable record.",
+      "expected_output": "Activates rocket-launch: runs every launch gate (targeted tests pass via lab lens command-proof/smoke-proof/ui-proof as appropriate, a biters correctness lens is clean or findings are fixed, all tracked acceptance criteria checked, CI green, a biters minimal-diff lens pass) and only then merges the PR, lets the branch/PR bridge auto-close the tracked issue, and posts a tracker status update with a human-reviewable record.",
       "files": []
     },
     {
       "id": 2,
       "prompt": "This is ready, launch it.",
-      "expected_output": "Activates rocket-launch: treats the change as a ship request, enforces the full gate list before merging, merges the PR so the bridge closes the Linear issue, and records the outcome — refusing to merge if any gate is red.",
+      "expected_output": "Activates rocket-launch: treats the change as a ship request, enforces the full gate list before merging, merges the PR so the bridge closes the tracked issue, and records the outcome — refusing to merge if any gate is red.",
       "files": []
     },
     {
       "id": 3,
       "prompt": "CI is failing on this PR but I want it merged now to close the ticket.",
-      "expected_output": "Activates rocket-launch but refuses to merge with a red gate: CI is not green so it blocks the launch, never silently closes the Linear issue by hand, and routes the fix back to roboports.",
+      "expected_output": "Activates rocket-launch but refuses to merge with a red gate: CI is not green so it blocks the launch, never silently closes the tracked issue by hand, and routes the fix back to roboports.",
       "files": []
     },
     {
@@ -27,7 +27,7 @@
     },
     {
       "id": 5,
-      "prompt": "Mark the Linear issue done, I'll deal with the PR later.",
+      "prompt": "Mark the tracked issue done, I'll deal with the PR later.",
       "expected_output": "Refuses to silently close the issue: closeout must go through the bridge (merge the PR with the issue id in the branch) and the acceptance check, not a manual close ahead of the merge.",
       "files": []
     }

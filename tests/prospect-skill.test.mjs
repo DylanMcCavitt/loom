@@ -16,7 +16,7 @@ test("prospect never implements and never creates issues", () => {
   assert.match(skill, /Never creates issues or sub-issues/u);
 });
 
-test("prospect creates the Linear home plus a brief", () => {
+test("prospect creates the tracker home plus a brief", () => {
   assert.match(skill, /save_initiative/u);
   assert.match(skill, /save_project/u);
   assert.match(skill, /save_document/u);

@@ -1,25 +1,25 @@
 # Roboports lens: issue-delivery (default)
 
 Loaded when the packet names `lens: issue-delivery` or names no lens at all.
-Coordinates the bounded build network that turns one *ready* Linear issue into
+Coordinates the bounded build network that turns one *ready* tracked issue into
 landed code: one issue → one branch/worktree → one PR, no more.
 
 ## The bridge
 
-Planning lives in Linear; code lands as a GitHub PR; the two are stitched by
-Linear's native GitHub integration.
+Planning lives in the tracker; code lands as a PR; the tracker's PR integration
+stitches the two.
 
 - **One issue → one branch/worktree → one PR** unless the repo envelope says
   otherwise.
-- **The branch name carries the Linear issue id.** The PR auto-links and, on
+- **The branch name carries the tracked issue id.** The PR auto-links and, on
   merge, auto-closes the issue. Never craft a branch that drops the id.
 
 ## Required reading
 
-1. The repo envelope: Linear team/project/label map, domain glossary,
+1. The repo envelope: tracker team/project/label map, domain glossary,
    branch/PR conventions, and build/test commands. Never hardcode commands or
    a tracker.
-2. The active Linear issue: description, comments, acceptance criteria.
+2. The active tracked issue: description, comments, acceptance criteria.
 3. The repo's agent context and any architecture/ADR/domain docs the issue
    names.
 
@@ -68,7 +68,7 @@ and a single lens.
 
 ## Review packet
 
-- the Linear issue id and its acceptance criteria
+- the tracked issue id and its acceptance criteria
 - changed-file list and the relevant diff/excerpts
 - checks already run (and any unrun, with reasons)
 - exact questions per reviewer lens

@@ -1,35 +1,8 @@
 {
   "skills": {
-    "assembler": {
-      "word-budget": {
-        "SKILL.md": 678
-      },
-      "tracker-coupling": {
-        "SKILL.md::Linear": 7,
-        "SKILL.md::GitHub": 1
-      }
-    },
     "belt": {
       "missing-evals": {
         "evals/evals.json": 1
-      }
-    },
-    "blueprint": {
-      "word-budget": {
-        "SKILL.md": 661
-      },
-      "tracker-coupling": {
-        "SKILL.md::Linear": 12,
-        "SKILL.md::GitHub": 2,
-        "references/lens-architecture.md::Linear": 1,
-        "references/lens-issue-decomposition.md::Linear": 4,
-        "references/lens-research-spike.md::Linear": 4,
-        "references/lens-spec-synthesis.md::Linear": 4,
-        "references/lens-spec-synthesis.md::GitHub": 1,
-        "references/lens-triage.md::Linear": 2
-      },
-      "eval-schema": {
-        "evals/evals.json::negative-case": 1
       }
     },
     "lab": {
@@ -37,37 +10,9 @@
         "evals/evals.json": 1
       }
     },
-    "map-seed": {
-      "word-budget": {
-        "SKILL.md": 850
-      }
-    },
-    "prospect": {
-      "tracker-coupling": {
-        "SKILL.md::Linear": 7
-      }
-    },
     "repair-pack": {
       "missing-evals": {
         "evals/evals.json": 1
-      }
-    },
-    "roboports": {
-      "word-budget": {
-        "SKILL.md": 855
-      },
-      "tracker-coupling": {
-        "SKILL.md::Linear": 9,
-        "SKILL.md::GitHub": 2,
-        "references/glossary.md::Linear": 1,
-        "references/lens-issue-delivery.md::Linear": 7,
-        "references/lens-issue-delivery.md::GitHub": 2
-      }
-    },
-    "rocket-launch": {
-      "tracker-coupling": {
-        "SKILL.md::Linear": 11,
-        "SKILL.md::GitHub": 1
       }
     }
   }

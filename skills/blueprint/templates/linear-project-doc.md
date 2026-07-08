@@ -1,6 +1,6 @@
 # {{PROJECT_NAME}} — Project Doc
 
-> Linear project document. `assembler` stamps the repo-local copy; the live copy is
+> Tracker project document. `assembler` stamps the repo-local copy; the live copy is
 > attached to the project via `save_document`. Use the repo domain glossary.
 
 ## Overview

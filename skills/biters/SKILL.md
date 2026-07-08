@@ -2,8 +2,8 @@
 name: biters
 description: Adversarial reviewer that attacks a change before merge — probing for correctness bugs, regressions, maintainability rot, scope creep, and missing tests by default, with security, minimal-diff, and workflow-drift passes available as lenses. Use when the user wants a change reviewed adversarially, risks found before merge, or a lens-focused review pass (correctness, security, minimal-diff, drift).
 metadata:
-  version: "0.1.0"
-  changelog: "0.1.0 - initial public release"
+  version: "0.2.0"
+  changelog: "0.2.0 - duplicated governance boilerplate removed"
 
 ---
 
@@ -66,7 +66,3 @@ The input packet may carry a `lens` field. A named lens loads `references/lens-<
 ## Review Output
 
 Report mode, lens, target surface, loaded references, rule IDs, proof run, and unresolved coverage gaps.
-
-## Skill Integrity
-
-This package is the canonical source; update the package and shared contract together, and edit it in place.

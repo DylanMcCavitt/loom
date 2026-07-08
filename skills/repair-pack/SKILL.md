@@ -2,8 +2,8 @@
 name: repair-pack
 description: Use when fixing exactly one concrete review or proof finding from a fresh compact packet.
 metadata:
-  version: "0.1.0"
-  changelog: "0.1.0 - initial public release"
+  version: "0.2.0"
+  changelog: "0.2.0 - duplicated governance boilerplate removed"
 
 ---
 
@@ -53,7 +53,3 @@ Use when fixes exactly one concrete review/proof finding from a fresh compact pa
 ## Review Output
 
 Report mode, target surface, loaded references, rule IDs, proof run, and unresolved coverage gaps.
-
-## Skill Integrity
-
-This package is the canonical source; update the package and shared contract together, and edit it in place.

@@ -1,7 +1,7 @@
 # {{PR_TITLE}}
 
-> PR description scaffold. The branch name carries the Linear issue id, so this PR
-> auto-links to the issue and the merge auto-closes it through the Linear/GitHub
+> PR description scaffold. The branch name carries the tracked issue id, so this PR
+> auto-links to the issue and the merge auto-closes it through the tracker/PR
 > bridge. `assembler` stamps the repo-local copy.
 
 Fixes {{ISSUE_ID}}
@@ -17,7 +17,7 @@ What changed and why, in one short paragraph.
 
 ## Acceptance criteria
 
-Map each Linear acceptance criterion to where it is satisfied.
+Map each tracked acceptance criterion to where it is satisfied.
 
 - [ ] {{criterion}} — {{how it is met}}
 

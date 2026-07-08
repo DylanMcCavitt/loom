@@ -1,30 +1,31 @@
 ---
 name: prospect
-description: Lands a brand-new idea, feature, or initiative as tracked planning work and creates its Linear home before any spec or issues exist. Use when the user is starting a new idea, feature, or initiative from scratch and wants it captured as planning work before a spec or issues exist.
+description: Lands a brand-new idea, feature, or initiative as tracked planning work and creates its tracker home before any spec or issues exist. Use when the user is starting a new idea, feature, or initiative from scratch and wants it captured as planning work before a spec or issues exist.
 metadata:
-  version: "0.1.0"
-  changelog: "0.1.0 - initial public release"
+  version: "0.2.0"
+  changelog: "0.2.0 - tracker-neutral vocabulary for intake and the planning home"
 
 ---
 
 # Prospect
 
 Scout a fresh patch and plant the first marker on it. A new idea arrives with no
-Linear home; `prospect` frames its intent just enough, then lands it as a Linear
-initiative or project with an idea/brief document attached — the planning system
-of record for everything that follows. It does **not** spec, decompose, or build;
-it opens the patch so the rest of the kit can mine it.
+tracker home; `prospect` frames its intent just enough, then lands it as a
+tracker initiative or project with an idea/brief document attached — the
+planning system of record for everything that follows. It does **not** spec,
+decompose, or build; it opens the patch so the rest of the kit can mine it.
 
-This skill does not create Linear initiatives, projects, or documents while being
-validated; during real intake it opens one home for the idea and attaches a brief.
+This skill does not create tracker initiatives, projects, or documents while
+being validated; during real intake it opens one home for the idea and attaches
+a brief.
 
 ## Read the envelope first
 
-This skill drives Linear through its MCP tools and never hardcodes a tracker.
+This skill drives the tracker through its MCP tools and never hardcodes one.
 Before creating anything, read the repo envelope that `assembler` generated (the
 `.agents/envelope/` map or the repo docs it points to) for:
 
-- the target Linear **team**, and whether new ideas land as an **initiative** or
+- the target tracker **team**, and whether new ideas land as an **initiative** or
   a **project** in this repo;
 - the domain glossary, so the idea is named in the repo's own language;
 - any naming/label conventions for new planning objects.
@@ -38,7 +39,7 @@ landing the idea.
    its rough shape in a line or two, and capture the open unknowns. Do not
    relitigate a decided idea or run a full interview — that depth belongs to
    `blueprint`.
-2. **Create the Linear home.** Per the envelope, call `save_initiative` *or*
+2. **Create the tracker home.** Per the envelope, call `save_initiative` *or*
    `save_project` on the target team for this idea. One home per idea: reuse an
    existing one instead of creating a duplicate.
 3. **Attach the brief.** Call `save_document` to publish an idea/brief doc on that

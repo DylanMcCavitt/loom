@@ -10,15 +10,15 @@ proof plan, and explicit open decisions.
   the conversation, the idea doc, research notes, and the codebase. If a genuine
   unknown blocks the spec, route to the research-spike lens instead of
   relitigating intent with the user.
-- Linear is the planning system of record; the spec lands as a Linear
-  **document** on the originating idea's project, not as a GitHub issue or a
+- The tracker is the planning system of record; the spec lands as a tracker
+  **document** on the originating idea's project, not as a code-host issue or a
   repo file.
 - Use the repo envelope's domain glossary vocabulary for every term in the spec;
   never invent names the glossary already provides.
 
 ## Playbook
 
-1. Read the repo envelope (Linear team/project/label map, domain glossary,
+1. Read the repo envelope (tracker team/project/label map, domain glossary,
    commands, template set), the originating idea/brief, and any research
    document. Do not hardcode a tracker, team, labels, or commands.
 2. Draft from `templates/prd.md`. The spec MUST include:
@@ -30,7 +30,7 @@ proof plan, and explicit open decisions.
 3. Keep it prose. No file paths or code snippets — they rot. The one exception:
    a decision-encoding snippet (state machine, reducer, schema, type shape)
    inlined where prose is less precise, trimmed to the decision-rich parts.
-4. Publish the finished spec as a Linear document on the project and return the
+4. Publish the finished spec as a tracker document on the project and return the
    created document id/link. The document is the spec's home; the
    issue-decomposition lens reads it to cut issues.
 

@@ -53,7 +53,7 @@ lanes with the envelope's domain glossary. Avoid "component", "service",
    across the seam. Explore at least two alternative interfaces (design it
    twice) and compare by depth, locality, and seam placement.
 5. **Record the decision** where the envelope puts architecture decisions (a
-   repo ADR or a Linear architecture document): the lane, the seam, the
+   repo ADR or a tracker architecture document): the lane, the seam, the
    materials, and the consumers. Hand the agreed restructure to the
    issue-decomposition lens to stamp as tracked issues; implementing it is
    `roboports`.

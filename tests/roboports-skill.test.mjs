@@ -11,7 +11,7 @@ test("roboports frontmatter name matches the directory", () => {
 test("roboports has the required trigger", () => {
   assert.match(
     skill,
-    /description: The implement coordinator\. Runs one tracked Linear issue end-to-end as code/u,
+    /description: The implement coordinator\. Runs one tracked issue end-to-end as code/u,
   );
   assert.match(
     skill,
@@ -21,7 +21,7 @@ test("roboports has the required trigger", () => {
 
 test("roboports preserves one issue one branch one PR with the bridge", () => {
   assert.match(skill, /one issue to one branch\/worktree to one PR/u);
-  assert.match(skill, /branch name carries the Linear issue id/u);
+  assert.match(skill, /branch name carries the tracked issue\s+id/u);
 });
 
 test("roboports keeps the localized-fanout discipline", () => {
@@ -58,7 +58,6 @@ test("roboports resolves side-effect boundary before tracker or PR actions", () 
   assert.match(skill, /Side-effect boundary: resolve the packet's `context` \(`validation` \| `live`\)/u);
 });
 
-test("roboports documents hard rename without keeping old canonical path", () => {
-  assert.match(skill, /former canonical name/u);
-  assert.match(skill, /steady state is `roboports` only/u);
+test("roboports stays tracker-neutral", () => {
+  assert.doesNotMatch(skill, /\bLinear\b|\bGitHub\b/u);
 });

@@ -67,7 +67,7 @@ Global policy:
 - Maximum autonomous depth is 3: root issue/PR owner at depth 0, each child wave increments depth by one.
 - The parent that starts a wave owns integration, conflict resolution, final proof selection, and tracker/PR reporting.
 - Stop when depth is exhausted, no allowed child exists for the mode/scope, a packet would widen scope, a coverage gap blocks the decision, proof is red before launch, or native rendering/live HOME apply/merge/closeout is requested in this contract slice.
-- Child agents never merge PRs, close Linear issues, apply generated files to live HOME, create native OMP/Codex/Claude agent files in this contract slice, or invent standards when references are missing.
+- Child agents never merge PRs, close tracked issues, apply generated files to live HOME, create native OMP/Codex/Claude agent files in this contract slice, or invent standards when references are missing.
 - Every wave transition records parent, child agents, issue/PR id, mode, scope, loaded references, allowed next agents, proof state, and stop reason.
 - Implementation children may run in parallel only when packets name disjoint files or the parent owns all integration edits.
 
@@ -91,7 +91,7 @@ The original implementer is avoided by default to reduce anchoring and context d
 Resolve conflicts in this order:
 
 1. The user's explicit goal and constraints.
-2. Active Linear issue acceptance criteria.
+2. Active tracked-issue acceptance criteria.
 3. Verified repo code/tests and live PR state.
 4. Repository-canonical guidance and routed references.
 5. Accepted exemplars with stable evidence.

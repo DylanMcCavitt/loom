@@ -6,14 +6,14 @@ block in the repo's `AGENTS.md`/`CLAUDE.md`. Each binding is plain Markdown a hu
 
 ## `linear-map.md`
 
-- **Team** — the Linear team key + name this repo files under.
+- **Team** — the tracker team key + name this repo files under.
 - **Project(s)** — the default project (and any sub-projects) issues land in.
 - **Labels** — the repo's label vocabulary, including the parent groups.
 - **States** — the workflow states, mapped to the triage roles used by
   `blueprint`'s triage lens: `needs-triage`, `needs-info`, `ready-for-agent`,
   `ready-for-human`, `wontfix` → the repo's actual state/label strings. The
   triage lens reads this map; it never hardcodes a state.
-- **Bridge** — the GitHub convention: the branch carries the Linear issue id; the
+- **Bridge** — the PR-host convention: the branch carries the tracked issue id; the
   PR auto-links and auto-closes the issue on merge. Record the branch-name shape.
 
 ## `domain.md`
@@ -46,7 +46,7 @@ A short block so a fresh agent discovers the envelope:
 This repo runs the Factorio workflow kit. The per-repo envelope is in
 `.agents/envelope/` — read it before planning or building:
 
-- `linear-map.md` — Linear team/project/label/state map + the GitHub bridge.
+- `linear-map.md` — tracker team/project/label/state map + the PR bridge.
 - `domain.md` — domain glossary.
 - `commands.md` — build/test/lint/run + default branch.
 - `templates/` — PR/issue/doc templates.

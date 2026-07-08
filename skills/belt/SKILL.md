@@ -2,8 +2,8 @@
 name: belt
 description: Handoff carrier that moves durable context between agents or threads with concise state, proof, risks, and next actions, covering handoff, thread-control, and resume flows through lenses. Use when writing a handoff, deciding whether to continue or start a new thread, or resuming a repo task from durable state.
 metadata:
-  version: "0.1.0"
-  changelog: "0.1.0 - initial public release"
+  version: "0.2.0"
+  changelog: "0.2.0 - restated non-goals and duplicated governance boilerplate removed"
 
 ---
 
@@ -52,16 +52,8 @@ The input packet may carry a `lens` field. A named lens loads `references/lens-<
 
 - Required input packet fields: `current state`, `lens`, `changed files`, `proof`, `risks`, `next action`.
 - Required output packet fields: `handoff`, `proof summary`, `blockers`, `resume command/context`.
-- Non-goals:
-- Do not implement code
-- Do not include transcripts by default
-- Do not live-apply to real HOME
-- Do not omit blockers
+- Do not include transcripts by default; do not omit blockers.
 
 ## Review Output
 
 Report mode, lens, target surface, loaded references, rule IDs, proof run, and unresolved coverage gaps.
-
-## Skill Integrity
-
-This package is the canonical source; update the package and shared contract together, and edit it in place.

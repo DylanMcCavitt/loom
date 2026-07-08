@@ -1,7 +1,7 @@
 # Blueprint lens: issue-decomposition
 
 Loaded when the packet names `lens: issue-decomposition`. Splits an accepted
-plan/spec/PRD into dependency-ordered Linear issues and sub-issues so
+plan/spec/PRD into dependency-ordered tracked issues and sub-issues so
 `roboports` can build them. (Absorbs the retired `ghosts` agent.)
 
 ## Judgment
@@ -18,7 +18,7 @@ plan/spec/PRD into dependency-ordered Linear issues and sub-issues so
 
 ### 1. Read the plan and the envelope
 
-Read the repo envelope before stamping anything: the Linear team/project/label
+Read the repo envelope before stamping anything: the tracker team/project/label
 map, domain glossary, milestone list, estimate scale, and the HITL/AFK state
 map. Read the source spec too — usually the blueprint PRD document on the
 project. Do not hardcode a tracker, team, label set, or states.
@@ -38,7 +38,7 @@ a design review, a manual check) or **AFK** (implementable and mergeable
 without one). Prefer AFK where possible.
 
 Size each slice for **one issue → one branch → one PR**: `roboports` names the
-branch with the Linear issue id and the PR auto-closes the issue on merge. A
+branch with the tracked issue id and the PR auto-closes the issue on merge. A
 slice too big to ride one PR is too big.
 
 ### 3. Set dependencies
@@ -48,7 +48,7 @@ multi-slice features under a parent issue with sub-issues. Confirm granularity
 and the dependency graph with the user before publishing if the breakdown is
 non-obvious.
 
-### 4. Publish to Linear in dependency order
+### 4. Publish to the tracker in dependency order
 
 Publish with `save_issue`, **blockers first**, so every blocked-by relation can
 reference a real issue id: `parent` for sub-issues, `blockedBy`/`blocks` for

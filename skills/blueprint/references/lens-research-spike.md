@@ -2,7 +2,7 @@
 
 Loaded when the packet names `lens: research-spike`. Runs a time-boxed
 investigation that resolves one open unknown with source-grounded findings
-before build, and records the findings as a Linear document. (Absorbs the
+before build, and records the findings as a tracker document. (Absorbs the
 retired `science-pack` and `research` agents.)
 
 ## Judgment
@@ -23,7 +23,7 @@ retired `science-pack` and `research` agents.)
 
 ## Playbook
 
-1. Read the repo envelope (domain glossary, the idea's Linear project) so
+1. Read the repo envelope (domain glossary, the idea's tracker project) so
    findings land in the right place and speak the repo's language.
 2. Pick the cheapest research tier that can resolve the unknown, and stop the
    moment the decision is unblocked:
@@ -34,7 +34,7 @@ retired `science-pack` and `research` agents.)
       solve it. Reach here only when the first two tiers can't answer it.
 3. If the unknown is really a design question, run a throwaway prototype
    instead of researching in the abstract, then fold the learnings back.
-4. Write findings as a Linear document on the idea's project (`save_document`).
+4. Write findings as a tracker document on the idea's project (`save_document`).
    Every finding MUST state the decision it unblocks — research that doesn't
    change a decision is overproduction. Hand the resolved decisions back to the
    spec-synthesis lens.
@@ -44,5 +44,5 @@ retired `science-pack` and `research` agents.)
 - Time-boxed: state the box up front; stop when the decision is unblocked or
   the box is spent, and report what's still open.
 - Every finding names the decision it unblocks and cites its sources.
-- Records findings in Linear; reads the repo envelope, hardcodes nothing.
+- Records findings in the tracker; reads the repo envelope, hardcodes nothing.
 - No live writes to real HOME; no issue closing; no PR merging.
