@@ -99,7 +99,7 @@ test("banned filler phrases are flagged case-insensitively with file and line", 
       references: { "guide.md": "Intro.\n\nPlease Note the ratchet.\n" },
     });
     const violations = violationsFor(root).filter((violation) => violation.rule === "filler-phrase");
-    assert.equal(violations.length, 2);
+    assert.equal(violations.length, 3);
     const skillHit = violations.find((violation) => violation.key === "SKILL.md::make sure to");
     assert.ok(skillHit, JSON.stringify(violations));
     // body starts after 4 frontmatter lines plus a blank line; phrase is body line 2 = file line 7

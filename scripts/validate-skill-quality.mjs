@@ -4,7 +4,7 @@
 // Rules:
 // - word-budget: SKILL.md body (frontmatter excluded) stays within the word budget.
 // - description-budget: frontmatter description stays within the character budget.
-// - filler-phrase: banned filler phrases are absent from SKILL.md and references/*.md bodies.
+// - filler-phrase: banned filler phrases (including polite padding like please/thanks) are absent
 // - tracker-coupling: vendor tracker names (Linear, GitHub) are absent from SKILL.md and
 //   references/*.md; neutral vocabulary (tracker, issue, change request, PR host, envelope)
 //   is the standard.
@@ -33,6 +33,10 @@ export const BANNED_PHRASES = Object.freeze([
   "as needed",
   "it is important to",
   "please note",
+  "please",
+  "thanks",
+  "thank you",
+  "kindly",
 ]);
 export const VENDOR_WORDS = Object.freeze(["Linear", "GitHub"]);
 export const DEFAULT_ALLOWLIST_PATH = "scripts/skill-quality-allowlist.json";
