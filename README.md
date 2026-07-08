@@ -34,17 +34,32 @@ node scripts/install.mjs --harness cursor --skills belt,lab --yes
 node scripts/install.mjs --list
 ```
 
-Claude Code and Codex targets default to symlinks; Cursor and Factory default to copies (`--symlink`/`--copy` override). OMP is config-based, so the installer prints the `skills.customDirectories` snippet instead of writing files. Existing targets that were not installed by Loom are skipped with a warning unless `--force` is passed, and `--dry-run` prints the plan without writing.
+Every harness defaults to symlink except `cursor` and `factory` (copy, because symlink support is undocumented) and `omp` (config snippet only); `--symlink`/`--copy` override. OMP is config-based, so the installer prints the `skills.customDirectories` snippet instead of writing files. Existing targets that were not installed by Loom are skipped with a warning unless `--force` is passed, and `--dry-run` prints the plan without writing. Global target paths follow the skills.sh supported-agents matrix.
 
 Manual routes, for reference:
 
-| Harness | Install route | Notes |
+| Harness | Global skills directory | Default mode |
 | --- | --- | --- |
-| Claude Code | `ln -s ~/loom/skills ~/.claude/skills` | Plain skill dirs, no plugin needed; symlinks documented-supported. |
-| Codex CLI and generic Agent Skills convention | `ln -s ~/loom/skills ~/.agents/skills` | Symlinked folders documented-supported. |
-| Cursor | Reads `~/.agents/skills` or `~/.cursor/skills` | Symlink support undocumented — verify in Skills UI; copy if not listed. |
-| OMP | `skills.customDirectories: [~/loom/skills]` | No symlink needed. |
-| Factory Droid | Copy into `~/.factory/skills` | Symlink behavior undocumented. |
+| Claude Code (`claude`) | `~/.claude/skills` | symlink |
+| Codex CLI (`codex`) | `~/.codex/skills` | symlink |
+| Generic Agent Skills — Cline, Dexto, Kimi Code CLI, Warp, Zed (`agents`) | `~/.agents/skills` | symlink |
+| Cursor (`cursor`) | `~/.cursor/skills` | copy |
+| Gemini CLI (`gemini`) | `~/.gemini/skills` | symlink |
+| GitHub Copilot (`copilot`) | `~/.copilot/skills` | symlink |
+| OpenCode (`opencode`) | `~/.config/opencode/skills` | symlink |
+| Amp — also Replit / universal (`amp`) | `~/.config/agents/skills` | symlink |
+| Goose (`goose`) | `~/.config/goose/skills` | symlink |
+| Windsurf (`windsurf`) | `~/.codeium/windsurf/skills` | symlink |
+| Factory Droid (`factory`) | `~/.factory/skills` | copy |
+| Roo Code (`roo`) | `~/.roo/skills` | symlink |
+| Kilo Code (`kilo`) | `~/.kilocode/skills` | symlink |
+| Charm Crush (`crush`) | `~/.config/crush/skills` | symlink |
+| Continue (`continue`) | `~/.continue/skills` | symlink |
+| Qwen Code (`qwen`) | `~/.qwen/skills` | symlink |
+| Trae (`trae`) | `~/.trae/skills` | symlink |
+| OpenHands (`openhands`) | `~/.openhands/skills` | symlink |
+| Augment (`augment`) | `~/.augment/skills` | symlink |
+| OMP (`omp`) | `skills.customDirectories: [~/loom/skills]` — no directory write | config |
 
 ## Maintainers
 

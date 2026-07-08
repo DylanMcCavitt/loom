@@ -15,12 +15,41 @@ import { skillsRoot } from "./lib/layout.mjs";
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 const repoSkillsDir = path.join(repoRoot, skillsRoot);
 
+// Global target paths follow the vercel-labs/skills (skills.sh) supported-agents
+// matrix. Everything defaults to symlink except cursor/factory (copy is safest
+// where symlink support is undocumented) and omp (config snippet only).
 export const HARNESSES = Object.freeze({
   claude: { label: "Claude Code", targetDir: ".claude/skills", mode: "symlink", note: "symlinks documented-supported" },
-  codex: { label: "Codex CLI / Agent Skills", targetDir: ".agents/skills", mode: "symlink", note: "symlinks documented-supported" },
+  codex: { label: "Codex CLI", targetDir: ".codex/skills", mode: "symlink", note: "symlinks documented-supported" },
+  agents: { label: "Generic Agent Skills (Cline, Dexto, Kimi Code CLI, Warp, Zed)", targetDir: ".agents/skills", mode: "symlink", note: "shared Agent Skills convention directory" },
   cursor: { label: "Cursor", targetDir: ".cursor/skills", mode: "copy", note: "symlink support undocumented; copy is safest" },
+  gemini: { label: "Gemini CLI", targetDir: ".gemini/skills", mode: "symlink", note: "skills.sh-supported global path" },
+  copilot: { label: "GitHub Copilot", targetDir: ".copilot/skills", mode: "symlink", note: "skills.sh-supported global path" },
+  opencode: { label: "OpenCode", targetDir: ".config/opencode/skills", mode: "symlink", note: "skills.sh-supported global path" },
+  amp: { label: "Amp (also Replit / universal)", targetDir: ".config/agents/skills", mode: "symlink", note: "skills.sh-supported global path" },
+  goose: { label: "Goose", targetDir: ".config/goose/skills", mode: "symlink", note: "skills.sh-supported global path" },
+  windsurf: { label: "Windsurf", targetDir: ".codeium/windsurf/skills", mode: "symlink", note: "skills.sh-supported global path" },
   factory: { label: "Factory Droid", targetDir: ".factory/skills", mode: "copy", note: "symlink support undocumented; copy is safest" },
+  roo: { label: "Roo Code", targetDir: ".roo/skills", mode: "symlink", note: "skills.sh-supported global path" },
+  kilo: { label: "Kilo Code", targetDir: ".kilocode/skills", mode: "symlink", note: "skills.sh-supported global path" },
+  crush: { label: "Charm Crush", targetDir: ".config/crush/skills", mode: "symlink", note: "skills.sh-supported global path" },
+  continue: { label: "Continue", targetDir: ".continue/skills", mode: "symlink", note: "skills.sh-supported global path" },
+  qwen: { label: "Qwen Code", targetDir: ".qwen/skills", mode: "symlink", note: "skills.sh-supported global path" },
+  trae: { label: "Trae", targetDir: ".trae/skills", mode: "symlink", note: "skills.sh-supported global path" },
+  openhands: { label: "OpenHands", targetDir: ".openhands/skills", mode: "symlink", note: "skills.sh-supported global path" },
+  augment: { label: "Augment", targetDir: ".augment/skills", mode: "symlink", note: "skills.sh-supported global path" },
   omp: { label: "OMP", targetDir: null, mode: "config", note: "config-based; prints a skills.customDirectories snippet, writes nothing" },
+});
+
+export const HARNESS_ALIASES = Object.freeze({
+  droid: "factory",
+  "gemini-cli": "gemini",
+  "claude-code": "claude",
+  "github-copilot": "copilot",
+  kilocode: "kilo",
+  warp: "agents",
+  zed: "agents",
+  cline: "agents",
 });
 
 const HARNESS_NAMES = Object.freeze(Object.keys(HARNESSES));
@@ -31,6 +60,7 @@ Interactive TUI when run on a TTY with no selection flags; otherwise flags drive
 
 Options:
   --harness <name>   Target harness (repeatable or comma-separated): ${HARNESS_NAMES.join(", ")}
+                     Aliases: ${Object.entries(HARNESS_ALIASES).map(([alias, canonical]) => `${alias}=${canonical}`).join(", ")}
   --all              Install every skill
   --skills <a,b,c>   Install only the named skills
   --home <dir>       Base dir standing in for HOME (default: os.homedir())
@@ -90,9 +120,11 @@ export function parseArgs(argv) {
     else if (flag === "--help" || flag === "-h") options.help = true;
     else throw new Error(`Unknown option: ${arg}`);
   }
-  for (const name of options.harnesses) {
-    if (!HARNESSES[name]) throw new Error(`Unknown harness: ${name} (expected one of ${HARNESS_NAMES.join(", ")})`);
-  }
+  options.harnesses = options.harnesses.map((name) => {
+    const canonical = HARNESS_ALIASES[name] ?? name;
+    if (!HARNESSES[canonical]) throw new Error(`Unknown harness: ${name} (expected one of ${HARNESS_NAMES.join(", ")})`);
+    return canonical;
+  });
   return options;
 }
 
@@ -297,7 +329,7 @@ function listOutput() {
   lines.push("", "Harnesses:");
   for (const [name, harness] of Object.entries(HARNESSES)) {
     const route = harness.targetDir ? `~/${harness.targetDir} (${harness.mode})` : "config snippet only";
-    lines.push(`  ${name.padEnd(8)} ${harness.label} -> ${route}; ${harness.note}`);
+    lines.push(`  ${name.padEnd(10)} ${harness.label} -> ${route}; ${harness.note}`);
   }
   return lines.join("\n");
 }
@@ -328,9 +360,11 @@ async function resolveSelections(options, { input, output, errorOutput, skillNam
       errorOutput.write("Aborted: no skills selected.\n");
       return null;
     }
+    // Default no harnesses selected: spraying files across ~20 harness dirs by
+    // default would be worse than making the user pick the ones they use.
     const harnesses = await promptMultiSelect({
       title: "Select target harnesses",
-      items: Object.entries(HARNESSES).map(([name, harness]) => ({ value: name, label: `${name} — ${harness.label}`, selected: true })),
+      items: Object.entries(HARNESSES).map(([name, harness]) => ({ value: name, label: `${name} — ${harness.label}`, selected: false })),
       input,
       output,
     });

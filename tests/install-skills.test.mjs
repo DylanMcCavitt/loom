@@ -51,6 +51,7 @@ test("shipped skill roster matches expectations", () => {
 });
 
 test("--list names every skill and harness", () => {
+  assert.equal(Object.keys(HARNESSES).length, 20);
   const home = sandboxHome("list");
   const result = runInstaller(["--list"], home);
   assert.equal(result.status, 0, result.stderr);
@@ -65,14 +66,14 @@ test("non-interactive symlink install links every skill into codex target", () =
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /codex: 11 installed \(symlink\)/u);
 
-  const target = path.join(home, ".agents", "skills");
+  const target = path.join(home, ".codex", "skills");
   for (const skill of EXPECTED_SKILLS) {
     const dest = path.join(target, skill);
     assert.ok(lstatSync(dest).isSymbolicLink(), `${dest} must be a symlink`);
     assert.equal(realpathSync(dest), path.join(repoSkillsDir, skill));
     assert.match(readFileSync(path.join(dest, "SKILL.md"), "utf8"), /^---/u);
   }
-  assertOnlyHarnessDirs(home, [".agents"]);
+  assertOnlyHarnessDirs(home, [".codex"]);
 });
 
 test("non-interactive copy install copies only the selected skills", () => {
@@ -105,7 +106,7 @@ test("re-running an install refreshes loom-owned targets and reports updated", (
   assert.equal(second.status, 0, second.stderr);
   assert.match(second.stdout, /codex: 1 updated/u);
 
-  const dest = path.join(home, ".agents", "skills", "belt");
+  const dest = path.join(home, ".codex", "skills", "belt");
   assert.ok(lstatSync(dest).isSymbolicLink());
   assert.equal(realpathSync(dest), path.join(repoSkillsDir, "belt"));
 
@@ -153,11 +154,44 @@ test("omp prints the customDirectories snippet and writes nothing", () => {
   assertOnlyHarnessDirs(home, []);
 });
 
+test("harness aliases normalize to canonical targets", () => {
+  const home = sandboxHome("alias");
+  const result = runInstaller(["--harness", "droid", "--skills", "belt", "--home", home, "--yes"], home);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /factory: 1 installed \(copy\)/u);
+  const dest = path.join(home, ".factory", "skills", "belt");
+  assert.ok(lstatSync(dest).isDirectory());
+  assert.ok(!lstatSync(dest).isSymbolicLink());
+  assertOnlyHarnessDirs(home, [".factory"]);
+});
+
+test("gemini harness symlinks into .gemini/skills", () => {
+  const home = sandboxHome("gemini");
+  const result = runInstaller(["--harness", "gemini", "--skills", "belt,lab", "--home", home, "--yes"], home);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /gemini: 2 installed \(symlink\)/u);
+  for (const skill of ["belt", "lab"]) {
+    const dest = path.join(home, ".gemini", "skills", skill);
+    assert.ok(lstatSync(dest).isSymbolicLink());
+    assert.equal(realpathSync(dest), path.join(repoSkillsDir, skill));
+  }
+  assertOnlyHarnessDirs(home, [".gemini"]);
+});
+
+test("unknown harness names error listing canonical keys", () => {
+  const home = sandboxHome("badharness");
+  const result = runInstaller(["--harness", "notreal", "--all", "--home", home, "--yes"], home);
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Unknown harness: notreal/u);
+  assert.match(result.stderr, /claude, codex, agents/u);
+  assertOnlyHarnessDirs(home, []);
+});
+
 test("mode overrides flip the per-harness default", () => {
   const home = sandboxHome("override");
   const copied = runInstaller(["--harness", "codex", "--skills", "belt", "--home", home, "--yes", "--copy"], home);
   assert.equal(copied.status, 0, copied.stderr);
-  const dest = path.join(home, ".agents", "skills", "belt");
+  const dest = path.join(home, ".codex", "skills", "belt");
   assert.ok(!lstatSync(dest).isSymbolicLink());
   assert.ok(lstatSync(dest).isDirectory());
 });
@@ -198,6 +232,29 @@ test("interactive picker toggles, moves, and confirms via keypress stream", asyn
   input.write("\u001b[B");
   input.write("\r");
   assert.deepEqual(await picked, ["two", "three"]);
+});
+
+test("harness-style picker starts empty and needs a toggle before enter selects anything", async () => {
+  const items = () => [
+    { value: "claude", label: "claude", selected: false },
+    { value: "codex", label: "codex", selected: false },
+  ];
+
+  const emptyInput = new PassThrough();
+  const emptyOutput = new PassThrough();
+  emptyOutput.resume();
+  const untouched = promptMultiSelect({ title: "harnesses", items: items(), input: emptyInput, output: emptyOutput });
+  emptyInput.write("\r");
+  assert.deepEqual(await untouched, []);
+
+  const input = new PassThrough();
+  const output = new PassThrough();
+  output.resume();
+  const picked = promptMultiSelect({ title: "harnesses", items: items(), input, output });
+  input.write("\u001b[B");
+  input.write(" ");
+  input.write("\r");
+  assert.deepEqual(await picked, ["codex"]);
 });
 
 test("interactive picker aborts on q", async () => {
