@@ -95,6 +95,7 @@ Manual routes, for reference:
 | Roboports skill | `node --test tests/roboports-skill.test.mjs` |
 | Rocket launch skill | `node --test tests/rocket-launch-skill.test.mjs` |
 | Retro packet | `node --test tests/retro-packet.test.mjs` |
+| Skill quality gate | `node --test tests/skill-quality.test.mjs` |
 | Skill validation | `node --test tests/skill-validation.test.mjs` |
 | Space age skill | `node --test tests/space-age-skill.test.mjs` |
 | Worktree guard | `node --test tests/worktree-guard.test.mjs` |
@@ -104,6 +105,7 @@ Manual routes, for reference:
 | Validator | Command | Purpose |
 | --- | --- | --- |
 | Nucleus docs drift | `node scripts/validate-nucleus-docs-drift.mjs` | Keeps README identity, commands, script citations, and test-suite rows aligned with package scripts and files on disk. |
+| Skill quality | `node scripts/validate-skill-quality.mjs` | Enforces word/description budgets, bans filler phrases and vendor tracker names, and requires eval coverage; existing violations are grandfathered in `scripts/skill-quality-allowlist.json`, a ratchet that may only shrink. |
 | Skill validation | `node scripts/validate-skills.mjs` | Checks skill shape, frontmatter, naming, and secret-like content. |
 
 ### Scripts
