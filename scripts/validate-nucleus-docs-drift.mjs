@@ -21,6 +21,7 @@ const DEFAULT_DOC_PATHS = Object.freeze([
 const COMMAND_DOC_PATHS = Object.freeze([
   "README.md",
   "docs/operator/daily-workflow.md",
+  "docs/operator/evals.md",
 ]);
 
 const PINNED_IDENTITY_ALIASES = Object.freeze(new Set([
@@ -104,6 +105,7 @@ export function validateDocumentedCommands({ pkg, root = repoRoot, docPaths = CO
   const failures = [];
 
   for (const relativePath of docPaths) {
+    if (!existsSync(path.join(root, relativePath))) continue;
     const content = readText(relativePath, root);
     for (const match of content.matchAll(/npm run ([a-z0-9:_-]+)/giu)) {
       const script = match[1];

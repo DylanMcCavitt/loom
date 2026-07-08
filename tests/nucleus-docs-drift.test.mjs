@@ -48,8 +48,10 @@ test("docs drift validator catches command drift from package.json", () => {
   const root = makeFixture();
   try {
     writeFileSync(path.join(root, "docs/operator/daily-workflow.md"), "```sh\nnpm run stale-command\n```\n");
+    writeFileSync(path.join(root, "docs/operator/evals.md"), "```sh\nnpm run also-stale\n```\n");
     const failures = validateDocumentedCommands({ root });
     assert.ok(failures.some((failure) => failure.includes("stale-command")), failures.join("\n"));
+    assert.ok(failures.some((failure) => failure.includes("also-stale")), failures.join("\n"));
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

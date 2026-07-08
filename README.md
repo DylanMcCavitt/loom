@@ -110,7 +110,7 @@ Manual routes, for reference:
 
 ### Eval tiers
 
-The pack uses a three-tier eval ladder; tier 1 is enforced offline in `npm run check`, while tiers 2–3 are opt-in bench modes.
+The pack uses a three-tier eval ladder; tier 1 is enforced offline in `npm run check`, while tiers 2–3 are opt-in bench modes. Operator cadence, evidence rules, and deferred gaps: [`docs/operator/evals.md`](docs/operator/evals.md).
 
 | Tier | Eval | Run |
 | --- | --- | --- |

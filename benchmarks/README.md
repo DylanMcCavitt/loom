@@ -2,7 +2,8 @@
 
 Benchmarks are opt-in behavior-eval rigs for roster agents. They are not part of
 `npm run check` when they require model calls; only cheap deterministic helpers
-and tests for those helpers belong in the normal check path.
+and tests for those helpers belong in the normal check path. Operator cadence
+for when to run each tier: [`docs/operator/evals.md`](../docs/operator/evals.md).
 
 ## Adding a roster-agent benchmark
 
