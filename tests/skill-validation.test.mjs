@@ -129,8 +129,6 @@ test("rejects nested SKILL.md files", () => {
   assert.match(result.stderr, /exactly one level/u);
 });
 
-// --- roster-contract guard (unit; requireCanonical off to run against temp trees) ---
-
 const { validateRosterContract } = await import("../scripts/validate-skills.mjs");
 
 function makeRosterFixture({ contract, packages }) {

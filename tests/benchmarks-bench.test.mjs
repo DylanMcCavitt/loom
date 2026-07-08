@@ -23,7 +23,6 @@ import {
 const repoRoot = new URL("..", import.meta.url).pathname;
 const benchScript = new URL("../scripts/bench.mjs", import.meta.url).pathname;
 
-// Model-in-the-loop modes must behave as if CI: no judge credentials.
 const offlineEnv = Object.fromEntries(
   Object.entries(process.env).filter(([key]) => !key.startsWith("LOOM_JUDGE_")),
 );

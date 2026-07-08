@@ -199,8 +199,8 @@ export function ablateMode({ skill, dest = null, force = false, env = process.en
     skill,
     dest,
     force,
-    materializeFn: (variantDest, options) => materialize(variantDest, options),
-    scoreFn: (runDir) => scoreRun(runDir),
+    materializeFn: materialize,
+    scoreFn: scoreRun,
   });
   console.log(`ablation workspaces: ${result.destRoot}`);
   console.log(`ablation manifest: ${result.manifestPath}`);

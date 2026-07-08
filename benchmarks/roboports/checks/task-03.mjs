@@ -47,7 +47,6 @@ try {
     'sortByName orders mixed-case names case-insensitively',
   );
 
-  // Anchors.
   eqJson(
     sortMod.sortByName([{ name: 'pliers' }, { name: 'anvil' }]).map((i) => i.name),
     ['anvil', 'pliers'],

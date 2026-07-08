@@ -1,6 +1,4 @@
 #!/usr/bin/env node
-// Drift guard for LOO-112 docs/manifests cleanup.
-//
 // Keeps operator-facing command docs tied to package.json, rejects active-doc
 // claims for pre-ADR-0004 source/output paths, verifies the Factorio kit
 // manifest roster names shipped nucleus skills, and keeps README tables aligned
@@ -24,7 +22,7 @@ const COMMAND_DOC_PATHS = Object.freeze([
   "README.md",
   "docs/operator/daily-workflow.md",
 ]);
-// Phase-4 rename complete: package.json name and README H1 must both resolve to "loom".
+
 const PINNED_IDENTITY_ALIASES = Object.freeze(new Set([
   "loom",
 ]));
@@ -86,7 +84,7 @@ export function validateNoActiveStalePaths({ root = repoRoot, docPaths = DEFAULT
   const files = [...new Set(docPaths.flatMap((docPath) => walkMarkdown(docPath, root)))];
   for (const relativePath of files) {
     const content = readText(relativePath, root);
-    if (isHistoricalAllowed(relativePath, content)) continue;
+    if (isHistoricalAllowed(relativePath)) continue;
     for (const stale of STALE_ACTIVE_PATHS) {
       for (const match of content.matchAll(stale.pattern)) {
         failures.push(`${relativePath}:${lineNumberForIndex(content, match.index ?? 0)}: ${stale.label} is active-doc stale; use ${stale.replacement}`);
@@ -104,7 +102,6 @@ export function validateDocumentedCommands({ pkg, root = repoRoot, docPaths = CO
   const packageJson = pkg ?? JSON.parse(readText("package.json", root));
   const scripts = packageScriptNames(packageJson);
   const failures = [];
-
 
   for (const relativePath of docPaths) {
     const content = readText(relativePath, root);
@@ -157,7 +154,6 @@ export function validateFactorioKitRoster({ root = repoRoot, manifestPath = "doc
   }
   return failures;
 }
-
 
 function readmeTestSuiteSection(readmeText) {
   const match = readmeText.match(/### Test Suites\n\n(?<table>[\s\S]*?)(?:\n\n## |\n*$)/u);

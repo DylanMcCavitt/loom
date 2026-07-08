@@ -33,7 +33,6 @@ try {
 
   eq(bulkDiscount(10, 10), 90, 'discount applies at exactly 10 units');
 
-  // Anchors.
   eq(bulkDiscount(9, 10), 90, 'anchor: 9 units pays full price');
   eq(bulkDiscount(11, 10), 99, 'anchor: 11 units still discounted');
   eq(bulkDiscount(11, 0.33), 3.27, 'anchor: rounding unchanged');

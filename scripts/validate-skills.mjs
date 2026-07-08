@@ -64,13 +64,11 @@ function readFrontmatterData(filePath, content, errors) {
   return new Map(Object.entries(parsed.values));
 }
 
-
 function containsConcreteUseWhen(description) {
   return /\bUse (?:when|for)\b\s+\S+/u.test(description);
 }
 const SKILL_NAME_PATTERN = /^(?=.{1,64}$)[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const MAX_DESCRIPTION_LENGTH = 1024;
-
 
 const SEMVER_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/u;
 
@@ -104,7 +102,6 @@ function scanSecrets(filePath, content, errors) {
   const findings = scanHarnessSafety(filePath, content, { privateHome: false });
   for (const finding of findings) errors.push(finding.replace(/API-key\/token\/secret-looking text/u, "API-key/token-looking text"));
 }
-
 
 function collectFiles(dir) {
   const files = [];
@@ -163,12 +160,8 @@ function collectGlobalSkillNames(globalSkillsDirs, skillsRoot) {
   for (const dir of globalSkillsDirs) {
     const resolved = path.resolve(dir);
     if (!existsSync(resolved)) continue;
-    // Skip global roots/entries that resolve back into this repo's canonical
-    // skill surface; they are not an external collision source.
     const resolvedReal = safeRealpath(resolved);
     const sameLocalRoot = resolvedReal && localSkillRoots.some((root) => isInsidePath(root, resolvedReal));
-    // The default ~/.agents/skills root may point at another worktree of this same package; that is
-    // this repo's canonical skills, not an external collision source. Explicit test/global dirs still count.
     const defaultGlobalRoot = path.join(homedir(), ".agents", "skills");
     const sameDefaultPackage = resolved === defaultGlobalRoot && isSamePackageSkillsRoot(resolved, skillsRoot);
     if (sameLocalRoot || sameDefaultPackage) continue;
@@ -179,8 +172,7 @@ function collectGlobalSkillNames(globalSkillsDirs, skillsRoot) {
       const skillPath = path.join(resolved, entry.name, "SKILL.md");
       if (!existsSync(skillPath)) continue;
       const content = readFileSync(skillPath, "utf8");
-      const parseErrors = [];
-      const frontmatter = readFrontmatterData(skillPath, content, parseErrors);
+      const frontmatter = readFrontmatterData(skillPath, content, []);
       const name = frontmatter?.get("name")?.trim();
       names.add(name || entry.name);
     }
@@ -200,7 +192,6 @@ function collectRelativeFiles(root, current = root, files = []) {
   }
   return files.sort();
 }
-
 
 const BUS_FIRST_HISTORY_FILE = "biters/references/lens-minimal-diff.md";
 const OLD_SHARED_NUCLEUS_PATHS = Object.freeze([
@@ -223,7 +214,6 @@ function scanSkillContentPolicy(skillsRoots, errors) {
     }
   }
 }
-
 
 function validateSkillsRoot(skillsDir, { errors, seenNames, globalNames }) {
   const skillsRoot = path.resolve(skillsDir);

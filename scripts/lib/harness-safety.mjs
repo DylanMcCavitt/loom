@@ -1,10 +1,4 @@
-// Shared safety-scanning primitives for harness validators, the dry-run safety
-// gate, and the render-to-write executor.
-//
-// Consumers MUST reject the same dangerous destination keys, secret-looking
-// values, and absolute private home paths, so the rules live in exactly one
-// place. Re-implementing them per consumer would let the gate and validators
-// drift.
+// Shared safety-scanning primitives for harness validators.
 
 import { existsSync } from "node:fs";
 import path from "node:path";

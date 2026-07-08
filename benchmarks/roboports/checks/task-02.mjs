@@ -55,7 +55,6 @@ try {
     );
   }
 
-  // Reuse verified textually: the report must lean on util.groupBy.
   const source = fs.readFileSync(path.join(process.cwd(), 'src', 'report.js'), 'utf8');
   ok(/\bgroupBy\b/.test(source), 'src/report.js references groupBy');
   ok(
@@ -63,7 +62,6 @@ try {
     'src/report.js imports from ./util.js',
   );
 
-  // Anchor: the existing category report is unchanged.
   eqJson(
     rep.reportByCategory([
       { name: 'hammer', category: 'tools', qty: 1, price: 14.5 },

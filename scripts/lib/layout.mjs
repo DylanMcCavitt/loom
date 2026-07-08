@@ -6,4 +6,3 @@ export const skillsRoot = "skills";
 export const operatorLocalSkillsRoot = "~/.agents/skills";
 export const operatorLocalManifestPath = "docs/skills/operator-local-manifest.md";
 export const sharedAgentContractMarkdownPath = "docs/agent-contract.md";
-

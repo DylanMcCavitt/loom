@@ -227,7 +227,6 @@ test("interactive picker toggles, moves, and confirms via keypress stream", asyn
     input,
     output,
   });
-  // Deselect the first item, move down, then confirm.
   input.write(" ");
   input.write("\u001b[B");
   input.write("\r");

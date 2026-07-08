@@ -10,7 +10,6 @@ import {
   validateNoActiveStalePaths,
 } from "../scripts/validate-nucleus-docs-drift.mjs";
 
-
 function makeFixture() {
   const root = path.join(tmpdir(), `nucleus-docs-drift-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`);
   mkdirSync(path.join(root, "docs/operator"), { recursive: true });
@@ -33,7 +32,6 @@ test("docs drift validator passes minimal aligned docs", () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
-
 
 test("docs drift validator catches stale active source paths outside superseded history", () => {
   const root = makeFixture();

@@ -31,8 +31,6 @@ function headingLevel(heading) {
   return heading.match(/^#+/u)?.[0].length ?? 0;
 }
 
-// Remove a whole markdown section: from the candidate heading line through the
-// line before the next heading of the same or higher level.
 function removeSection(lines, heading) {
   const level = headingLevel(heading);
   const start = lines.findIndex((line) => line.trim() === heading.trim());
@@ -67,15 +65,13 @@ export function applyTrimCandidates(skillMd, candidates) {
   return { content, applied, missed };
 }
 
-// Fallback trim when no judge scorecard covers the skill: keep frontmatter,
-// the title/intro, and the first `## ` section; drop everything after it.
 export function heuristicTrim(skillMd) {
   const lines = skillMd.split('\n');
   const sectionStarts = [];
   let inFrontmatter = false;
   for (let index = 0; index < lines.length; index += 1) {
     if (lines[index].trim() === '---' && (index === 0 || inFrontmatter)) {
-      inFrontmatter = index === 0 ? true : false;
+      inFrontmatter = index === 0;
       continue;
     }
     if (!inFrontmatter && /^## /u.test(lines[index])) sectionStarts.push(index);

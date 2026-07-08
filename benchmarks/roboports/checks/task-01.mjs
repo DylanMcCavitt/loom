@@ -40,7 +40,6 @@ try {
     'totalValue includes the last item',
   );
 
-  // Anchors: behavior that was already correct must not regress.
   eq(inv.totalValue([]), 0, 'anchor: totalValue of empty list is 0');
   eq(
     inv.totalValue([

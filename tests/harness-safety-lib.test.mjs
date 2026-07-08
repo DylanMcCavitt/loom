@@ -67,7 +67,6 @@ function assertSafetyRejection(errors, label) {
   assert.match(joined, /PRIVATE KEY|private key|credential/i, `${label} should report the private key header`);
 }
 
-
 function withTempDir(callback) {
   const root = mkdtempSync(path.join(tmpdir(), "harness-safety-lib-"));
   try {
@@ -77,12 +76,10 @@ function withTempDir(callback) {
   }
 }
 
-
 function writeText(filePath, text) {
   mkdirSync(path.dirname(filePath), { recursive: true });
   writeFileSync(filePath, text);
 }
-
 
 function skillsFixture(root) {
   const skillsDir = path.join(root, "skills");
@@ -115,13 +112,10 @@ test("shared safety scan rejects each unsafe fixture fragment", () => {
   assertSafetyRejection(scanHarnessSafety("fixture", unsafeFixtureText()), "scanHarnessSafety");
 });
 
-
 test("kept exported validation entrypoints reject the same unsafe fixture", async () => {
   const validateSkills = await importRequired("../scripts/validate-skills.mjs", "validateSkills");
-
 
   withTempDir((root) => {
     assertSafetyRejection(errorsFrom(validateSkills(skillsFixture(root))), "validate-skills");
   });
-
 });

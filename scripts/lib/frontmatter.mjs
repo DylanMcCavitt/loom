@@ -49,6 +49,7 @@ function parseNestedStringMap(lines, startIndex, baseIndent) {
   }
   return { value: parts.some((line) => line.trim()) ? values : "", continuation, invalidLines };
 }
+
 export function parseFrontmatter(content) {
   const open = /^---\r?\n/u.exec(content);
   if (!open) return null;

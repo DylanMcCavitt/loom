@@ -132,9 +132,6 @@ export function parseJudgeResponse(text) {
   };
 }
 
-// Deterministic canned judgment: middling scores plus the SKILL.md's last
-// top-level section as a trim candidate, so downstream ablation has a real
-// section to cut when exercised offline.
 export function mockJudgeResult(context) {
   const headings = [...context.skillMd.matchAll(/^## .+$/gmu)].map((match) => match[0]);
   return {

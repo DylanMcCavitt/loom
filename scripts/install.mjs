@@ -296,7 +296,6 @@ export function promptMultiSelect({
         for (const item of state) item.selected = !allSelected;
       }
       render();
-      return undefined;
     };
 
     input.on("keypress", onKeypress);

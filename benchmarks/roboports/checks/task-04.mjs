@@ -38,7 +38,6 @@ try {
   }
   ok(!('getItems' in api), 'getItems must be gone from src/api.js (no compat alias)');
 
-  // No shim anywhere: the old identifier must not survive under src/.
   const srcDir = path.join(process.cwd(), 'src');
   for (const file of fs.readdirSync(srcDir).sort()) {
     if (!file.endsWith('.js')) continue;
@@ -46,7 +45,6 @@ try {
     ok(!/\bgetItems\b/.test(source), `getItems identifier still present in src/${file}`);
   }
 
-  // Call sites still work against the store.
   const rep = await load('src/report.js');
   const rows = rep.reportByCategory();
   ok(Array.isArray(rows) && rows.length > 0, 'reportByCategory() still works (store-backed)');

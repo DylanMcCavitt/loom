@@ -4,7 +4,6 @@ import { test } from "node:test";
 import { createWorld } from "./fixtures/mock-linear-github.mjs";
 
 const skillsRoot = new URL("../skills/", import.meta.url);
-const utilitiesRoot = new URL("../skills/", import.meta.url);
 const MVP = ["prospect", "blueprint", "roboports", "biters", "lab", "repair-pack", "rocket-launch", "belt", "assembler"];
 const KIT = [...MVP, "space-age", "map-seed"];
 const MOVED_OPERATOR_LOCAL = [
@@ -14,41 +13,32 @@ const MOVED_OPERATOR_LOCAL = [
   "skill-maintenance", "swiftui-pro", "tdd", "write-a-skill",
 ];
 const OPERATOR_LOCAL_ENGINES = new Set(["tdd", "diagnose", "debug-tools"]);
-// Every kit skill ships trigger evals (LOO-228 added belt, lab, repair-pack).
-const EVAL_SKILLS = [...KIT];
 
 function skillUrl(name, file) {
-  const inSkills = new URL(`${name}/${file}`, skillsRoot);
-  return existsSync(inSkills) ? inSkills : new URL(`${name}/${file}`, utilitiesRoot);
+  return new URL(`${name}/${file}`, skillsRoot);
 }
 
 const manifest = readFileSync(new URL("../docs/skills/factorio-kit.md", import.meta.url), "utf8");
 const assemblerSkill = readFileSync(new URL("../skills/assembler/SKILL.md", import.meta.url), "utf8");
 const adr0003 = readFileSync(new URL("../docs/decisions/0003-factorio-workflow-kit.md", import.meta.url), "utf8");
 
-// ---- Golden path: idea -> spec -> ghosts -> roboports -> rocket-launch ----
-
 test("golden path: dependency-ordered ghosts, branch carries id, merge closes via bridge", () => {
   const { api } = createWorld();
   const project = api.createProject("offline-mode");
   api.addDoc(project, "PRD: offline mode");
 
-  // ghosts: blocker first so the blocked-by id resolves.
   api.createIssue({ key: "ABC-1", project, labels: ["afk"] });
   api.createIssue({ key: "ABC-2", project, blockedBy: ["ABC-1"], labels: ["afk"] });
 
-  // roboports: implement ABC-1 on a branch that carries the id.
   const pr1 = api.openPr("ABC-1", "feat/ABC-1-local-cache", "Closes ABC-1");
   assert.equal(api.issue("ABC-1").state, "in_review");
 
-  // rocket-launch: a red gate refuses the merge; the issue stays open.
   assert.throws(
     () => api.merge(pr1, { tests: true, review: true, acceptance: true, ci: false, minimalDiff: true }),
     /red gate\(s\) ci/u,
   );
   assert.equal(api.issue("ABC-1").state, "in_review");
 
-  // all gates green -> merge -> bridge closes ABC-1.
   api.merge(pr1, { tests: true, review: true, acceptance: true, ci: true, minimalDiff: true });
   assert.equal(api.issue("ABC-1").state, "done");
 });
@@ -77,14 +67,11 @@ test("bridge invariant: a merge without the PR closing keyword does not close th
   const { api } = createWorld();
   const project = api.createProject("p");
   api.createIssue({ key: "ABC-7", project });
-  // Branch carries the id, but the PR body has NO closing keyword.
   const pr = api.openPr("ABC-7", "feat/ABC-7-cache", "wip: cache layer");
   const merged = api.merge(pr, { tests: true, review: true, acceptance: true, ci: true, minimalDiff: true });
-  assert.equal(merged.merged, true); // the merge still lands the code
-  assert.notEqual(api.issue("ABC-7").state, "done"); // but the bridge does not auto-close
+  assert.equal(merged.merged, true);
+  assert.notEqual(api.issue("ABC-7").state, "done");
 });
-
-// ---- Eval coverage gate: every kit skill ships runnable trigger evals ----
 
 test("every kit skill ships a SKILL.md in a shipped root", () => {
   for (const name of KIT) {
@@ -93,7 +80,7 @@ test("every kit skill ships a SKILL.md in a shipped root", () => {
 });
 
 test("every eval-bearing kit skill ships evals with positive + negative coverage", () => {
-  for (const name of EVAL_SKILLS) {
+  for (const name of KIT) {
     const evalsPath = skillUrl(name, "evals/evals.json");
     assert.ok(existsSync(evalsPath), `${name}: missing evals/evals.json`);
     const data = JSON.parse(readFileSync(evalsPath, "utf8"));
@@ -106,7 +93,6 @@ test("every eval-bearing kit skill ships evals with positive + negative coverage
         `${name}: eval ${c.id} missing expected_output`,
       );
     }
-    // At least one negative/routing case (must NOT activate or routes elsewhere).
     const hasNegative = data.evals.some((c) =>
       /\bnot\b|does not|NOT|route|->|instead/u.test(c.expected_output),
     );
@@ -146,7 +132,7 @@ test("workflow docs use post-cutover content-envelope terminology", () => {
 test("renamed and absorbed skills have no duplicate canonical old paths", () => {
   for (const retired of ["dispatch", "robots", "inserter", "ghosts", "radar", "proof-pass", "bus-first", "main-bus", "science-pack", "research", "spitters", "spidertron", "recycler", "quality", "modules"]) {
     assert.equal(existsSync(new URL(`${retired}/SKILL.md`, skillsRoot)), false, `${retired} must not remain in skills/`);
-    assert.equal(existsSync(new URL(`${retired}/SKILL.md`, utilitiesRoot)), false, `${retired} must not remain in the skills tree`);
+    assert.equal(existsSync(new URL(`${retired}/SKILL.md`, skillsRoot)), false, `${retired} must not remain in the skills tree`);
   }
   assert.ok(existsSync(new URL("roboports/SKILL.md", skillsRoot)), "roboports skill missing");
 });
@@ -154,17 +140,15 @@ test("renamed and absorbed skills have no duplicate canonical old paths", () => 
 test("operator-local utilities are not tracked under skills tree", () => {
   for (const name of MOVED_OPERATOR_LOCAL) {
     assert.equal(
-      existsSync(new URL(`${name}/SKILL.md`, utilitiesRoot)),
+      existsSync(new URL(`${name}/SKILL.md`, skillsRoot)),
       false,
       `${name} must not remain in skills tree after LOO-152`,
     );
   }
   for (const name of ["assembler", "prospect", "space-age", "map-seed"]) {
-    assert.ok(existsSync(new URL(`${name}/SKILL.md`, utilitiesRoot)), `${name} kit utility missing`);
+    assert.ok(existsSync(new URL(`${name}/SKILL.md`, skillsRoot)), `${name} kit utility missing`);
   }
 });
-
-// ---- Handoff graph: every routed-to kit skill actually exists ----
 
 test("kit handoff targets all exist as skills", () => {
   const edges = {
@@ -181,8 +165,6 @@ test("kit handoff targets all exist as skills", () => {
   for (const [from, targets] of Object.entries(edges)) {
     const skill = readFileSync(skillUrl(from, "SKILL.md"), "utf8");
     for (const to of targets) {
-      // A routed-to target backticked in a SKILL.md MUST exist as a skill;
-      // a dangling route fails here instead of being silently skipped.
       if (skill.includes(`\`${to}\``)) {
         if (OPERATOR_LOCAL_ENGINES.has(to)) continue;
         const present = existsSync(skillUrl(to, "SKILL.md"));

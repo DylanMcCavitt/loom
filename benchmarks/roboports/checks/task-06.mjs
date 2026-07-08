@@ -19,9 +19,7 @@ function throws(fn, label) {
   try {
     fn();
     failures.push(`${label}: expected a throw, but none happened`);
-  } catch {
-    // expected
-  }
+  } catch {}
 }
 function load(rel) {
   return import(pathToFileURL(path.join(process.cwd(), rel)).href);
@@ -39,7 +37,6 @@ function finish() {
 try {
   const { addItem } = await load('src/intake.js');
 
-  // New feature: optional supplier.
   const withSupplier = addItem({ name: 'Gasket kit', qty: 2, price: 3.5, supplier: 'Acme Supply' });
   eq(withSupplier.supplier, 'Acme Supply', 'valid supplier is stored');
   const atBoundary = addItem({ name: 'Boundary', qty: 1, price: 1, supplier: 's'.repeat(100) });
