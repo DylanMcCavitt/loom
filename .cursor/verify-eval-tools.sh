@@ -31,13 +31,22 @@ fi
 
 echo ""
 echo "=== Judge backend ==="
-source "$(dirname "$0")/source-eval-judge.sh" 2>/dev/null || true
-if [[ -n "${LOOM_JUDGE_CMD:-}" ]]; then
-  echo "ok: LOOM_JUDGE_BACKEND=${LOOM_JUDGE_BACKEND:-unset} → LOOM_JUDGE_CMD is set"
-  echo "     model label: ${LOOM_JUDGE_MODEL:-unset}"
-else
-  echo "hint: set LOOM_JUDGE_BACKEND=cursor or codex in Cloud Agents Secrets"
-fi
+# bench reads LOOM_JUDGE_BACKEND directly (benchmarks/judge/judge.mjs); no
+# sourcing needed. Non-fatal: the judge skips gracefully when unset.
+case "${LOOM_JUDGE_BACKEND:-}" in
+  cursor)
+    echo 'ok: LOOM_JUDGE_BACKEND=cursor → agent -p --mode ask --model auto --output-format text "$(cat)"'
+    ;;
+  codex)
+    echo 'ok: LOOM_JUDGE_BACKEND=codex → codex exec --ephemeral --sandbox read-only -m gpt-5.5 -c model_reasoning_effort=xhigh -'
+    ;;
+  "")
+    echo "hint: set LOOM_JUDGE_BACKEND=cursor or codex in Cloud Agents Secrets"
+    ;;
+  *)
+    echo "warn: unknown LOOM_JUDGE_BACKEND=${LOOM_JUDGE_BACKEND} (use cursor or codex) — bench --judge will fail loudly" >&2
+    ;;
+esac
 
 echo ""
 echo "=== Auth hints (non-fatal) ==="
@@ -60,7 +69,7 @@ fi
 if [[ "${FAIL}" -eq 0 ]]; then
   echo ""
   echo "ready: CLIs installed. Run judge with:"
-  echo "  source .cursor/source-eval-judge.sh && npm run bench -- --judge roboports"
+  echo "  npm run bench -- --judge roboports"
   exit 0
 fi
 echo ""

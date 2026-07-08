@@ -1,4 +1,3 @@
 {
-  "install": "bash .cursor/install-eval-tools.sh && npm ci",
-  "start": "bash -lc 'source \"$PWD/.cursor/source-eval-judge.sh\" 2>/dev/null || true'"
+  "install": "bash .cursor/install-eval-tools.sh && npm ci"
 }

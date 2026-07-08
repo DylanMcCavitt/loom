@@ -260,6 +260,50 @@ test("resolveJudgeConfig enables on api key, command, or mock, disables otherwis
   );
 });
 
+test("resolveJudgeConfig maps LOOM_JUDGE_BACKEND to the matching CLI command", () => {
+  const cursor = resolveJudgeConfig({ LOOM_JUDGE_BACKEND: "cursor" });
+  assert.equal(cursor.enabled, true);
+  assert.equal(cursor.cmd, 'agent -p --mode ask --model auto --output-format text "$(cat)"');
+  assert.equal(cursor.model, "cursor-auto");
+
+  const codex = resolveJudgeConfig({ LOOM_JUDGE_BACKEND: "codex" });
+  assert.equal(codex.enabled, true);
+  assert.equal(codex.cmd, "codex exec --ephemeral --sandbox read-only -m gpt-5.5 -c model_reasoning_effort=xhigh -");
+  assert.equal(codex.model, "gpt-5.5-xhigh");
+
+  // Case-insensitive (secrets UIs sometimes capitalize).
+  const mixed = resolveJudgeConfig({ LOOM_JUDGE_BACKEND: "Codex" });
+  assert.equal(mixed.cmd, codex.cmd);
+  assert.equal(mixed.model, "gpt-5.5-xhigh");
+});
+
+test("explicit LOOM_JUDGE_CMD and LOOM_JUDGE_MODEL override the backend mapping", () => {
+  const cmdOverride = resolveJudgeConfig({
+    LOOM_JUDGE_BACKEND: "cursor",
+    LOOM_JUDGE_CMD: "my-judge-cli",
+  });
+  assert.equal(cmdOverride.cmd, "my-judge-cli");
+
+  const modelOverride = resolveJudgeConfig({
+    LOOM_JUDGE_BACKEND: "cursor",
+    LOOM_JUDGE_MODEL: "my-label",
+  });
+  assert.equal(modelOverride.cmd, 'agent -p --mode ask --model auto --output-format text "$(cat)"');
+  assert.equal(modelOverride.model, "my-label");
+});
+
+test("unknown LOOM_JUDGE_BACKEND fails loudly in createJudgeProvider", () => {
+  const config = resolveJudgeConfig({ LOOM_JUDGE_BACKEND: "bogus" });
+  assert.equal(config.enabled, true);
+  assert.throws(() => createJudgeProvider(config), /unknown LOOM_JUDGE_BACKEND: bogus \(expected cursor or codex\)/u);
+});
+
+test("backend-provided cmd yields a command provider without executing it", () => {
+  const provider = createJudgeProvider(resolveJudgeConfig({ LOOM_JUDGE_BACKEND: "cursor" }));
+  assert.equal(provider.kind, "command");
+  assert.equal(provider.model, "cursor-auto");
+});
+
 test("runJudge command provider pipes the prompt to a CLI and parses its stdout", async () => {
   const fixtureRoot = makeJudgeFixtureRoot();
   const canned = JSON.stringify({

@@ -14,6 +14,9 @@
 //   prompt on stdin; stdout must be the rubric JSON. Lets subscription CLIs
 //   (for example `codex exec -` or `cursor-agent -p`) act as the judge
 //   without an API key. Precedence: mock > cmd > api key.
+// - LOOM_JUDGE_BACKEND  — named backend ("cursor" or "codex"); maps to a
+//   subscription-CLI command via JUDGE_BACKENDS. Explicit LOOM_JUDGE_CMD /
+//   LOOM_JUDGE_MODEL override it. Unknown values fail loudly.
 // - LOOM_JUDGE_MOCK     — any non-empty value enables an offline canned judge;
 //   a value starting with "{" is parsed as the canned judge JSON itself.
 //
@@ -37,17 +40,45 @@ export const JUDGE_SCORE_DIMENSIONS = Object.freeze([
   'actionability',
 ]);
 
+// Named judge backends: LOOM_JUDGE_BACKEND=<name> (typically a cloud secret)
+// maps to a subscription-CLI command with no shell sourcing required.
+// .cursor/source-eval-judge.sh mirrors these strings for manual shells; this
+// table is the source of truth.
+export const JUDGE_BACKENDS = Object.freeze({
+  cursor: Object.freeze({
+    cmd: 'agent -p --mode ask --model auto --output-format text "$(cat)"',
+    model: 'cursor-auto',
+  }),
+  codex: Object.freeze({
+    cmd: 'codex exec --ephemeral --sandbox read-only -m gpt-5.5 -c model_reasoning_effort=xhigh -',
+    model: 'gpt-5.5-xhigh',
+  }),
+});
+
 export function resolveJudgeConfig(env = process.env) {
   const apiKey = env.LOOM_JUDGE_API_KEY ?? '';
-  const cmd = env.LOOM_JUDGE_CMD ?? '';
+  const explicitCmd = env.LOOM_JUDGE_CMD ?? '';
   const mock = env.LOOM_JUDGE_MOCK ?? '';
+  const backend = (env.LOOM_JUDGE_BACKEND ?? '').trim().toLowerCase();
+  const backendEntry = backend ? JUDGE_BACKENDS[backend] : undefined;
+  const backendError = backend && !backendEntry
+    ? `unknown LOOM_JUDGE_BACKEND: ${backend} (expected cursor or codex)`
+    : '';
+  let cmd = explicitCmd;
+  let model = env.LOOM_JUDGE_MODEL ?? '';
+  if (!explicitCmd && backendEntry) {
+    cmd = backendEntry.cmd;
+    if (!model) model = backendEntry.model;
+  }
   return {
     apiKey,
     cmd,
-    model: env.LOOM_JUDGE_MODEL ?? '',
+    model,
     baseUrl: (env.LOOM_JUDGE_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/u, ''),
     mock,
-    enabled: Boolean(apiKey) || Boolean(cmd) || Boolean(mock),
+    backend,
+    backendError,
+    enabled: Boolean(apiKey) || Boolean(cmd) || Boolean(mock) || Boolean(backendError),
   };
 }
 
@@ -170,6 +201,9 @@ export function createJudgeProvider(config, { fetchImpl = fetch, spawnImpl = spa
         return canned ?? mockJudgeResult(context);
       },
     };
+  }
+  if (config.backendError && !config.cmd) {
+    throw new Error(config.backendError);
   }
   if (config.cmd) {
     return {

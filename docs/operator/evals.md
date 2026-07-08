@@ -43,8 +43,7 @@ saved environment snapshot when one exists.
 6. From the **loom repo root**, verify:
    ```sh
    bash .cursor/verify-eval-tools.sh
-   source .cursor/source-eval-judge.sh
-   npm run bench -- --judge roboports
+   npm run bench -- --judge roboports   # LOOM_JUDGE_BACKEND secret is read directly
    ```
 7. Open `retro/judge-scorecard-*.md` in markdown preview.
 8. **Snapshot** the environment from the dashboard so future threads skip cold
@@ -56,14 +55,17 @@ saved environment snapshot when one exists.
 cd /workspace   # or your loom checkout — must be repo root
 
 npm run check                                          # always
-source .cursor/source-eval-judge.sh                    # applies LOOM_JUDGE_BACKEND
-npm run bench -- --judge roboports                     # one skill first
+npm run bench -- --judge roboports                     # one skill first; reads LOOM_JUDGE_BACKEND directly
 npm run bench -- --judge                               # full pack when ready
 
 npm run bench -- --materialize /tmp/roboports-run --force   # sandbox outside repo
 # worker arm in /tmp/roboports-run using .bench/tasks/01-*.md
 npm run bench -- --score /tmp/roboports-run                   # grade from repo root
 ```
+
+Optional: `source .cursor/source-eval-judge.sh` exports the mapped
+`LOOM_JUDGE_CMD`/`LOOM_JUDGE_MODEL` into your shell for manual use; bench does
+not need it.
 
 ## Ladder at a glance
 
