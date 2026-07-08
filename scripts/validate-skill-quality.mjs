@@ -27,16 +27,20 @@ export const WORD_BUDGET = 650;
 export const DESCRIPTION_BUDGET = 1024;
 export const BANNED_PHRASES = Object.freeze([
   "make sure to",
+  "be sure to",
   "be careful",
   "remember to",
   "never forget",
+  "don't forget to",
   "as needed",
   "it is important to",
+  "feel free to",
   "please note",
   "please",
   "thanks",
   "thank you",
   "kindly",
+  "sorry",
 ]);
 export const VENDOR_WORDS = Object.freeze(["Linear", "GitHub"]);
 export const DEFAULT_ALLOWLIST_PATH = "scripts/skill-quality-allowlist.json";
