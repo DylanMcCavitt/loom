@@ -41,3 +41,6 @@ skills/.system/
 
 # Generated model-judge scorecards (npm run bench -- --judge output).
 retro/judge-scorecard-*
+
+# Generated eval dashboard (npm run dashboard output).
+retro/eval-dashboard*
