@@ -198,7 +198,7 @@ test("bench --judge with no credentials prints a skip notice and exits 0", () =>
   });
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /bench --judge: skipped — LOOM_JUDGE_API_KEY is not set/u);
+  assert.match(result.stdout, /bench --judge: skipped — no judge backend configured/u);
   assert.match(result.stdout, /Exiting 0/u);
   assert.doesNotMatch(result.stdout, /judge scorecard/u);
 });
@@ -211,7 +211,7 @@ test("bench --ablate with no credentials prints a skip notice and exits 0", () =
   });
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /bench --ablate: skipped — LOOM_JUDGE_API_KEY is not set/u);
+  assert.match(result.stdout, /bench --ablate: skipped — no judge backend configured/u);
   assert.doesNotMatch(result.stdout, /ablation manifest/u);
 });
 

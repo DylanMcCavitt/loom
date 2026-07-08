@@ -53,11 +53,12 @@ export function resolveJudgeConfig(env = process.env) {
 
 export function offlineSkipNotice(mode) {
   return [
-    `bench ${mode}: skipped — LOOM_JUDGE_API_KEY is not set.`,
+    `bench ${mode}: skipped — no judge backend configured.`,
     'Model-in-the-loop bench modes are opt-in and never run in CI. To enable, set',
     'LOOM_JUDGE_API_KEY and LOOM_JUDGE_MODEL (and optionally LOOM_JUDGE_BASE_URL for',
     'an OpenAI-compatible chat-completions endpoint), set LOOM_JUDGE_CMD to a CLI',
-    'judge command reading the prompt on stdin, or set LOOM_JUDGE_MOCK=1 for a',
+    'judge command reading the prompt on stdin, set LOOM_JUDGE_BACKEND in the cloud',
+    'environment (see docs/operator/evals.md), or set LOOM_JUDGE_MOCK=1 for a',
     'canned offline judge. Exiting 0.',
   ].join('\n');
 }

@@ -8,6 +8,60 @@ Related: [`loop.md`](loop.md) (Plan → Act → Verify → Record → Stop),
 [`benchmarks/README.md`](../../benchmarks/README.md) (bench CLI),
 [`docs/skills/factorio-kit.md`](../skills/factorio-kit.md) (five harness layers).
 
+## Where to run
+
+| Eval | Machine | Working directory |
+| --- | --- | --- |
+| `npm run check` | Laptop or cloud VM | **Loom repo root** (where `package.json` lives) |
+| `npm run bench -- --judge` | Machine with judge CLI + auth | **Loom repo root** — reads `skills/`, writes `retro/judge-scorecard-*` |
+| `npm run bench -- --ablate` | Same as judge | **Loom repo root** to launch; workspaces under `/tmp/...` |
+| Roboports benchmark | Machine with worker agent | **Materialize outside repo** (`/tmp/roboports-run`); **score from repo root** |
+
+**Start on a cloud VM** once `.cursor/environment.json` is committed and the
+environment is snapshotted (see below). Until then, your laptop is fine for
+judge runs.
+
+## Cloud VM setup (persistent across threads)
+
+Committed [`.cursor/environment.json`](../../.cursor/environment.json) tells
+every cloud agent how to install eval CLIs on boot. Each new thread reuses the
+saved environment snapshot when one exists.
+
+### One-time operator steps
+
+1. **Merge** the branch with `.cursor/environment.json` (or cherry-pick those files).
+2. Open [Cloud Agents → loom environment](https://cursor.com/dashboard/cloud-agents) and confirm the repo picks up `.cursor/environment.json` (it overrides personal defaults when present).
+3. In **Secrets** for that environment, add:
+   - `LOOM_JUDGE_BACKEND` = `cursor` or `codex` (selects the judge command)
+   - `CURSOR_API_KEY` — required for headless `agent -p` when backend is `cursor`
+   - `CODEX_API_KEY` — optional; otherwise run `codex login` once interactively, then snapshot
+4. Start a cloud agent on `main`. The `install` step runs
+   `bash .cursor/install-eval-tools.sh && npm ci`.
+5. From the **loom repo root**, verify:
+   ```sh
+   bash .cursor/verify-eval-tools.sh
+   source .cursor/source-eval-judge.sh
+   npm run bench -- --judge roboports
+   ```
+6. Open `retro/judge-scorecard-*.md` in markdown preview.
+7. **Snapshot** the environment from the dashboard so future threads skip cold
+   install and retain Codex auth if you logged in interactively.
+
+### Per-thread eval commands (cloud VM, repo root)
+
+```sh
+cd /workspace   # or your loom checkout — must be repo root
+
+npm run check                                          # always
+source .cursor/source-eval-judge.sh                    # applies LOOM_JUDGE_BACKEND
+npm run bench -- --judge roboports                     # one skill first
+npm run bench -- --judge                               # full pack when ready
+
+npm run bench -- --materialize /tmp/roboports-run --force   # sandbox outside repo
+# worker arm in /tmp/roboports-run using .bench/tasks/01-*.md
+npm run bench -- --score /tmp/roboports-run                   # grade from repo root
+```
+
 ## Ladder at a glance
 
 | Layer | What it measures | Command | CI? |
@@ -46,9 +100,9 @@ npm run bench -- --judge roboports  # one skill
 # OpenAI Codex plan — GPT-5.5 at xhigh reasoning, stdin prompt, read-only
 LOOM_JUDGE_CMD='codex exec --ephemeral --sandbox read-only -m gpt-5.5 -c model_reasoning_effort=xhigh -' \
 LOOM_JUDGE_MODEL='gpt-5.5-xhigh' npm run bench -- --judge
-# Cursor plan — auto model; -p takes the prompt as an argument, so "$(cat)"
-# captures the piped stdin; --mode ask keeps the judge read-only
-LOOM_JUDGE_CMD='cursor-agent -p --mode ask --model auto --output-format text "$(cat)"' \
+# Cursor plan (agent CLI): -p takes the prompt as an ARGUMENT, not stdin,
+# so "$(cat)" captures the piped prompt; --mode ask keeps it read-only.
+LOOM_JUDGE_CMD='agent -p --mode ask --model auto --output-format text "$(cat)"' \
 LOOM_JUDGE_MODEL='cursor-auto' npm run bench -- --judge
 ```
 

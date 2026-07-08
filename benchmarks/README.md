@@ -62,9 +62,9 @@ a shell with the prompt piped to its stdin:
 LOOM_JUDGE_CMD='codex exec --ephemeral --sandbox read-only -m gpt-5.5 -c model_reasoning_effort=xhigh -' \
 LOOM_JUDGE_MODEL='gpt-5.5-xhigh' npm run bench -- --judge
 
-# Cursor plan (cursor-agent CLI): -p takes the prompt as an ARGUMENT, not
+# Cursor plan (agent CLI): -p takes the prompt as an ARGUMENT, not
 # stdin, so "$(cat)" captures the piped prompt; --mode ask keeps it read-only.
-LOOM_JUDGE_CMD='cursor-agent -p --mode ask --model auto --output-format text "$(cat)"' \
+LOOM_JUDGE_CMD='agent -p --mode ask --model auto --output-format text "$(cat)"' \
 LOOM_JUDGE_MODEL='cursor-auto' npm run bench -- --judge
 ```
 
