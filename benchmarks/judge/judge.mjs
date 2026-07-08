@@ -10,13 +10,19 @@
 // - LOOM_JUDGE_API_KEY  — bearer token for an OpenAI-compatible endpoint.
 // - LOOM_JUDGE_MODEL    — model name (required for live calls).
 // - LOOM_JUDGE_BASE_URL — endpoint base (default https://api.openai.com/v1).
+// - LOOM_JUDGE_CMD      — shell command run once per skill with the judge
+//   prompt on stdin; stdout must be the rubric JSON. Lets subscription CLIs
+//   (for example `codex exec -` or `cursor-agent -p`) act as the judge
+//   without an API key. Precedence: mock > cmd > api key.
 // - LOOM_JUDGE_MOCK     — any non-empty value enables an offline canned judge;
 //   a value starting with "{" is parsed as the canned judge JSON itself.
 //
-// With neither LOOM_JUDGE_API_KEY nor LOOM_JUDGE_MOCK set, callers must skip
-// with exit 0 (CI has no credentials). Scorecards are written to retro/ and
-// never contain env var values, keys, or endpoint URLs.
+// With none of LOOM_JUDGE_API_KEY, LOOM_JUDGE_CMD, or LOOM_JUDGE_MOCK set,
+// callers must skip with exit 0 (CI has no credentials). Scorecards are
+// written to retro/ and never contain env var values, keys, endpoint URLs,
+// or command lines.
 
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -33,22 +39,26 @@ export const JUDGE_SCORE_DIMENSIONS = Object.freeze([
 
 export function resolveJudgeConfig(env = process.env) {
   const apiKey = env.LOOM_JUDGE_API_KEY ?? '';
+  const cmd = env.LOOM_JUDGE_CMD ?? '';
   const mock = env.LOOM_JUDGE_MOCK ?? '';
   return {
     apiKey,
+    cmd,
     model: env.LOOM_JUDGE_MODEL ?? '',
     baseUrl: (env.LOOM_JUDGE_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/u, ''),
     mock,
-    enabled: Boolean(apiKey) || Boolean(mock),
+    enabled: Boolean(apiKey) || Boolean(cmd) || Boolean(mock),
   };
 }
 
 export function offlineSkipNotice(mode) {
   return [
-    `bench ${mode}: skipped — LOOM_JUDGE_API_KEY is not set.`,
+    `bench ${mode}: skipped — no judge backend configured.`,
     'Model-in-the-loop bench modes are opt-in and never run in CI. To enable, set',
     'LOOM_JUDGE_API_KEY and LOOM_JUDGE_MODEL (and optionally LOOM_JUDGE_BASE_URL for',
-    'an OpenAI-compatible chat-completions endpoint), or set LOOM_JUDGE_MOCK=1 for a',
+    'an OpenAI-compatible chat-completions endpoint), set LOOM_JUDGE_CMD to a CLI',
+    'judge command reading the prompt on stdin, set LOOM_JUDGE_BACKEND in the cloud',
+    'environment (see docs/operator/evals.md), or set LOOM_JUDGE_MOCK=1 for a',
     'canned offline judge. Exiting 0.',
   ].join('\n');
 }
@@ -141,7 +151,13 @@ export function mockJudgeResult(context) {
   };
 }
 
-export function createJudgeProvider(config, { fetchImpl = fetch } = {}) {
+export function judgePromptText({ rubric, context }) {
+  return buildJudgeMessages({ rubric, context })
+    .map((message) => `--- ${message.role} ---\n${message.content}`)
+    .join('\n\n');
+}
+
+export function createJudgeProvider(config, { fetchImpl = fetch, spawnImpl = spawnSync } = {}) {
   if (config.mock) {
     let canned = null;
     if (config.mock.trim().startsWith('{')) {
@@ -152,6 +168,25 @@ export function createJudgeProvider(config, { fetchImpl = fetch } = {}) {
       model: 'mock',
       async judge(context) {
         return canned ?? mockJudgeResult(context);
+      },
+    };
+  }
+  if (config.cmd) {
+    return {
+      kind: 'command',
+      model: config.model || 'command',
+      async judge(context, { rubric }) {
+        const result = spawnImpl(config.cmd, {
+          shell: true,
+          input: judgePromptText({ rubric, context }),
+          encoding: 'utf8',
+          maxBuffer: 10 * 1024 * 1024,
+        });
+        if (result.error) throw new Error(`judge command failed to start: ${result.error.message}`);
+        if (result.status !== 0) {
+          throw new Error(`judge command exited ${result.status}: ${String(result.stderr ?? '').trim().slice(0, 500)}`);
+        }
+        return parseJudgeResponse(result.stdout);
       },
     };
   }

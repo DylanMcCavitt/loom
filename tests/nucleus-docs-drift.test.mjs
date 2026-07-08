@@ -54,3 +54,14 @@ test("docs drift validator catches command drift from package.json", () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("docs drift validator auto-discovers new operator docs for command drift", () => {
+  const root = makeFixture();
+  try {
+    writeFileSync(path.join(root, "docs/operator/evals.md"), "```sh\nnpm run also-stale\n```\n");
+    const failures = validateDocumentedCommands({ root });
+    assert.ok(failures.some((failure) => failure.includes("evals.md") && failure.includes("also-stale")), failures.join("\n"));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

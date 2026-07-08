@@ -40,7 +40,7 @@ Use the shared roster vocabulary from [`docs/agent-contract.md`](../agent-contra
 1. Open one review-ready PR for the branch.
 2. Put evidence in durable state: PR body summary, acceptance checklist, literal `npm run check` result, literal named-proof output, and unresolved risk.
 3. Add the tracker comment required by the packet or tracker bridge so the issue points at the PR and evidence.
-4. Feed the result into the **retro generator stage** as a retro packet: issue id, branch, PR, loaded lenses, changed files, proof, review findings, stop reason, and follow-up candidates. Reference the stage by name; do not couple the packet to a hard-coded file path.
+4. Feed the result into the **retro generator stage** as a retro packet: issue id, branch, PR, loaded lenses, changed files, proof, review findings, stop reason, and follow-up candidates. Reference the stage by name; do not couple the packet to a hard-coded file path. When the named proof is a bench/eval gate, follow [`evals.md`](evals.md) for judge scorecards, roboports `--score` JSON, and ablation manifests.
 
 ## Stop
 

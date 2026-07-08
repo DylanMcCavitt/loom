@@ -18,10 +18,6 @@ const DEFAULT_DOC_PATHS = Object.freeze([
   "docs/skills/factorio-kit.md",
 ]);
 
-const COMMAND_DOC_PATHS = Object.freeze([
-  "README.md",
-  "docs/operator/daily-workflow.md",
-]);
 
 const PINNED_IDENTITY_ALIASES = Object.freeze(new Set([
   "loom",
@@ -98,12 +94,14 @@ function packageScriptNames(pkg) {
   return new Set(Object.keys(pkg.scripts ?? {}));
 }
 
-export function validateDocumentedCommands({ pkg, root = repoRoot, docPaths = COMMAND_DOC_PATHS } = {}) {
+export function validateDocumentedCommands({ pkg, root = repoRoot, docPaths = null } = {}) {
   const packageJson = pkg ?? JSON.parse(readText("package.json", root));
   const scripts = packageScriptNames(packageJson);
   const failures = [];
 
-  for (const relativePath of docPaths) {
+  // Auto-discover README + every docs/operator/*.md so new operator runbooks
+  // cannot silently escape command validation.
+  for (const relativePath of docPaths ?? operatorDocPaths(root)) {
     const content = readText(relativePath, root);
     for (const match of content.matchAll(/npm run ([a-z0-9:_-]+)/giu)) {
       const script = match[1];

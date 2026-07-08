@@ -198,7 +198,7 @@ test("bench --judge with no credentials prints a skip notice and exits 0", () =>
   });
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /bench --judge: skipped — LOOM_JUDGE_API_KEY is not set/u);
+  assert.match(result.stdout, /bench --judge: skipped — no judge backend configured/u);
   assert.match(result.stdout, /Exiting 0/u);
   assert.doesNotMatch(result.stdout, /judge scorecard/u);
 });
@@ -211,7 +211,7 @@ test("bench --ablate with no credentials prints a skip notice and exits 0", () =
   });
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /bench --ablate: skipped — LOOM_JUDGE_API_KEY is not set/u);
+  assert.match(result.stdout, /bench --ablate: skipped — no judge backend configured/u);
   assert.doesNotMatch(result.stdout, /ablation manifest/u);
 });
 
@@ -249,13 +249,49 @@ test("bench --judge and --ablate reject malformed arguments", () => {
   assert.match(ablateUnknown.stderr, /unknown argument: --bogus/u);
 });
 
-test("resolveJudgeConfig enables on api key or mock, disables otherwise", () => {
+test("resolveJudgeConfig enables on api key, command, or mock, disables otherwise", () => {
   assert.equal(resolveJudgeConfig({}).enabled, false);
   assert.equal(resolveJudgeConfig({ LOOM_JUDGE_API_KEY: "k" }).enabled, true);
+  assert.equal(resolveJudgeConfig({ LOOM_JUDGE_CMD: "judge-cli" }).enabled, true);
   assert.equal(resolveJudgeConfig({ LOOM_JUDGE_MOCK: "1" }).enabled, true);
   assert.equal(
     resolveJudgeConfig({ LOOM_JUDGE_BASE_URL: "https://example.test/v1/" }).baseUrl,
     "https://example.test/v1",
+  );
+});
+
+test("runJudge command provider pipes the prompt to a CLI and parses its stdout", async () => {
+  const fixtureRoot = makeJudgeFixtureRoot();
+  const canned = JSON.stringify({
+    scores: { conciseness: 4, delta_over_base: 5, agnosticism: 3, actionability: 4 },
+    trim_candidates: [],
+    notes: "cli judge",
+  });
+  // Stand-in for a subscription CLI (codex exec / cursor-agent -p): reads the
+  // prompt on stdin, writes rubric JSON to stdout.
+  const cmd = `${process.execPath} -e 'let p="";process.stdin.on("data",(c)=>{p+=c}).on("end",()=>{if(!p.includes("--- system ---")||!p.includes("sample-skill"))process.exit(2);console.log(${JSON.stringify(canned)})})'`;
+
+  try {
+    const { scorecard } = await runJudge({
+      repoRoot: fixtureRoot,
+      env: { LOOM_JUDGE_CMD: cmd, LOOM_JUDGE_MODEL: "cli-judge-model" },
+    });
+    assert.deepEqual(scorecard.judge, { provider: "command", model: "cli-judge-model" });
+    assert.equal(scorecard.skills[0].total, 16);
+    assert.equal(scorecard.skills[0].notes, "cli judge");
+    assert.ok(!JSON.stringify(scorecard).includes(process.execPath), "scorecard must not leak the command line");
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test("command provider surfaces a failing CLI as an error", async () => {
+  const provider = createJudgeProvider(resolveJudgeConfig({ LOOM_JUDGE_CMD: `${process.execPath} -e 'console.error("boom");process.exit(3)'` }));
+  assert.equal(provider.kind, "command");
+  assert.equal(provider.model, "command");
+  await assert.rejects(
+    provider.judge({ skill: "x", skillMd: "# x", evalsJson: null }, { rubric: "rubric" }),
+    /judge command exited 3: boom/u,
   );
 });
 

@@ -45,3 +45,4 @@ Before finishing: `npm run check` must pass.
 - This repo has **zero runtime dependencies** and no build step. `npm ci` is essentially a no-op but keeps things clean; it is the update script.
 - There is **no dev server, GUI, database, or container**. "Running the app" means invoking the CLI scripts in `## Commands` and running the test/validate gates — all fully offline and hermetic.
 - `npm test` / `npm run check` runs the full Node test suite and takes ~60–90s; do not assume it hung.
+- **Evals on cloud VMs:** run from the **loom repo root**. `.cursor/environment.json` installs `agent` and `codex` CLIs on boot; set `LOOM_JUDGE_BACKEND` (`cursor` or `codex`) in Cloud Agents Secrets — judge auth uses the CLIs' subscription login persisted in the environment snapshot (`agent login` / `codex login` once, then snapshot) — then `source .cursor/source-eval-judge.sh` before `npm run bench -- --judge`. Full cadence: [`docs/operator/evals.md`](docs/operator/evals.md).

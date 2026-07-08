@@ -66,8 +66,9 @@ function usage() {
     '',
     'Deterministic modes (list/materialize/score) never call models.',
     'Model-in-the-loop modes (judge/ablate) are opt-in: they read LOOM_JUDGE_API_KEY,',
-    'LOOM_JUDGE_MODEL, and LOOM_JUDGE_BASE_URL (or LOOM_JUDGE_MOCK), skip with exit 0',
-    'when unset, and are never part of npm run check or CI.',
+    'LOOM_JUDGE_MODEL, and LOOM_JUDGE_BASE_URL (or LOOM_JUDGE_CMD for a CLI judge, or',
+    'LOOM_JUDGE_MOCK), skip with exit 0 when unset, and are never part of npm run',
+    'check or CI.',
   ].join('\n');
 }
 

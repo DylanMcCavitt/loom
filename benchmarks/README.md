@@ -2,7 +2,8 @@
 
 Benchmarks are opt-in behavior-eval rigs for roster agents. They are not part of
 `npm run check` when they require model calls; only cheap deterministic helpers
-and tests for those helpers belong in the normal check path.
+and tests for those helpers belong in the normal check path. Operator cadence
+for when to run each tier: [`docs/operator/evals.md`](../docs/operator/evals.md).
 
 ## Adding a roster-agent benchmark
 
@@ -40,12 +41,32 @@ Configuration is env-var only (names below, never values; no secrets in
 tracked files or generated output):
 
 - `LOOM_JUDGE_API_KEY` — bearer token for an OpenAI-compatible
-  chat-completions endpoint. Required for live judge calls.
-- `LOOM_JUDGE_MODEL` — judge model name. Required when the API key is set.
+  chat-completions endpoint. Required for live API judge calls.
+- `LOOM_JUDGE_MODEL` — judge model name. Required when the API key is set;
+  optional label when `LOOM_JUDGE_CMD` is set.
 - `LOOM_JUDGE_BASE_URL` — endpoint base URL (defaults to the OpenAI API).
+- `LOOM_JUDGE_CMD` — shell command run once per skill with the judge prompt on
+  stdin; stdout must be the rubric JSON (code fences tolerated). Lets
+  subscription CLIs act as the judge without an API key. Precedence:
+  mock > cmd > api key.
 - `LOOM_JUDGE_MOCK` — set to any non-empty value for a deterministic canned
   judge with no network calls (used by tests and offline dry runs); a value
   starting with `{` is parsed as the canned judge JSON itself.
+
+Subscription-CLI judge examples (no API key needed). The command runs through
+a shell with the prompt piped to its stdin:
+
+```sh
+# OpenAI Codex plan (Codex CLI): `-` reads the prompt from stdin;
+# read-only sandbox and --ephemeral keep the judge side-effect free.
+LOOM_JUDGE_CMD='codex exec --ephemeral --sandbox read-only -m gpt-5.5 -c model_reasoning_effort=xhigh -' \
+LOOM_JUDGE_MODEL='gpt-5.5-xhigh' npm run bench -- --judge
+
+# Cursor plan (agent CLI): -p takes the prompt as an ARGUMENT, not
+# stdin, so "$(cat)" captures the piped prompt; --mode ask keeps it read-only.
+LOOM_JUDGE_CMD='agent -p --mode ask --model auto --output-format text "$(cat)"' \
+LOOM_JUDGE_MODEL='cursor-auto' npm run bench -- --judge
+```
 
 Worker != grader: the `LOOM_JUDGE_*` variables configure the **grader** model
 only. They are deliberately separate from any worker (implementer) agent
