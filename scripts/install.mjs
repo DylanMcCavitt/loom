@@ -22,7 +22,7 @@ export const HARNESSES = Object.freeze({
   claude: { label: "Claude Code", targetDir: ".claude/skills", mode: "symlink", note: "symlinks documented-supported" },
   codex: { label: "Codex CLI", targetDir: ".codex/skills", mode: "symlink", note: "symlinks documented-supported" },
   agents: { label: "Generic Agent Skills (Cline, Dexto, Kimi Code CLI, Warp, Zed)", targetDir: ".agents/skills", mode: "symlink", note: "shared Agent Skills convention directory" },
-  cursor: { label: "Cursor", targetDir: ".cursor/skills", mode: "copy", note: "symlink support undocumented; copy is safest" },
+  cursor: { label: "Cursor", targetDir: ".cursor/skills", mode: "copy", note: "symlink verified on Cursor Linux VM (v0.2.1 smoke); installer defaults to copy—pass --symlink to opt in" },
   gemini: { label: "Gemini CLI", targetDir: ".gemini/skills", mode: "symlink", note: "skills.sh-supported global path" },
   copilot: { label: "GitHub Copilot", targetDir: ".copilot/skills", mode: "symlink", note: "skills.sh-supported global path" },
   opencode: { label: "OpenCode", targetDir: ".config/opencode/skills", mode: "symlink", note: "skills.sh-supported global path" },

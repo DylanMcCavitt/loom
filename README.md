@@ -34,7 +34,7 @@ node scripts/install.mjs --harness cursor --skills belt,lab --yes
 node scripts/install.mjs --list
 ```
 
-Every harness defaults to symlink except `cursor` and `factory` (copy, because symlink support is undocumented) and `omp` (config snippet only); `--symlink`/`--copy` override. OMP is config-based, so the installer prints the `skills.customDirectories` snippet instead of writing files. Existing targets that were not installed by Loom are skipped with a warning unless `--force` is passed, and `--dry-run` prints the plan without writing. Global target paths follow the skills.sh supported-agents matrix.
+Every harness defaults to symlink except `cursor` (installer defaults to copy for safety; on Cursor Linux a `~/.cursor/skills` symlink resolves, enumerates all skills, and passes agent invocation via `cursor-agent` per v0.2.1 install smoke—use `--symlink` to opt in) and `factory` (copy; symlink support undocumented) and `omp` (config snippet only); `--symlink`/`--copy` override. OMP is config-based, so the installer prints the `skills.customDirectories` snippet instead of writing files. Existing targets that were not installed by Loom are skipped with a warning unless `--force` is passed, and `--dry-run` prints the plan without writing. Global target paths follow the skills.sh supported-agents matrix.
 
 Manual routes, for reference:
 
@@ -107,6 +107,18 @@ Manual routes, for reference:
 | Nucleus docs drift | `node scripts/validate-nucleus-docs-drift.mjs` | Keeps README identity, commands, script citations, and test-suite rows aligned with package scripts and files on disk. |
 | Skill quality | `node scripts/validate-skill-quality.mjs` | Enforces word/description budgets, bans filler phrases and vendor tracker names, and requires eval coverage; existing violations are grandfathered in `scripts/skill-quality-allowlist.json`, a ratchet that may only shrink. |
 | Skill validation | `node scripts/validate-skills.mjs` | Checks skill shape, frontmatter, naming, and secret-like content. |
+
+### Eval tiers
+
+The pack uses a three-tier eval ladder; tier 1 is enforced offline in `npm run check`, while tiers 2–3 are opt-in bench modes.
+
+| Tier | Eval | Run |
+| --- | --- | --- |
+| 1 | Trigger evals | Per-skill routing corpora in `skills/<name>/evals/evals.json`; validated by the skill-quality gate as part of `npm run check` (coverage required). |
+| 2 | Judge | `npm run bench -- --judge [skill]` scores `SKILL.md` against `benchmarks/judge/RUBRIC.md` with a model in the loop; writes JSON and markdown scorecards under `retro/`. |
+| 3 | Ablation | `npm run bench -- --ablate <skill>` materializes full, absent, and trimmed roboports workspaces to compare with-skill vs without-skill uplift (re-score arms with `npm run bench -- --score <workspace>`). |
+
+Tiers 2–3 are opt-in model-in-the-loop modes: they read `LOOM_JUDGE_API_KEY` (and related `LOOM_JUDGE_*` settings) and skip with exit 0 when unset, so they never run in CI.
 
 ### Scripts
 
