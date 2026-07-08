@@ -20,13 +20,46 @@ Loom is a curated, harness-agnostic agent skill pack for turning planning, imple
 
 ## Install per harness
 
-| Harness | Install route | Notes |
+The fastest route is the bundled installer:
+
+```sh
+npm run install:skills
+```
+
+On a TTY it opens an interactive picker: choose skills, choose harnesses, review the summary, confirm. Non-interactively, drive it with flags:
+
+```sh
+node scripts/install.mjs --harness codex,claude --all --yes
+node scripts/install.mjs --harness cursor --skills belt,lab --yes
+node scripts/install.mjs --list
+```
+
+Every harness defaults to symlink except `cursor` and `factory` (copy, because symlink support is undocumented) and `omp` (config snippet only); `--symlink`/`--copy` override. OMP is config-based, so the installer prints the `skills.customDirectories` snippet instead of writing files. Existing targets that were not installed by Loom are skipped with a warning unless `--force` is passed, and `--dry-run` prints the plan without writing. Global target paths follow the skills.sh supported-agents matrix.
+
+Manual routes, for reference:
+
+| Harness | Global skills directory | Default mode |
 | --- | --- | --- |
-| Claude Code | `ln -s ~/loom/skills ~/.claude/skills` | Plain skill dirs, no plugin needed; symlinks documented-supported. |
-| Codex CLI and generic Agent Skills convention | `ln -s ~/loom/skills ~/.agents/skills` | Symlinked folders documented-supported. |
-| Cursor | Reads `~/.agents/skills` or `~/.cursor/skills` | Symlink support undocumented — verify in Skills UI; copy if not listed. |
-| OMP | `skills.customDirectories: [~/loom/skills]` | No symlink needed. |
-| Factory Droid | Copy into `~/.factory/skills` | Symlink behavior undocumented. |
+| Claude Code (`claude`) | `~/.claude/skills` | symlink |
+| Codex CLI (`codex`) | `~/.codex/skills` | symlink |
+| Generic Agent Skills — Cline, Dexto, Kimi Code CLI, Warp, Zed (`agents`) | `~/.agents/skills` | symlink |
+| Cursor (`cursor`) | `~/.cursor/skills` | copy |
+| Gemini CLI (`gemini`) | `~/.gemini/skills` | symlink |
+| GitHub Copilot (`copilot`) | `~/.copilot/skills` | symlink |
+| OpenCode (`opencode`) | `~/.config/opencode/skills` | symlink |
+| Amp — also Replit / universal (`amp`) | `~/.config/agents/skills` | symlink |
+| Goose (`goose`) | `~/.config/goose/skills` | symlink |
+| Windsurf (`windsurf`) | `~/.codeium/windsurf/skills` | symlink |
+| Factory Droid (`factory`) | `~/.factory/skills` | copy |
+| Roo Code (`roo`) | `~/.roo/skills` | symlink |
+| Kilo Code (`kilo`) | `~/.kilocode/skills` | symlink |
+| Charm Crush (`crush`) | `~/.config/crush/skills` | symlink |
+| Continue (`continue`) | `~/.continue/skills` | symlink |
+| Qwen Code (`qwen`) | `~/.qwen/skills` | symlink |
+| Trae (`trae`) | `~/.trae/skills` | symlink |
+| OpenHands (`openhands`) | `~/.openhands/skills` | symlink |
+| Augment (`augment`) | `~/.augment/skills` | symlink |
+| OMP (`omp`) | `skills.customDirectories: [~/loom/skills]` — no directory write | config |
 
 ## Maintainers
 
@@ -41,6 +74,7 @@ Loom is a curated, harness-agnostic agent skill pack for turning planning, imple
 | `npm run bench` | Runs `node scripts/bench.mjs`. |
 | `npm run loop` | Runs `node scripts/loop.mjs`. |
 | `npm run guard:worktree` | Runs `node scripts/worktree-guard.mjs`. |
+| `npm run install:skills` | Runs `node scripts/install.mjs`. |
 
 ### Test Suites
 
@@ -53,6 +87,7 @@ Loom is a curated, harness-agnostic agent skill pack for turning planning, imple
 | Factorio kit golden path | `node --test tests/factorio-kit-goldenpath.test.mjs` |
 | Frontmatter metadata | `node --test tests/frontmatter.test.mjs` |
 | Harness safety library | `node --test tests/harness-safety-lib.test.mjs` |
+| Skill installer | `node --test tests/install-skills.test.mjs` |
 | Loop entrypoint | `node --test tests/loop-entrypoint.test.mjs` |
 | Map seed skill | `node --test tests/map-seed-skill.test.mjs` |
 | Nucleus docs drift | `node --test tests/nucleus-docs-drift.test.mjs` |
@@ -76,6 +111,7 @@ Loom is a curated, harness-agnostic agent skill pack for turning planning, imple
 | Script | Command | Purpose |
 | --- | --- | --- |
 | Benchmark harness | `node scripts/bench.mjs` | Runs repository benchmark checks. |
+| Skill installer | `node scripts/install.mjs` | Links or copies `skills/` into harness skill directories, interactively or via flags. |
 | Operator loop | `node scripts/loop.mjs` | Runs the offline loop entrypoint. |
 | Retro packet helper | `node scripts/retro-packet.mjs` | Handles retro packet maintenance. |
 | Worktree guard | `node scripts/worktree-guard.mjs` | Confirms agent work starts in the intended checkout. |

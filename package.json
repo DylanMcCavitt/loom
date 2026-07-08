@@ -13,6 +13,7 @@
     "validate": "sh -c 'set -e; for f in scripts/validate-*.mjs; do node \"$f\"; done'",
     "lint": "npm run validate",
     "check": "npm run validate && npm test",
+    "install:skills": "node scripts/install.mjs",
     "loop": "node scripts/loop.mjs"
   }
 }

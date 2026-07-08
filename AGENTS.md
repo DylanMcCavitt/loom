@@ -11,6 +11,7 @@ Loom is a curated, harness-agnostic agent skill pack. The repo source of truth i
 - `npm run bench` - benchmark harness.
 - `npm run loop` - offline loop entrypoint.
 - `npm run guard:worktree` - confirms work starts in the intended checkout.
+- `npm run install:skills` - interactive or flag-driven installer that links or copies `skills/` into harness skill directories.
 
 Node >= 20, ESM (`type: module`), no external runtime dependencies.
 
