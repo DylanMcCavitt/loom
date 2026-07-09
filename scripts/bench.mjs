@@ -7,6 +7,10 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { materializeRoboportsSandbox } from '../benchmarks/roboports/materialize.mjs';
 import { offlineSkipNotice, resolveJudgeConfig, runJudge } from '../benchmarks/judge/judge.mjs';
 import { runAblation } from '../benchmarks/ablation/ablate.mjs';
+import {
+  formatRoutingSummary,
+  runRoutingEval,
+} from '../benchmarks/routing/route.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -62,14 +66,15 @@ function usage() {
     '  npm run bench -- --materialize <dir> [--force]',
     '  npm run bench -- --score <runDir>',
     '  npm run bench -- --judge [skill]',
+    '  npm run bench -- --route [skill]',
     '  npm run bench -- --ablate <skill> [--dest <dir>] [--force]',
     '',
     'Deterministic modes (list/materialize/score) never call models.',
-    'Model-in-the-loop modes (judge/ablate) read LOOM_JUDGE_API_KEY, LOOM_JUDGE_MODEL,',
+    'Model-in-the-loop modes (judge/route/ablate) read LOOM_JUDGE_API_KEY, LOOM_JUDGE_MODEL,',
     'and LOOM_JUDGE_BASE_URL (or LOOM_JUDGE_CMD for a CLI judge, or LOOM_JUDGE_MOCK,',
     'or LOOM_JUDGE_BACKEND). When no LOOM_JUDGE_* env is set, the committed default',
     'in benchmarks/judge/judge.config.json applies; LOOM_JUDGE_BACKEND=none opts out',
-    '(then judge/ablate skip with exit 0). Never part of npm run check or CI.',
+    '(then judge/route/ablate skip with exit 0). Never part of npm run check or CI.',
   ].join('\n');
 }
 
@@ -190,6 +195,19 @@ export async function judgeMode({ skill = null, env = process.env, fetchImpl = f
   return result;
 }
 
+export async function routeMode({ skill = null, env = process.env, fetchImpl = fetch } = {}) {
+  const config = resolveJudgeConfig(env);
+  if (!config.enabled) {
+    console.log(offlineSkipNotice('--route'));
+    return null;
+  }
+  const result = await runRoutingEval({ repoRoot, skill, env, fetchImpl });
+  console.log(`routing scorecard (json): ${result.jsonPath}`);
+  console.log(`routing scorecard (md): ${result.mdPath}`);
+  console.log(formatRoutingSummary(result.scorecard));
+  return result;
+}
+
 export function ablateMode({ skill, dest = null, force = false, env = process.env } = {}) {
   const config = resolveJudgeConfig(env);
   if (!config.enabled) {
@@ -251,6 +269,14 @@ export async function main(argv = process.argv.slice(2)) {
     if (skill && skill.startsWith('--')) die(`unknown argument: ${skill}`);
     if (argv.length > 2) die(`unknown argument(s): ${argv.slice(2).join(' ')}`);
     await judgeMode({ skill });
+    return;
+  }
+
+  if (argv[0] === '--route') {
+    const skill = argv[1] ?? null;
+    if (skill && skill.startsWith('--')) die(`unknown argument: ${skill}`);
+    if (argv.length > 2) die(`unknown argument(s): ${argv.slice(2).join(' ')}`);
+    await routeMode({ skill });
     return;
   }
 

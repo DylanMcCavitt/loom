@@ -83,6 +83,7 @@ Manual routes, for reference:
 | Assembler skill | `node --test tests/assembler-skill.test.mjs` |
 | Benchmark script | `node --test tests/benchmarks-bench.test.mjs` |
 | Eval dashboard | `node --test tests/eval-dashboard.test.mjs` |
+| Routing eval | `node --test tests/routing-eval.test.mjs` |
 | Biters skill | `node --test tests/biters-skill.test.mjs` |
 | Blueprint skill | `node --test tests/blueprint-skill.test.mjs` |
 | Factorio kit golden path | `node --test tests/factorio-kit-goldenpath.test.mjs` |
@@ -119,6 +120,7 @@ The pack uses a three-tier eval ladder; tier 1 is enforced offline in `npm run c
 | --- | --- | --- |
 | 1 | Trigger evals | Per-skill routing corpora in `skills/<name>/evals/evals.json`; validated by the skill-quality gate as part of `npm run check` (coverage required). |
 | 2 | Judge | `npm run bench -- --judge [skill]` scores `SKILL.md` against `benchmarks/judge/RUBRIC.md` with a model in the loop; writes JSON and markdown scorecards under `retro/`. |
+| 2 | Routing | `npm run bench -- --route [skill]` asks the judge backend which skill should activate for each `evals/evals.json` prompt given only name+description pairs; writes routing scorecards under `retro/`. |
 | 3 | Ablation | `npm run bench -- --ablate <skill>` materializes full, absent, and trimmed roboports workspaces to compare with-skill vs without-skill uplift (re-score arms with `npm run bench -- --score <workspace>`). |
 
 Tiers 2–3 are model-in-the-loop modes: they read `LOOM_JUDGE_*` settings, falling back to the committed default backend in `benchmarks/judge/judge.config.json`; `LOOM_JUDGE_BACKEND=none` opts out (then they skip with exit 0), and they never run in CI.
