@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -8,6 +9,7 @@ import { fileURLToPath } from "node:url";
 import {
   BANNED_PHRASES,
   DEFAULT_ALLOWLIST_PATH,
+  DEFAULT_TOKEN_BUDGETS_PATH,
   DESCRIPTION_BUDGET,
   WORD_BUDGET,
   buildAllowlist,
@@ -15,6 +17,14 @@ import {
   compareAgainstAllowlist,
   evaluateSkillQuality,
 } from "../scripts/validate-skill-quality.mjs";
+import {
+  TOKEN_BUDGET_SHRINK_REPORT_MIN,
+  buildTokenBudgets,
+  compareTokenBudgets,
+  estimateSkillActivationTokens,
+  estimateTokensFromChars,
+  resolveDefaultLensRelPath,
+} from "../scripts/lib/skill-token-budget.mjs";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
@@ -262,4 +272,161 @@ test("checked-in allowlist matches the shipped skills exactly", () => {
   const { checked, failures } = evaluateSkillQuality({ root: repoRoot, allowlist });
   assert.equal(checked, 11);
   assert.deepEqual(failures, []);
+});
+
+test("estimateTokensFromChars uses ceil(chars/4)", () => {
+  assert.equal(estimateTokensFromChars(0), 0);
+  assert.equal(estimateTokensFromChars(1), 1);
+  assert.equal(estimateTokensFromChars(4), 1);
+  assert.equal(estimateTokensFromChars(5), 2);
+  assert.equal(estimateTokensFromChars(100), 25);
+});
+
+test("activation estimate covers SKILL.md + default lens + rules.md only", () => {
+  const root = makeRoot();
+  try {
+    const skillMd = "---\nname: demo\ndescription: Demo.\n---\n\nBody text here.\n";
+    const lens = "# Default lens\n\nLens body.\n";
+    const rules = "# Rules\n\nRule body.\n";
+    const other = "# Other lens\n\nShould not count.\n";
+    writeSkill(root, "demo", {
+      body: "Body text here.",
+      references: {
+        "lens-handoff.md": lens,
+        "lens-other.md": other,
+        "rules.md": rules,
+      },
+    });
+    // writeSkill overwrites SKILL.md; rewrite with AGENTS.md default lens prose.
+    writeFileSync(
+      path.join(root, "skills", "demo", "SKILL.md"),
+      skillMd,
+    );
+    writeFileSync(
+      path.join(root, "skills", "demo", "AGENTS.md"),
+      "## Load order\n\n1. SKILL.md\n2. when the packet names no lens, load the default `references/lens-handoff.md`.\n3. `references/rules.md`\n",
+    );
+
+    const estimate = estimateSkillActivationTokens(path.join(root, "skills", "demo"), "demo");
+    assert.equal(estimate.defaultLens, "references/lens-handoff.md");
+    assert.deepEqual(estimate.files, ["SKILL.md", "references/lens-handoff.md", "references/rules.md"]);
+    const expectedChars = skillMd.length + lens.length + rules.length;
+    assert.equal(estimate.chars, expectedChars);
+    assert.equal(estimate.tokens, Math.ceil(expectedChars / 4));
+    assert.equal(resolveDefaultLensRelPath(path.join(root, "skills", "demo")), "references/lens-handoff.md");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("skills without a default lens estimate SKILL.md (+ rules when present)", () => {
+  const root = makeRoot();
+  try {
+    writeSkill(root, "utility", { body: "Short utility body." });
+    const estimate = estimateSkillActivationTokens(path.join(root, "skills", "utility"), "utility");
+    assert.equal(estimate.defaultLens, null);
+    assert.deepEqual(estimate.files, ["SKILL.md"]);
+    assert.ok(estimate.tokens > 0);
+
+    writeSkill(root, "with-rules", {
+      body: "Short body.",
+      references: { "rules.md": "# Rules\n\nAccepted.\n" },
+    });
+    const withRules = estimateSkillActivationTokens(path.join(root, "skills", "with-rules"), "with-rules");
+    assert.deepEqual(withRules.files, ["SKILL.md", "references/rules.md"]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("token budget exceed fails; meaningful shrink reports; update map rebuilds", () => {
+  const root = makeRoot();
+  try {
+    writeSkill(root, "demo", { body: "Short compliant body." });
+    const estimate = estimateSkillActivationTokens(path.join(root, "skills", "demo"), "demo");
+    const budgets = { demo: estimate.tokens };
+
+    assert.deepEqual(compareTokenBudgets([estimate], budgets).failures, []);
+    assert.deepEqual(compareTokenBudgets([estimate], budgets).notices, []);
+
+    const over = compareTokenBudgets([estimate], { demo: estimate.tokens - 1 });
+    assert.equal(over.failures.length, 1);
+    assert.match(over.failures[0], /token-budget: demo activation estimate is \d+ tokens; budget is \d+/u);
+    assert.match(over.failures[0], /consciously raise the budget/u);
+
+    const underBudget = estimate.tokens + TOKEN_BUDGET_SHRINK_REPORT_MIN;
+    const under = compareTokenBudgets([estimate], { demo: underBudget });
+    assert.deepEqual(under.failures, []);
+    assert.equal(under.notices.length, 1);
+    assert.match(under.notices[0], /meaningfully under budget/u);
+
+    const missing = compareTokenBudgets([estimate], {});
+    assert.match(missing.failures[0], /has no recorded budget/u);
+
+    const stale = compareTokenBudgets([estimate], { demo: estimate.tokens, gone: 10 });
+    assert.match(stale.failures[0], /stale budget entry for removed skill 'gone'/u);
+
+    assert.deepEqual(buildTokenBudgets([estimate]), { demo: estimate.tokens });
+
+    const { failures } = evaluateSkillQuality({
+      root,
+      allowlist: { skills: {} },
+      tokenBudgets: { demo: estimate.tokens - 1 },
+    });
+    assert.equal(failures.length, 1);
+    assert.match(failures[0], /token-budget: demo /u);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("checked-in token budgets match shipped skill activation estimates", () => {
+  const allowlist = JSON.parse(readFileSync(path.join(repoRoot, DEFAULT_ALLOWLIST_PATH), "utf8"));
+  const tokenBudgets = JSON.parse(readFileSync(path.join(repoRoot, DEFAULT_TOKEN_BUDGETS_PATH), "utf8"));
+  const { checked, failures, tokenNotices, tokenRows } = evaluateSkillQuality({
+    root: repoRoot,
+    allowlist,
+    tokenBudgets,
+  });
+  assert.equal(checked, 11);
+  assert.deepEqual(failures, []);
+  assert.deepEqual(tokenNotices, []);
+  assert.equal(tokenRows.length, 11);
+  for (const row of tokenRows) {
+    assert.equal(row.status, "ok");
+    assert.equal(row.tokens, tokenBudgets[row.skill]);
+  }
+});
+
+test("--update-budgets rewrites the token budget file to current estimates", () => {
+  const root = makeRoot();
+  const budgetsPath = path.join(root, "budgets.json");
+  try {
+    writeSkill(root, "demo", { body: "Short compliant body." });
+    writeFileSync(path.join(root, "empty-allowlist.json"), `${JSON.stringify({ skills: {} }, null, 2)}\n`);
+    writeFileSync(budgetsPath, `${JSON.stringify({ demo: 1 }, null, 2)}\n`);
+
+    const result = spawnSync(
+      process.execPath,
+      [
+        path.join(repoRoot, "scripts/validate-skill-quality.mjs"),
+        "--skills-dir",
+        "skills",
+        "--allowlist",
+        "empty-allowlist.json",
+        "--token-budgets",
+        "budgets.json",
+        "--update-budgets",
+      ],
+      { encoding: "utf8", cwd: root },
+    );
+    assert.equal(result.status, 0, `${result.stderr}\n${result.stdout}`);
+    const updated = JSON.parse(readFileSync(budgetsPath, "utf8"));
+    const estimate = estimateSkillActivationTokens(path.join(root, "skills", "demo"), "demo");
+    assert.deepEqual(updated, { demo: estimate.tokens });
+    assert.match(result.stdout, /Updated token budgets/u);
+    assert.match(result.stdout, /Activation token estimates/u);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

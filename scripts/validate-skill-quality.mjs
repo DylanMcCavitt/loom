@@ -9,17 +9,28 @@
 //   references/*.md; neutral vocabulary (tracker, issue, change request, PR host, envelope)
 //   is the standard.
 // - missing-evals / eval-schema: every skill ships evals/evals.json matching the eval schema.
+// - token-budget: activation token estimate (ceil(chars/4) over SKILL.md + default lens +
+//   references/rules.md when present) must not exceed scripts/skill-token-budgets.json.
+//   Exceeding fails; meaningful shrinks are reported (non-fatal). Rewrite baselines with
+//   --update-budgets after intentional review.
 //
 // Existing violations are grandfathered in scripts/skill-quality-allowlist.json. The
 // allowlist is a ratchet: a violation not listed (or grown beyond its listed count) fails,
 // and a listed violation that shrank or disappeared fails as a stale allowlist entry until
 // the list shrinks to match. Regenerate a shrunken list with --print-allowlist.
 
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseFrontmatter } from "./lib/frontmatter.mjs";
 import { skillsRoot } from "./lib/layout.mjs";
+import {
+  DEFAULT_TOKEN_BUDGETS_PATH,
+  buildTokenBudgets,
+  collectSkillActivationTokenEstimates,
+  compareTokenBudgets,
+  formatTokenBudgetTable,
+} from "./lib/skill-token-budget.mjs";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
@@ -44,6 +55,7 @@ export const BANNED_PHRASES = Object.freeze([
 ]);
 export const VENDOR_WORDS = Object.freeze(["Linear", "GitHub"]);
 export const DEFAULT_ALLOWLIST_PATH = "scripts/skill-quality-allowlist.json";
+export { DEFAULT_TOKEN_BUDGETS_PATH };
 
 const KNOWN_RULES = Object.freeze(new Set([
   "word-budget",
@@ -54,7 +66,7 @@ const KNOWN_RULES = Object.freeze(new Set([
   "eval-schema",
 ]));
 
-const USAGE = "Usage: node scripts/validate-skill-quality.mjs [--skills-dir <dir>] [--allowlist <file>] [--print-allowlist]";
+const USAGE = "Usage: node scripts/validate-skill-quality.mjs [--skills-dir <dir>] [--allowlist <file>] [--token-budgets <file>] [--print-allowlist] [--update-budgets]";
 
 function escapeRegExp(text) {
   return text.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
@@ -337,10 +349,43 @@ export function compareAgainstAllowlist(violations, allowlist) {
   return failures;
 }
 
-export function evaluateSkillQuality({ root = repoRoot, skillsDir = skillsRoot, allowlist } = {}) {
+export function evaluateSkillQuality({
+  root = repoRoot,
+  skillsDir = skillsRoot,
+  allowlist,
+  tokenBudgets,
+} = {}) {
   const { skills, violations } = collectSkillQualityViolations({ root, skillsDir });
   const failures = compareAgainstAllowlist(violations, allowlist ?? { skills: {} });
-  return { checked: skills.length, violations, failures };
+  const resolvedSkillsDir = path.resolve(root, skillsDir);
+  const estimates = collectSkillActivationTokenEstimates({ skillsDir: resolvedSkillsDir, skillNames: skills });
+  let tokenRows = [];
+  let tokenNotices = [];
+  // tokenBudgets === undefined skips the ratchet (unit tests focused on other rules).
+  // The CLI always passes a loaded map (possibly empty).
+  if (tokenBudgets !== undefined) {
+    const tokenResult = compareTokenBudgets(estimates, tokenBudgets);
+    failures.push(...tokenResult.failures);
+    tokenRows = tokenResult.rows;
+    tokenNotices = tokenResult.notices;
+  } else {
+    tokenRows = estimates.map((estimate) => ({
+      skill: estimate.skill,
+      tokens: estimate.tokens,
+      budget: null,
+      defaultLens: estimate.defaultLens,
+      files: estimate.files,
+      status: "ok",
+    }));
+  }
+  return {
+    checked: skills.length,
+    violations,
+    failures,
+    tokenEstimates: estimates,
+    tokenRows,
+    tokenNotices,
+  };
 }
 
 function readAllowlistFile(allowlistPath) {
@@ -348,8 +393,19 @@ function readAllowlistFile(allowlistPath) {
   return JSON.parse(readFileSync(allowlistPath, "utf8"));
 }
 
+function readTokenBudgetsFile(tokenBudgetsPath) {
+  if (!existsSync(tokenBudgetsPath)) return {};
+  return JSON.parse(readFileSync(tokenBudgetsPath, "utf8"));
+}
+
 function readArgs(argv) {
-  const options = { skillsDir: skillsRoot, allowlistPath: path.join(repoRoot, DEFAULT_ALLOWLIST_PATH), printAllowlist: false };
+  const options = {
+    skillsDir: skillsRoot,
+    allowlistPath: path.join(repoRoot, DEFAULT_ALLOWLIST_PATH),
+    tokenBudgetsPath: path.join(repoRoot, DEFAULT_TOKEN_BUDGETS_PATH),
+    printAllowlist: false,
+    updateBudgets: false,
+  };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     const next = argv[index + 1];
@@ -361,17 +417,29 @@ function readArgs(argv) {
       options.printAllowlist = true;
       continue;
     }
+    if (arg === "--update-budgets") {
+      options.updateBudgets = true;
+      continue;
+    }
     if (!next || next.startsWith("--")) throw new Error(`${arg} requires a value`);
     if (arg === "--skills-dir") {
       options.skillsDir = next;
     } else if (arg === "--allowlist") {
       options.allowlistPath = next;
+    } else if (arg === "--token-budgets") {
+      options.tokenBudgetsPath = next;
     } else {
       throw new Error(`Unknown option: ${arg}`);
     }
     index += 1;
   }
   return options;
+}
+
+function printTokenTable(rows) {
+  if (!rows.length) return;
+  console.log("Activation token estimates (ceil(chars/4); SKILL.md + default lens + rules.md):");
+  console.log(formatTokenBudgetTable(rows));
 }
 
 function main() {
@@ -381,16 +449,47 @@ function main() {
     console.log(JSON.stringify(buildAllowlist(violations), null, 2));
     return;
   }
+
   const allowlist = readAllowlistFile(options.allowlistPath);
-  const { checked, failures } = evaluateSkillQuality({ root: process.cwd(), skillsDir: options.skillsDir, allowlist });
-  if (failures.length) {
+  let tokenBudgets = readTokenBudgetsFile(options.tokenBudgetsPath);
+  const result = evaluateSkillQuality({
+    root: process.cwd(),
+    skillsDir: options.skillsDir,
+    allowlist,
+    tokenBudgets,
+  });
+
+  if (options.updateBudgets) {
+    tokenBudgets = buildTokenBudgets(result.tokenEstimates);
+    writeFileSync(options.tokenBudgetsPath, `${JSON.stringify(tokenBudgets, null, 2)}\n`);
+    console.log(`Updated token budgets: wrote ${Object.keys(tokenBudgets).length} skills to ${options.tokenBudgetsPath}`);
+    // Re-evaluate against the freshly written budgets so the table/status reflect post-update.
+    const refreshed = evaluateSkillQuality({
+      root: process.cwd(),
+      skillsDir: options.skillsDir,
+      allowlist,
+      tokenBudgets,
+    });
+    printTokenTable(refreshed.tokenRows);
+    for (const notice of refreshed.tokenNotices) console.log(`note: ${notice}`);
+    if (refreshed.failures.length) {
+      console.error("Skill quality validation failed:");
+      for (const failure of refreshed.failures) console.error(`- ${failure}`);
+      process.exit(1);
+    }
+    console.log(`Skill quality validation passed: ${refreshed.checked} skill${refreshed.checked === 1 ? "" : "s"} checked in ${options.skillsDir}`);
+    return;
+  }
+
+  printTokenTable(result.tokenRows);
+  for (const notice of result.tokenNotices) console.log(`note: ${notice}`);
+  if (result.failures.length) {
     console.error("Skill quality validation failed:");
-    for (const failure of failures) console.error(`- ${failure}`);
+    for (const failure of result.failures) console.error(`- ${failure}`);
     process.exit(1);
   }
-  console.log(`Skill quality validation passed: ${checked} skill${checked === 1 ? "" : "s"} checked in ${options.skillsDir}`);
+  console.log(`Skill quality validation passed: ${result.checked} skill${result.checked === 1 ? "" : "s"} checked in ${options.skillsDir}`);
 }
-
 const invokedDirectly = process.argv[1]
   && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
 
