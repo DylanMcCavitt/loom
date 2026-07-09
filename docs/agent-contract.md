@@ -121,6 +121,29 @@ Every agent receives a bounded input packet and returns a bounded output packet.
 
 Rules use stable IDs (`## rule/{stable-id}`) citing status, scope, rule, why, exceptions, source, bad/good examples, assumptions, and open decisions. Missing or unverified guidance belongs in `references/coverage-gaps.md`.
 
+### Machine-checkable JSON packets
+
+Emit conformant packets as JSON objects tagged with a top-level `"packet"` kind. Schemas and `validatePacket(kind, object)` live in `scripts/lib/packet-schema.mjs`; `scripts/validate-packets.mjs` scans `retro/**/*.md` (fenced json code blocks) and `retro/**/*.json` for tagged packets. Untagged JSON is ignored. Kinds:
+
+| `packet` value | Purpose |
+| --- | --- |
+| `repair-finding` | repair-pack finding packet (nine required fields) |
+| `agent-input` | common bounded input (`mode`, `targetSurface`, optional `lens`/`lenses`, `context`, `scope`, `issueId`/`prId`) |
+| `agent-output` | common bounded output (mode, lens, loaded references, rule IDs, proof run/result, coverage gaps, changed files, optional blocker) |
+
+Field names are camelCase. `context` is `validation` | `live` and defaults to `live` when omitted. Example:
+
+```json
+{
+  "packet": "agent-input",
+  "mode": "repair",
+  "context": "validation",
+  "targetSurface": "skills/repair-pack",
+  "issueId": "LOO-000",
+  "lens": "correctness"
+}
+```
+
 ## Governance and activation
 
 Guidance changes follow the practiced retro-packet core: generated packets (scripts/retro-packet.mjs) stay pending under `retro/pr-{number}/`, human PR review is the HITL gate, accepted rules still satisfy the enforced rule schema, and accepted guidance lands only after approval in the narrowest relevant skill destination. The older collector/judge/destination machine is aspirational design vocabulary, not live automation.
