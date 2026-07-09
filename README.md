@@ -82,6 +82,7 @@ Manual routes, for reference:
 | --- | --- |
 | Assembler skill | `node --test tests/assembler-skill.test.mjs` |
 | Benchmark script | `node --test tests/benchmarks-bench.test.mjs` |
+| Eval dashboard | `node --test tests/eval-dashboard.test.mjs` |
 | Biters skill | `node --test tests/biters-skill.test.mjs` |
 | Blueprint skill | `node --test tests/blueprint-skill.test.mjs` |
 | Factorio kit golden path | `node --test tests/factorio-kit-goldenpath.test.mjs` |
@@ -125,6 +126,7 @@ Tiers 2–3 are model-in-the-loop modes: they read `LOOM_JUDGE_*` settings, fall
 | Script | Command | Purpose |
 | --- | --- | --- |
 | Benchmark harness | `node scripts/bench.mjs` | Runs repository benchmark checks. |
+| Eval dashboard | `node scripts/eval-dashboard.mjs` | Renders gitignored judge scorecards into `retro/eval-dashboard.html` plus a stdout summary. |
 | Skill installer | `node scripts/install.mjs` | Links or copies `skills/` into harness skill directories, interactively or via flags. |
 | Operator loop | `node scripts/loop.mjs` | Runs the offline loop entrypoint. |
 | Retro packet helper | `node scripts/retro-packet.mjs` | Handles retro packet maintenance. |

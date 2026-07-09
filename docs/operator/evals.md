@@ -193,6 +193,22 @@ Verify owns `npm run check` plus the named proof (including bench/eval when that
 is the evidence). Record durable scorecards under `retro/`; do not rely on chat
 memory.
 
+## Visual dashboard
+
+After one or more judge runs, run `npm run dashboard` from the repo root and
+open `retro/eval-dashboard.html` (gitignored) in a browser. It renders every
+`retro/judge-scorecard-*.json` into per-skill scores, deltas, sparklines, trim
+candidates, and current skill versions. The improve-and-rejudge loop:
+
+- Run `npm run bench -- --judge` to produce a fresh scorecard.
+- Run `npm run dashboard` and read the per-skill trim candidates and notes.
+- Edit the `SKILL.md` sections flagged, then bump `metadata.version` and
+  `metadata.changelog` per [`docs/skills/skill-versioning.md`](../skills/skill-versioning.md).
+- Re-judge and re-run the dashboard; the Δ column and sparkline show whether
+  the edit moved the total.
+- Mock runs (`LOOM_JUDGE_MOCK`) are marked gray/italic — they are canned
+  scores, never quality evidence.
+
 ## What not to do
 
 - Do not put live judge, ablation, or worker arms into CI — model-scored gates

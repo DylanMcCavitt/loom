@@ -9,6 +9,7 @@
   "scripts": {
     "test": "node --test tests/*.test.mjs",
     "bench": "node scripts/bench.mjs",
+    "dashboard": "node scripts/eval-dashboard.mjs",
     "guard:worktree": "node scripts/worktree-guard.mjs",
     "validate": "sh -c 'set -e; for f in scripts/validate-*.mjs; do node \"$f\"; done'",
     "lint": "npm run validate",
