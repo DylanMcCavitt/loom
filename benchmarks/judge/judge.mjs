@@ -172,7 +172,7 @@ export function buildJudgeMessages({ rubric, context }) {
   ];
 }
 
-function stripCodeFences(text) {
+export function stripCodeFences(text) {
   const fenced = text.match(/```(?:json)?\s*\n([\s\S]*?)\n\s*```/u);
   return (fenced ? fenced[1] : text).trim();
 }
@@ -217,10 +217,74 @@ export function mockJudgeResult(context) {
   };
 }
 
-export function judgePromptText({ rubric, context }) {
-  return buildJudgeMessages({ rubric, context })
+export function messagesToPromptText(messages) {
+  return messages
     .map((message) => `--- ${message.role} ---\n${message.content}`)
     .join('\n\n');
+}
+
+export function judgePromptText({ rubric, context }) {
+  return messagesToPromptText(buildJudgeMessages({ rubric, context }));
+}
+
+// Shared raw-completion layer for model-in-the-loop bench modes (--judge,
+// --triggers). Maps a resolved LOOM_JUDGE_* config (cmd/backend or
+// OpenAI-compatible API key) to a provider that turns chat messages into raw
+// model text; each mode owns its own response parsing and mock behavior.
+export function createCompletionProvider(config, { fetchImpl = fetch, spawnImpl = spawnSync } = {}) {
+  if (config.backendError && !config.cmd) {
+    throw new Error(config.backendError);
+  }
+  if (config.cmd) {
+    return {
+      kind: 'command',
+      model: config.model || 'command',
+      async complete(messages) {
+        const result = spawnImpl(config.cmd, {
+          shell: true,
+          input: messagesToPromptText(messages),
+          encoding: 'utf8',
+          maxBuffer: 10 * 1024 * 1024,
+        });
+        if (result.error) throw new Error(`judge command failed to start: ${result.error.message}`);
+        if (result.status !== 0) {
+          throw new Error(`judge command exited ${result.status}: ${String(result.stderr ?? '').trim().slice(0, 500)}`);
+        }
+        return result.stdout;
+      },
+    };
+  }
+  if (!config.apiKey) throw new Error('LOOM_JUDGE_API_KEY is required for live judge calls');
+  if (!config.model) {
+    throw new Error('LOOM_JUDGE_MODEL is required when LOOM_JUDGE_API_KEY is set');
+  }
+  return {
+    kind: 'openai-compatible',
+    model: config.model,
+    async complete(messages) {
+      const response = await fetchImpl(`${config.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          authorization: `Bearer ${config.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: config.model,
+          temperature: 0,
+          messages,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error(`judge endpoint returned HTTP ${response.status}`);
+      }
+      const payload = await response.json();
+      const content = payload?.choices?.[0]?.message?.content;
+      if (typeof content !== 'string') {
+        throw new Error('judge endpoint response is missing choices[0].message.content');
+      }
+      return content;
+    },
+  };
 }
 
 export function createJudgeProvider(config, { fetchImpl = fetch, spawnImpl = spawnSync } = {}) {
@@ -237,57 +301,12 @@ export function createJudgeProvider(config, { fetchImpl = fetch, spawnImpl = spa
       },
     };
   }
-  if (config.backendError && !config.cmd) {
-    throw new Error(config.backendError);
-  }
-  if (config.cmd) {
-    return {
-      kind: 'command',
-      model: config.model || 'command',
-      async judge(context, { rubric }) {
-        const result = spawnImpl(config.cmd, {
-          shell: true,
-          input: judgePromptText({ rubric, context }),
-          encoding: 'utf8',
-          maxBuffer: 10 * 1024 * 1024,
-        });
-        if (result.error) throw new Error(`judge command failed to start: ${result.error.message}`);
-        if (result.status !== 0) {
-          throw new Error(`judge command exited ${result.status}: ${String(result.stderr ?? '').trim().slice(0, 500)}`);
-        }
-        return parseJudgeResponse(result.stdout);
-      },
-    };
-  }
-  if (!config.apiKey) throw new Error('LOOM_JUDGE_API_KEY is required for live judge calls');
-  if (!config.model) {
-    throw new Error('LOOM_JUDGE_MODEL is required when LOOM_JUDGE_API_KEY is set');
-  }
+  const completion = createCompletionProvider(config, { fetchImpl, spawnImpl });
   return {
-    kind: 'openai-compatible',
-    model: config.model,
+    kind: completion.kind,
+    model: completion.model,
     async judge(context, { rubric }) {
-      const response = await fetchImpl(`${config.baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          authorization: `Bearer ${config.apiKey}`,
-        },
-        body: JSON.stringify({
-          model: config.model,
-          temperature: 0,
-          messages: buildJudgeMessages({ rubric, context }),
-        }),
-      });
-      if (!response.ok) {
-        throw new Error(`judge endpoint returned HTTP ${response.status}`);
-      }
-      const payload = await response.json();
-      const content = payload?.choices?.[0]?.message?.content;
-      if (typeof content !== 'string') {
-        throw new Error('judge endpoint response is missing choices[0].message.content');
-      }
-      return parseJudgeResponse(content);
+      return parseJudgeResponse(await completion.complete(buildJudgeMessages({ rubric, context })));
     },
   };
 }

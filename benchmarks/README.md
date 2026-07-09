@@ -35,7 +35,7 @@ trackers, close PRs, or become part of CI for model-in-the-loop arms.
 
 Tiers 2–3 of the eval ladder live behind explicit flags on the same CLI. They
 are **never** part of `npm run check`, the validators, or CI: with no judge
-credentials configured, both modes print a skip notice and exit 0.
+credentials configured, these modes print a skip notice and exit 0.
 
 Configuration is env-var only (names below, never values; no secrets in
 tracked files or generated output):
@@ -92,6 +92,23 @@ judge for concrete trim candidates. The skill's `evals/evals.json` (when
 present) is included in the judge context as routing intent. Output is a
 timestamped scorecard pair `retro/judge-scorecard-<ISO>.{json,md}`; generated
 scorecards are gitignored and must not be committed.
+
+### Trigger evals (`--triggers`)
+
+```sh
+npm run bench -- --triggers          # all skills with an eval corpus
+npm run bench -- --triggers belt     # one skill
+```
+
+Runs each `skills/<name>/evals/evals.json` prompt as a routing eval on the
+same `LOOM_JUDGE_*` provider path. Per case the model receives only the skill
+roster (names + frontmatter descriptions) and the case prompt — never
+`expected_output` — and predicts which skill (if any) activates
+(`benchmarks/judge/triggers.mjs`). Grading is mechanical: positive cases pass
+when the prediction names the corpus skill, "Does NOT activate" cases pass
+when it does not; lens choice and negative-case route targets are reported as
+informational signals only. Output is a timestamped scorecard pair
+`retro/trigger-scorecard-<ISO>.{json,md}`; gitignored, never committed.
 
 ### Ablation (`--ablate`)
 

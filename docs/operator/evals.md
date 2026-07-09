@@ -14,6 +14,7 @@ Related: [`loop.md`](loop.md) (Plan → Act → Verify → Record → Stop),
 | --- | --- | --- |
 | `npm run check` | Laptop or cloud VM | **Loom repo root** (where `package.json` lives) |
 | `npm run bench -- --judge` | Machine with judge CLI + auth | **Loom repo root** — reads `skills/`, writes `retro/judge-scorecard-*` |
+| `npm run bench -- --triggers` | Same as judge | **Loom repo root** — reads `skills/`, writes `retro/trigger-scorecard-*` |
 | `npm run bench -- --ablate` | Same as judge | **Loom repo root** to launch; workspaces under `/tmp/...` |
 | Roboports benchmark | Machine with worker agent | **Materialize outside repo** (`/tmp/roboports-run`); **score from repo root** |
 
@@ -77,6 +78,8 @@ cd /workspace   # or your loom checkout — must be repo root
 npm run check                                          # always
 npm run bench -- --judge roboports                     # one skill first; committed default backend applies
 npm run bench -- --judge                               # full pack when ready
+npm run bench -- --triggers belt                       # routing evals for one skill
+npm run bench -- --triggers                            # routing evals for the full pack
 
 npm run bench -- --materialize /tmp/roboports-run --force   # sandbox outside repo
 # worker arm in /tmp/roboports-run using .bench/tasks/01-*.md
@@ -92,8 +95,9 @@ not need it.
 | Layer | What it measures | Command | CI? |
 | --- | --- | --- | --- |
 | Lint + envelopes | Frontmatter, budgets, skill invariants | `npm run check` | Yes |
-| Trigger corpora | Routing intent in `skills/*/evals/evals.json` | Validated in check; **not LLM-executed** | Schema only |
+| Trigger corpora | Routing intent in `skills/*/evals/evals.json` | Schema/coverage validated in check | Schema only |
 | Judge | Skill text quality vs `benchmarks/judge/RUBRIC.md` | `npm run bench -- --judge [skill]` | No |
+| Trigger evals | Routing accuracy on `evals.json` prompts | `npm run bench -- --triggers [skill]` | No |
 | Doctrine | Workflow discipline on 6 fixed roboports tasks | materialize → **external worker** → `--score` | No |
 | Ablation | Full / absent / trimmed uplift | `npm run bench -- --ablate <skill>` then re-score | No |
 
@@ -147,6 +151,32 @@ trim candidates and regression notes; they do not gate CI. Each skill’s
 **Worker ≠ grader:** keep `LOOM_JUDGE_*` separate from whatever configures the
 implementer agent. Prefer scoring `roboports`, `biters`, `lab`, and
 `rocket-launch` first when starting live judge runs.
+
+### 2b. After trigger or routing changes (tier 2b)
+
+```sh
+npm run bench -- --triggers          # all skills with an eval corpus
+npm run bench -- --triggers belt     # one skill
+
+# dry run (no network; deterministic canned predictions, not real routing)
+LOOM_JUDGE_MOCK=1 npm run bench -- --triggers
+```
+
+`--triggers` runs each `skills/<name>/evals/evals.json` prompt as a live
+routing eval on the same `LOOM_JUDGE_*` provider path as `--judge` (committed
+default backend, `LOOM_JUDGE_CMD`, API key, or mock). The methodology is blind
+prediction + mechanical grading: per case the model sees only the skill roster
+(names + frontmatter descriptions) and the prompt — never `expected_output` —
+and answers which skill should activate. Grading is mechanical from the corpus
+itself: a case whose `expected_output` says "Does NOT activate" must not
+predict the corpus skill; every other case must. Lens choice and negative-case
+route targets are reported as soft signals, not pass/fail gates.
+
+Scorecards land in `retro/trigger-scorecard-*.{json,md}` (gitignored). Read the
+markdown for per-case verdicts; a failing positive case usually means the
+skill's frontmatter `description` is too vague for a router to pick it, and a
+failing negative case means it over-claims. Fix the description or the corpus,
+bump the skill version, and re-run.
 
 ### 3. After roboports or delivery-doctrine changes (tier 3a)
 
@@ -211,10 +241,8 @@ candidates, and current skill versions. The improve-and-rejudge loop:
 
 ## What not to do
 
-- Do not put live judge, ablation, or worker arms into CI — model-scored gates
-  are forbidden by design.
-- Do not expect `evals/evals.json` to be “run” today — they are authoring and
-  coverage artifacts consumed by quality validation and the judge context.
+- Do not put live judge, trigger, ablation, or worker arms into CI —
+  model-scored gates are forbidden by design.
 - Do not ask the implementer (`roboports`) to grade itself; use `biters` /
   `lab` (or the judge) as separate graders.
 - Do not invent a parallel bus-first benchmark directory — that methodology was
@@ -225,21 +253,18 @@ candidates, and current skill versions. The improve-and-rejudge loop:
 
 These are intentional absences, not broken setup:
 
-- No trigger-eval LLM runner for `skills/*/evals/evals.json`.
 - No automated worker driver — arms are manual/external (`--ablate` prep only).
 - `safe` / `discipline` scorers are specified in roboports `SPEC.md` but not
   fully implemented in `checks/score.mjs`.
 - Content-envelope tests are missing for `belt`, `lab`, and `repair-pack` (CI
   still covers eval schema and golden-path presence).
 
-Highest-leverage future addition: a `bench --triggers` mode that LLM-judges
-each `evals.json` prompt against `expected_output` on the same `LOOM_JUDGE_*`
-path — still opt-in, never CI.
-
 ## Success criteria
 
 - Every PR: `npm run check` green.
 - Skill-text PRs: fresh judge scorecard attached or linked (not committed).
+- Trigger/description or corpus PRs: fresh trigger scorecard attached or
+  linked (not committed).
 - Doctrine / skill-behavior PRs: roboports `--score` JSON attached; ablation
   only when claiming uplift.
 - No secrets or scorecards committed; worker and grader configs stay separate.

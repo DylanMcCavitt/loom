@@ -100,6 +100,7 @@ Manual routes, for reference:
 | Skill quality gate | `node --test tests/skill-quality.test.mjs` |
 | Skill validation | `node --test tests/skill-validation.test.mjs` |
 | Space age skill | `node --test tests/space-age-skill.test.mjs` |
+| Trigger evals | `node --test tests/trigger-evals.test.mjs` |
 | Worktree guard | `node --test tests/worktree-guard.test.mjs` |
 
 ### Validators
@@ -117,8 +118,9 @@ The pack uses a three-tier eval ladder; tier 1 is enforced offline in `npm run c
 
 | Tier | Eval | Run |
 | --- | --- | --- |
-| 1 | Trigger evals | Per-skill routing corpora in `skills/<name>/evals/evals.json`; validated by the skill-quality gate as part of `npm run check` (coverage required). |
+| 1 | Trigger corpora | Per-skill routing corpora in `skills/<name>/evals/evals.json`; validated by the skill-quality gate as part of `npm run check` (coverage required). |
 | 2 | Judge | `npm run bench -- --judge [skill]` scores `SKILL.md` against `benchmarks/judge/RUBRIC.md` with a model in the loop; writes JSON and markdown scorecards under `retro/`. |
+| 2b | Trigger evals | `npm run bench -- --triggers [skill]` has the judge model blindly predict routing for each `evals.json` prompt and grades it mechanically against the case's polarity; writes `retro/trigger-scorecard-*`. |
 | 3 | Ablation | `npm run bench -- --ablate <skill>` materializes full, absent, and trimmed roboports workspaces to compare with-skill vs without-skill uplift (re-score arms with `npm run bench -- --score <workspace>`). |
 
 Tiers 2–3 are model-in-the-loop modes: they read `LOOM_JUDGE_*` settings, falling back to the committed default backend in `benchmarks/judge/judge.config.json`; `LOOM_JUDGE_BACKEND=none` opts out (then they skip with exit 0), and they never run in CI.
