@@ -118,7 +118,7 @@ The pack uses a three-tier eval ladder; tier 1 is enforced offline in `npm run c
 | 2 | Judge | `npm run bench -- --judge [skill]` scores `SKILL.md` against `benchmarks/judge/RUBRIC.md` with a model in the loop; writes JSON and markdown scorecards under `retro/`. |
 | 3 | Ablation | `npm run bench -- --ablate <skill>` materializes full, absent, and trimmed roboports workspaces to compare with-skill vs without-skill uplift (re-score arms with `npm run bench -- --score <workspace>`). |
 
-Tiers 2–3 are opt-in model-in-the-loop modes: they read `LOOM_JUDGE_API_KEY` (and related `LOOM_JUDGE_*` settings) and skip with exit 0 when unset, so they never run in CI.
+Tiers 2–3 are model-in-the-loop modes: they read `LOOM_JUDGE_*` settings, falling back to the committed default backend in `benchmarks/judge/judge.config.json`; `LOOM_JUDGE_BACKEND=none` opts out (then they skip with exit 0), and they never run in CI.
 
 ### Scripts
 

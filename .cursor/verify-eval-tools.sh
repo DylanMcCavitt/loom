@@ -31,32 +31,46 @@ fi
 
 echo ""
 echo "=== Judge backend ==="
-# bench reads LOOM_JUDGE_BACKEND directly (benchmarks/judge/judge.mjs); no
-# sourcing needed. Non-fatal: the judge skips gracefully when unset.
-case "${LOOM_JUDGE_BACKEND:-}" in
+# bench reads LOOM_JUDGE_BACKEND directly (benchmarks/judge/judge.mjs) and
+# falls back to the committed default in benchmarks/judge/judge.config.json,
+# so the judge is enabled on every thread with no per-thread configuration.
+BACKEND="${LOOM_JUDGE_BACKEND:-}"
+BACKEND_SOURCE="LOOM_JUDGE_BACKEND"
+if [[ -z "${BACKEND}" ]]; then
+  BACKEND="$(node -p 'JSON.parse(require("fs").readFileSync("benchmarks/judge/judge.config.json", "utf8")).defaultBackend' 2>/dev/null || true)"
+  BACKEND_SOURCE="benchmarks/judge/judge.config.json default"
+fi
+case "${BACKEND}" in
   cursor)
-    echo 'ok: LOOM_JUDGE_BACKEND=cursor → agent -p --mode ask --model auto --output-format text "$(cat)"'
+    echo "ok: judge backend cursor (${BACKEND_SOURCE}) → agent -p --mode ask --model auto --output-format text \"\$(cat)\""
     ;;
   codex)
-    echo 'ok: LOOM_JUDGE_BACKEND=codex → codex exec --ephemeral --sandbox read-only -m gpt-5.5 -c model_reasoning_effort=xhigh -'
+    echo "ok: judge backend codex (${BACKEND_SOURCE}) → codex exec --ephemeral --sandbox read-only -m gpt-5.5 -c model_reasoning_effort=xhigh -"
+    ;;
+  none|off)
+    echo "note: judge backend disabled (${BACKEND_SOURCE}=${BACKEND}) — bench --judge will skip"
     ;;
   "")
-    echo "hint: set LOOM_JUDGE_BACKEND=cursor or codex in Cloud Agents Secrets"
+    echo "hint: no judge backend — set defaultBackend in benchmarks/judge/judge.config.json or LOOM_JUDGE_BACKEND=cursor|codex"
     ;;
   *)
-    echo "warn: unknown LOOM_JUDGE_BACKEND=${LOOM_JUDGE_BACKEND} (use cursor or codex) — bench --judge will fail loudly" >&2
+    echo "warn: unknown judge backend '${BACKEND}' from ${BACKEND_SOURCE} (use cursor or codex) — bench --judge will fail loudly" >&2
     ;;
 esac
 
 echo ""
 echo "=== Auth hints (non-fatal) ==="
 # Both CLIs may print "Not logged in" while still exiting 0, so check output too.
-AGENT_STATUS="$(agent status 2>&1)" && ! grep -qi 'not logged in' <<<"${AGENT_STATUS}" \
-  && echo "ok: agent CLI is logged in (Cursor subscription)" \
-  || echo "hint: run 'agent login' once in this VM, then snapshot the environment (Dashboard -> Cloud Agents -> Environments)"
+if [[ -n "${CURSOR_API_KEY:-}" ]]; then
+  echo "ok: agent CLI authenticated via CURSOR_API_KEY secret"
+else
+  AGENT_STATUS="$(agent status 2>&1)" && ! grep -qi 'not logged in' <<<"${AGENT_STATUS}" \
+    && echo "ok: agent CLI is logged in (Cursor subscription)" \
+    || echo "hint: add CURSOR_API_KEY to Cloud Agents Secrets (persists across threads), or run 'agent login' once and snapshot the environment"
+fi
 CODEX_STATUS="$(codex login status 2>&1)" && ! grep -qi 'not logged in' <<<"${CODEX_STATUS}" \
   && echo "ok: codex CLI is logged in (ChatGPT/Codex subscription)" \
-  || echo "hint: run 'codex login' once in this VM (device-auth flow), then snapshot the environment"
+  || echo "hint: add CODEX_AUTH_JSON (base64 of a working ~/.codex/auth.json; split into CODEX_AUTH_JSON_1/_2 chunks when over the 4096-char secret limit) to Cloud Agents Secrets, or run 'codex login' once and snapshot the environment"
 
 echo ""
 echo "=== Structural gate ==="

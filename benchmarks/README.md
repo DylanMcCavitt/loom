@@ -45,11 +45,13 @@ tracked files or generated output):
 - `LOOM_JUDGE_MODEL` — judge model name. Required when the API key is set;
   optional label when `LOOM_JUDGE_CMD` is set.
 - `LOOM_JUDGE_BASE_URL` — endpoint base URL (defaults to the OpenAI API).
-- `LOOM_JUDGE_BACKEND` — named subscription-CLI backend, `cursor` or `codex`.
-  Set once (e.g. as a cloud secret); bench maps it to the matching
-  subscription CLI command (`JUDGE_BACKENDS` in `benchmarks/judge/judge.mjs`).
-  `LOOM_JUDGE_CMD` / `LOOM_JUDGE_MODEL` override it; unknown values fail
-  loudly.
+- `LOOM_JUDGE_BACKEND` — named subscription-CLI backend, `cursor` or `codex`
+  (`none` disables the judge). Bench maps it to the matching subscription CLI
+  command (`JUDGE_BACKENDS` in `benchmarks/judge/judge.mjs`). When no
+  `LOOM_JUDGE_*` env is set at all, the committed `defaultBackend` in
+  `benchmarks/judge/judge.config.json` applies, so judge runs need no
+  per-machine configuration. `LOOM_JUDGE_CMD` / `LOOM_JUDGE_MODEL` override
+  it; unknown values fail loudly.
 - `LOOM_JUDGE_CMD` — shell command run once per skill with the judge prompt on
   stdin; stdout must be the rubric JSON (code fences tolerated). Lets
   subscription CLIs act as the judge without an API key. Precedence:
