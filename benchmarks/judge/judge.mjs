@@ -16,12 +16,16 @@
 //   without an API key. Precedence: mock > cmd > api key.
 // - LOOM_JUDGE_BACKEND  — named backend ("cursor" or "codex"); maps to a
 //   subscription-CLI command via JUDGE_BACKENDS. Explicit LOOM_JUDGE_CMD /
-//   LOOM_JUDGE_MODEL override it. Unknown values fail loudly.
+//   LOOM_JUDGE_MODEL override it. Unknown values fail loudly. When unset,
+//   the committed default in benchmarks/judge/judge.config.json applies;
+//   set LOOM_JUDGE_BACKEND=none to opt out of the default entirely.
 // - LOOM_JUDGE_MOCK     — any non-empty value enables an offline canned judge;
 //   a value starting with "{" is parsed as the canned judge JSON itself.
 //
-// With none of LOOM_JUDGE_API_KEY, LOOM_JUDGE_CMD, or LOOM_JUDGE_MOCK set,
-// callers must skip with exit 0 (CI has no credentials). Scorecards are
+// With no LOOM_JUDGE_* env set, the committed defaultBackend in
+// benchmarks/judge/judge.config.json enables the judge; when that is also
+// absent (or LOOM_JUDGE_BACKEND=none), callers must skip with exit 0;
+// offline tests opt out via LOOM_JUDGE_BACKEND=none. Scorecards are
 // written to retro/ and never contain env var values, keys, endpoint URLs,
 // or command lines.
 
@@ -55,14 +59,43 @@ export const JUDGE_BACKENDS = Object.freeze({
   }),
 });
 
-export function resolveJudgeConfig(env = process.env) {
+// LOOM_JUDGE_BACKEND values that explicitly disable the committed default.
+const BACKEND_OPT_OUT_VALUES = new Set(['none', 'off']);
+
+export const JUDGE_CONFIG_RELATIVE_PATH = 'benchmarks/judge/judge.config.json';
+
+// Committed judge defaults (benchmarks/judge/judge.config.json). Missing or
+// malformed files resolve to no default so env-only setups keep working.
+export function loadJudgeDefaults(repoRoot = defaultRepoRoot) {
+  const configPath = path.join(repoRoot, JUDGE_CONFIG_RELATIVE_PATH);
+  try {
+    const parsed = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    const defaultBackend = typeof parsed.defaultBackend === 'string'
+      ? parsed.defaultBackend.trim().toLowerCase()
+      : '';
+    return { defaultBackend };
+  } catch {
+    return { defaultBackend: '' };
+  }
+}
+
+export function resolveJudgeConfig(env = process.env, defaults = loadJudgeDefaults()) {
   const apiKey = env.LOOM_JUDGE_API_KEY ?? '';
   const explicitCmd = env.LOOM_JUDGE_CMD ?? '';
   const mock = env.LOOM_JUDGE_MOCK ?? '';
-  const backend = (env.LOOM_JUDGE_BACKEND ?? '').trim().toLowerCase();
+  const envBackend = (env.LOOM_JUDGE_BACKEND ?? '').trim().toLowerCase();
+  const optedOut = BACKEND_OPT_OUT_VALUES.has(envBackend);
+  const defaultBackend = (defaults?.defaultBackend ?? '').trim().toLowerCase();
+  // The committed default only applies when the environment provides no judge
+  // configuration at all; any explicit LOOM_JUDGE_* setting wins outright.
+  const envHasJudgeConfig = Boolean(apiKey) || Boolean(explicitCmd) || Boolean(mock) || Boolean(envBackend);
+  const backend = optedOut ? '' : (envBackend || (envHasJudgeConfig ? '' : defaultBackend));
+  const backendSource = optedOut || !backend ? 'none' : (envBackend ? 'env' : 'default');
   const backendEntry = backend ? JUDGE_BACKENDS[backend] : undefined;
   const backendError = backend && !backendEntry
-    ? `unknown LOOM_JUDGE_BACKEND: ${backend} (expected cursor or codex)`
+    ? (backendSource === 'default'
+      ? `unknown defaultBackend in ${JUDGE_CONFIG_RELATIVE_PATH}: ${backend} (expected cursor or codex)`
+      : `unknown LOOM_JUDGE_BACKEND: ${backend} (expected cursor or codex)`)
     : '';
   let cmd = explicitCmd;
   let model = env.LOOM_JUDGE_MODEL ?? '';
@@ -77,6 +110,7 @@ export function resolveJudgeConfig(env = process.env) {
     baseUrl: (env.LOOM_JUDGE_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/u, ''),
     mock,
     backend,
+    backendSource,
     backendError,
     enabled: Boolean(apiKey) || Boolean(cmd) || Boolean(mock) || Boolean(backendError),
   };
@@ -89,8 +123,9 @@ export function offlineSkipNotice(mode) {
     'LOOM_JUDGE_API_KEY and LOOM_JUDGE_MODEL (and optionally LOOM_JUDGE_BASE_URL for',
     'an OpenAI-compatible chat-completions endpoint), set LOOM_JUDGE_CMD to a CLI',
     'judge command reading the prompt on stdin, set LOOM_JUDGE_BACKEND in the cloud',
-    'environment (see docs/operator/evals.md), or set LOOM_JUDGE_MOCK=1 for a',
-    'canned offline judge. Exiting 0.',
+    'environment, set defaultBackend in benchmarks/judge/judge.config.json (see',
+    'docs/operator/evals.md), or set LOOM_JUDGE_MOCK=1 for a canned offline judge.',
+    'LOOM_JUDGE_BACKEND=none opts out of the committed default. Exiting 0.',
   ].join('\n');
 }
 

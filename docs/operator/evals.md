@@ -24,30 +24,39 @@ judge runs.
 ## Cloud VM setup (persistent across threads)
 
 Committed [`.cursor/environment.json`](../../.cursor/environment.json) tells
-every cloud agent how to install eval CLIs on boot. Each new thread reuses the
-saved environment snapshot when one exists.
+every cloud agent how to install eval CLIs on boot, and the committed
+[`benchmarks/judge/judge.config.json`](../../benchmarks/judge/judge.config.json)
+selects the judge backend (`defaultBackend`, currently `codex`) with **no
+per-thread configuration**. Auth persists through **Cloud Agents Secrets**, so
+every new thread is eval-ready without a snapshot; a snapshot is only an
+optimization to skip the cold CLI install.
 
 ### One-time operator steps
 
-1. **Merge** the branch with `.cursor/environment.json` (or cherry-pick those files).
+1. **Merge** the branch with `.cursor/environment.json` and
+   `benchmarks/judge/judge.config.json` (or cherry-pick those files).
 2. Open [Cloud Agents → loom environment](https://cursor.com/dashboard/cloud-agents) and confirm the repo picks up `.cursor/environment.json` (it overrides personal defaults when present).
-3. In **Secrets** for that environment, add only
-   `LOOM_JUDGE_BACKEND` = `cursor` or `codex` (selects the judge CLI).
-   No API keys are needed.
+3. In **Secrets** for that environment, add the auth for the backend(s) you use:
+   - `CURSOR_API_KEY` (from cursor.com/settings → API keys) — the `agent` CLI
+     reads it natively; enables the `cursor` judge headlessly.
+   - `CODEX_AUTH_JSON` — base64 of a working `~/.codex/auth.json` from a
+     machine where `codex login` succeeded (`base64 -w0 ~/.codex/auth.json`);
+     the install script writes it to `~/.codex/auth.json` on every boot.
+   - Optionally `LOOM_JUDGE_BACKEND` = `cursor` or `codex` to override the
+     committed default (`none` disables the judge entirely). No other keys.
 4. Start a cloud agent on `main`. The `install` step runs
-   `bash .cursor/install-eval-tools.sh && npm ci`.
-5. **One-time subscription login** inside a cloud thread: from the VM terminal,
-   run `agent login` (Cursor plan) and/or `codex login` (ChatGPT plan,
-   device-auth flow). Verify with `agent status` / `codex login status`, then
-   **snapshot** the environment so the login persists for every future thread.
-6. From the **loom repo root**, verify:
+   `bash .cursor/install-eval-tools.sh && npm ci` and prints an
+   **eval readiness** summary (CLI auth + active judge backend) in the boot log.
+5. From the **loom repo root**, verify:
    ```sh
    bash .cursor/verify-eval-tools.sh
-   npm run bench -- --judge roboports   # LOOM_JUDGE_BACKEND secret is read directly
+   npm run bench -- --judge roboports   # committed default backend, no env needed
    ```
-7. Open `retro/judge-scorecard-*.md` in markdown preview.
-8. **Snapshot** the environment from the dashboard so future threads skip cold
-   install and retain the subscription logins.
+6. Open `retro/judge-scorecard-*.md` in markdown preview.
+7. Optional: **snapshot** the environment from the dashboard so future threads
+   skip the cold CLI install. If you prefer subscription logins over secrets,
+   run `agent login` / `codex login` once in the VM and snapshot — but secrets
+   are the mechanism that survives with zero manual steps.
 
 ### Per-thread eval commands (cloud VM, repo root)
 
@@ -55,7 +64,7 @@ saved environment snapshot when one exists.
 cd /workspace   # or your loom checkout — must be repo root
 
 npm run check                                          # always
-npm run bench -- --judge roboports                     # one skill first; reads LOOM_JUDGE_BACKEND directly
+npm run bench -- --judge roboports                     # one skill first; committed default backend applies
 npm run bench -- --judge                               # full pack when ready
 
 npm run bench -- --materialize /tmp/roboports-run --force   # sandbox outside repo
@@ -91,6 +100,9 @@ mock bridge, and bench CLI smoke. Do not treat model scores as a substitute.
 ### 2. After skill text or routing changes (tier 2)
 
 ```sh
+# default: committed backend from benchmarks/judge/judge.config.json — no env needed
+npm run bench -- --judge
+
 # dry run (no network; canned scores, not a real judgment)
 LOOM_JUDGE_MOCK=1 npm run bench -- --judge
 
@@ -154,9 +166,10 @@ npm run bench -- --score /tmp/ablation/<variant-workspace>
 ```
 
 Compare full vs absent vs trimmed via `ablation-manifest.json`. Use ablation for
-uplift claims, not for every PR. `--ablate` requires the same judge enablement
-as `--judge` (`LOOM_JUDGE_MOCK` or live `LOOM_JUDGE_*`); without it the CLI
-prints a skip notice and exits 0.
+uplift claims, not for every PR. `--ablate` uses the same judge enablement as
+`--judge` (committed default backend, `LOOM_JUDGE_MOCK`, or live
+`LOOM_JUDGE_*`); with `LOOM_JUDGE_BACKEND=none` the CLI prints a skip notice
+and exits 0.
 
 ### 5. Loop discipline while iterating
 

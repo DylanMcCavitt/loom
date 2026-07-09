@@ -65,10 +65,11 @@ function usage() {
     '  npm run bench -- --ablate <skill> [--dest <dir>] [--force]',
     '',
     'Deterministic modes (list/materialize/score) never call models.',
-    'Model-in-the-loop modes (judge/ablate) are opt-in: they read LOOM_JUDGE_API_KEY,',
-    'LOOM_JUDGE_MODEL, and LOOM_JUDGE_BASE_URL (or LOOM_JUDGE_CMD for a CLI judge, or',
-    'LOOM_JUDGE_MOCK), skip with exit 0 when unset, and are never part of npm run',
-    'check or CI.',
+    'Model-in-the-loop modes (judge/ablate) read LOOM_JUDGE_API_KEY, LOOM_JUDGE_MODEL,',
+    'and LOOM_JUDGE_BASE_URL (or LOOM_JUDGE_CMD for a CLI judge, or LOOM_JUDGE_MOCK,',
+    'or LOOM_JUDGE_BACKEND). When no LOOM_JUDGE_* env is set, the committed default',
+    'in benchmarks/judge/judge.config.json applies; LOOM_JUDGE_BACKEND=none opts out',
+    '(then judge/ablate skip with exit 0). Never part of npm run check or CI.',
   ].join('\n');
 }
 

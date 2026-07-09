@@ -7,7 +7,9 @@ import { test } from "node:test";
 
 import { ROBO_PORTS_SCENARIOS, materialize, scoreRun } from "../scripts/bench.mjs";
 import {
+  JUDGE_BACKENDS,
   createJudgeProvider,
+  loadJudgeDefaults,
   parseJudgeResponse,
   resolveJudgeConfig,
   runJudge,
@@ -23,9 +25,14 @@ import {
 const repoRoot = new URL("..", import.meta.url).pathname;
 const benchScript = new URL("../scripts/bench.mjs", import.meta.url).pathname;
 
-const offlineEnv = Object.fromEntries(
-  Object.entries(process.env).filter(([key]) => !key.startsWith("LOOM_JUDGE_")),
-);
+// LOOM_JUDGE_BACKEND=none opts out of the committed default backend in
+// benchmarks/judge/judge.config.json so offline tests stay hermetic.
+const offlineEnv = {
+  ...Object.fromEntries(
+    Object.entries(process.env).filter(([key]) => !key.startsWith("LOOM_JUDGE_")),
+  ),
+  LOOM_JUDGE_BACKEND: "none",
+};
 
 function makeTempRun() {
   return path.join(
@@ -250,14 +257,59 @@ test("bench --judge and --ablate reject malformed arguments", () => {
 });
 
 test("resolveJudgeConfig enables on api key, command, or mock, disables otherwise", () => {
-  assert.equal(resolveJudgeConfig({}).enabled, false);
-  assert.equal(resolveJudgeConfig({ LOOM_JUDGE_API_KEY: "k" }).enabled, true);
-  assert.equal(resolveJudgeConfig({ LOOM_JUDGE_CMD: "judge-cli" }).enabled, true);
-  assert.equal(resolveJudgeConfig({ LOOM_JUDGE_MOCK: "1" }).enabled, true);
+  const noDefaults = { defaultBackend: "" };
+  assert.equal(resolveJudgeConfig({}, noDefaults).enabled, false);
+  assert.equal(resolveJudgeConfig({ LOOM_JUDGE_API_KEY: "k" }, noDefaults).enabled, true);
+  assert.equal(resolveJudgeConfig({ LOOM_JUDGE_CMD: "judge-cli" }, noDefaults).enabled, true);
+  assert.equal(resolveJudgeConfig({ LOOM_JUDGE_MOCK: "1" }, noDefaults).enabled, true);
   assert.equal(
-    resolveJudgeConfig({ LOOM_JUDGE_BASE_URL: "https://example.test/v1/" }).baseUrl,
+    resolveJudgeConfig({ LOOM_JUDGE_BASE_URL: "https://example.test/v1/" }, noDefaults).baseUrl,
     "https://example.test/v1",
   );
+});
+
+test("committed judge.config.json default enables the judge with no env at all", () => {
+  const defaults = loadJudgeDefaults();
+  assert.equal(defaults.defaultBackend, "codex");
+
+  const config = resolveJudgeConfig({});
+  assert.equal(config.enabled, true);
+  assert.equal(config.backend, "codex");
+  assert.equal(config.backendSource, "default");
+  assert.equal(config.cmd, JUDGE_BACKENDS.codex.cmd);
+  assert.equal(config.model, JUDGE_BACKENDS.codex.model);
+});
+
+test("LOOM_JUDGE_BACKEND env overrides the committed default; none/off opt out", () => {
+  const defaults = { defaultBackend: "codex" };
+
+  const envWins = resolveJudgeConfig({ LOOM_JUDGE_BACKEND: "cursor" }, defaults);
+  assert.equal(envWins.backend, "cursor");
+  assert.equal(envWins.backendSource, "env");
+  assert.equal(envWins.cmd, JUDGE_BACKENDS.cursor.cmd);
+
+  for (const optOut of ["none", "off", "None", "OFF"]) {
+    const disabled = resolveJudgeConfig({ LOOM_JUDGE_BACKEND: optOut }, defaults);
+    assert.equal(disabled.enabled, false, `${optOut} should disable the default`);
+    assert.equal(disabled.backend, "");
+    assert.equal(disabled.backendSource, "none");
+  }
+});
+
+test("unknown defaultBackend in judge.config.json fails loudly", () => {
+  const config = resolveJudgeConfig({}, { defaultBackend: "bogus" });
+  assert.equal(config.enabled, true);
+  assert.match(config.backendError, /unknown defaultBackend in benchmarks\/judge\/judge\.config\.json: bogus/u);
+  assert.throws(() => createJudgeProvider(config), /unknown defaultBackend/u);
+});
+
+test("loadJudgeDefaults tolerates a missing config file", () => {
+  const dir = makeTempDir("judge-defaults");
+  try {
+    assert.deepEqual(loadJudgeDefaults(dir), { defaultBackend: "" });
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("resolveJudgeConfig maps LOOM_JUDGE_BACKEND to the matching CLI command", () => {
