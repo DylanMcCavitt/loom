@@ -110,7 +110,7 @@ Manual routes, for reference:
 | --- | --- | --- |
 | Nucleus docs drift | `node scripts/validate-nucleus-docs-drift.mjs` | Keeps README identity, commands, script citations, and test-suite rows aligned with package scripts and files on disk. |
 | Packet schema | `node scripts/validate-packets.mjs` | Validates tagged JSON agent packets (`packet` kind) under `retro/` against the schemas in `scripts/lib/packet-schema.mjs`. |
-| Skill quality | `node scripts/validate-skill-quality.mjs` | Enforces word/description budgets, bans filler phrases and vendor tracker names, and requires eval coverage; existing violations are grandfathered in `scripts/skill-quality-allowlist.json`, a ratchet that may only shrink. |
+| Skill quality | `node scripts/validate-skill-quality.mjs` | Enforces word/description budgets, an activation-token budget ratchet (`scripts/skill-token-budgets.json`; ceil(chars/4) over SKILL.md + default lens + rules.md), bans filler phrases and vendor tracker names, and requires eval coverage; existing quality violations are grandfathered in `scripts/skill-quality-allowlist.json`, a ratchet that may only shrink. |
 | Skill validation | `node scripts/validate-skills.mjs` | Checks skill shape, frontmatter, naming, and secret-like content. |
 
 ### Eval tiers
