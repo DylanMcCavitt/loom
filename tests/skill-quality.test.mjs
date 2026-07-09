@@ -298,10 +298,7 @@ test("activation estimate covers SKILL.md + default lens + rules.md only", () =>
       },
     });
     // writeSkill overwrites SKILL.md; rewrite with AGENTS.md default lens prose.
-    writeFileSync(
-      path.join(root, "skills", "demo", "SKILL.md"),
-      skillMd,
-    );
+    writeFileSync(path.join(root, "skills", "demo", "SKILL.md"), skillMd);
     writeFileSync(
       path.join(root, "skills", "demo", "AGENTS.md"),
       "## Load order\n\n1. SKILL.md\n2. when the packet names no lens, load the default `references/lens-handoff.md`.\n3. `references/rules.md`\n",

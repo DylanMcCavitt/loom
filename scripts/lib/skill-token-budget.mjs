@@ -1,25 +1,10 @@
-// Activation-token estimates for skill packages.
-//
-// Cost model (chars/4, ceil): SKILL.md + the package's default lens reference
-// (when one exists) + references/rules.md when present. This mirrors the
-// realistic first-load set described in each skill's AGENTS.md load order
-// (SKILL.md → default lens → rules), not the full reference tree.
-//
-// Default lens resolution (maintainable, no hard-coded skill map):
-// 1. Prefer AGENTS.md load-order / lens-reference prose.
-// 2. Fall back to SKILL.md lens prose.
-// Patterns accepted:
-//   - `the default \`references/lens-<name>.md\``
-//   - `load the default \`references/lens-<name>.md\``
-//   - `` `references/lens-<name>.md` (default) ``
-// Skills without a matching default (utilities, non-lens packages) contribute
-// only SKILL.md (+ rules.md if present).
+// Activation-token estimates: ceil(chars/4) over SKILL.md + default lens + rules.md.
+// Default lens is parsed from AGENTS.md then SKILL.md (no hard-coded skill map).
 
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 export const CHARS_PER_TOKEN = 4;
-/** Report (do not fail) when the estimate is at least this many tokens under budget. */
 export const TOKEN_BUDGET_SHRINK_REPORT_MIN = 16;
 export const DEFAULT_TOKEN_BUDGETS_PATH = "scripts/skill-token-budgets.json";
 
@@ -29,7 +14,7 @@ const DEFAULT_LENS_PATTERNS = Object.freeze([
 ]);
 
 export function estimateTokensFromChars(charCount) {
-  if (!Number.isFinite(charCount) || charCount <= 0) return 0;
+  if (charCount <= 0) return 0;
   return Math.ceil(charCount / CHARS_PER_TOKEN);
 }
 
@@ -40,71 +25,42 @@ export function resolveDefaultLensRelPath(skillDir) {
     const text = readFileSync(fullPath, "utf8");
     for (const pattern of DEFAULT_LENS_PATTERNS) {
       const match = pattern.exec(text);
-      if (match?.groups?.rel) return match.groups.rel.split(path.sep).join("/");
+      if (match?.groups?.rel) return match.groups.rel;
     }
   }
   return null;
 }
 
-function fileCharCount(filePath) {
-  if (!existsSync(filePath)) return { chars: 0, present: false };
-  return { chars: readFileSync(filePath, "utf8").length, present: true };
+function appendFileChars(skillDir, relFile, state) {
+  const fullPath = path.join(skillDir, relFile);
+  if (!existsSync(fullPath)) return;
+  state.chars += readFileSync(fullPath, "utf8").length;
+  state.files.push(relFile);
 }
 
-/**
- * @returns {{
- *   skill: string,
- *   tokens: number,
- *   chars: number,
- *   files: string[],
- *   defaultLens: string | null,
- * }}
- */
 export function estimateSkillActivationTokens(skillDir, skillName = path.basename(skillDir)) {
-  const files = [];
-  let chars = 0;
-
-  const skillMd = path.join(skillDir, "SKILL.md");
-  const skillMdStats = fileCharCount(skillMd);
-  if (skillMdStats.present) {
-    chars += skillMdStats.chars;
-    files.push("SKILL.md");
-  }
+  const state = { chars: 0, files: [] };
+  appendFileChars(skillDir, "SKILL.md", state);
 
   const defaultLens = resolveDefaultLensRelPath(skillDir);
-  if (defaultLens) {
-    const lensStats = fileCharCount(path.join(skillDir, ...defaultLens.split("/")));
-    if (lensStats.present) {
-      chars += lensStats.chars;
-      files.push(defaultLens);
-    }
-  }
+  if (defaultLens) appendFileChars(skillDir, defaultLens, state);
 
-  const rulesRel = "references/rules.md";
-  const rulesStats = fileCharCount(path.join(skillDir, "references", "rules.md"));
-  if (rulesStats.present) {
-    chars += rulesStats.chars;
-    files.push(rulesRel);
-  }
+  appendFileChars(skillDir, "references/rules.md", state);
 
   return {
     skill: skillName,
-    tokens: estimateTokensFromChars(chars),
-    chars,
-    files,
+    tokens: estimateTokensFromChars(state.chars),
+    chars: state.chars,
+    files: state.files,
     defaultLens,
   };
 }
 
 export function collectSkillActivationTokenEstimates({ skillsDir, skillNames }) {
-  const estimates = [];
-  for (const skill of skillNames) {
-    estimates.push(estimateSkillActivationTokens(path.join(skillsDir, skill), skill));
-  }
-  return estimates;
+  return skillNames.map((skill) => estimateSkillActivationTokens(path.join(skillsDir, skill), skill));
 }
 
-export function validateTokenBudgetsShape(budgets, failures) {
+function validateTokenBudgetsShape(budgets, failures) {
   if (!budgets || typeof budgets !== "object" || Array.isArray(budgets)) {
     failures.push("token budgets: must be a JSON object mapping skillName → token budget");
     return false;
@@ -119,12 +75,6 @@ export function validateTokenBudgetsShape(budgets, failures) {
   return valid;
 }
 
-/**
- * Compare live estimates to recorded budgets.
- * - Exceeding the recorded budget fails (trim content or raise the budget in review).
- * - Dropping by TOKEN_BUDGET_SHRINK_REPORT_MIN or more yields a non-failing notice.
- * - Missing / stale skill keys fail so the ratchet file stays complete.
- */
 export function compareTokenBudgets(estimates, budgets) {
   const failures = [];
   const notices = [];
@@ -148,7 +98,6 @@ export function compareTokenBudgets(estimates, budgets) {
       skill: estimate.skill,
       tokens: estimate.tokens,
       budget: budget ?? null,
-      defaultLens: estimate.defaultLens,
       files: estimate.files,
       status,
     });
