@@ -11,11 +11,11 @@ test("biters frontmatter name matches the directory", () => {
 test("biters has the required adversarial-review trigger", () => {
   assert.match(
     skill,
-    /description: Adversarial reviewer that attacks a change before merge/u,
+    /description: Probes a change before merge for correctness bugs/u,
   );
   assert.match(
     skill,
-    /Use when the user wants a change reviewed adversarially, risks found before merge, or a lens-focused review pass \(correctness, security, minimal-diff, drift\)\./u,
+    /Use when reviewing a PR adversarially, hunting bugs and risks before merge/u,
   );
 });
 

@@ -1,9 +1,9 @@
 ---
 name: lab
-description: Proof specialist that runs proof-only validation and records behavior evidence without expanding scope, covering command, UI, and smoke proof through lenses. Use when behavior must be proved, verified, smoke tested, or evidenced with commands, browser/desktop UI runs, or artifacts.
+description: Proves a stated behavior claim with command, UI, or smoke evidence and records artifacts without expanding scope. Use when behavior must be proved, verified, smoke tested, or evidenced — rerun checks and capture output, click through browser/desktop UI for screenshots, or grade an end-to-end smoke pass. Not for adversarial review or hunting bugs — use biters; not for implementing a tracked issue or feature — use roboports.
 metadata:
-  version: "0.2.1"
-  changelog: "0.2.1 - add trigger eval corpus for command, UI, and smoke proof activation"
+  version: "0.2.2"
+  changelog: "0.2.2 - sharpen routing description with distinct verbs and negative triggers"
 
 ---
 

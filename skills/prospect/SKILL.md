@@ -1,9 +1,9 @@
 ---
 name: prospect
-description: Lands a brand-new idea, feature, or initiative as tracked planning work and creates its tracker home before any spec or issues exist. Use when the user is starting a new idea, feature, or initiative from scratch and wants it captured as planning work before a spec or issues exist.
+description: Scouts a brand-new idea, feature, or initiative and lands it as tracked planning work — creating the tracker home plus idea/brief before any spec or issues exist. Use when the user is starting a new idea, feature, or initiative from scratch and wants it captured as planning work before a spec or issues exist. Not for splitting a plan into issues or writing a PRD — use blueprint; not for building features — use roboports.
 metadata:
-  version: "0.2.0"
-  changelog: "0.2.0 - tracker-neutral vocabulary for intake and the planning home"
+  version: "0.2.1"
+  changelog: "0.2.1 - sharpen routing description with distinct verbs and negative triggers"
 
 ---
 

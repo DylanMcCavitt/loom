@@ -5,10 +5,10 @@ import { test } from "node:test";
 const skill = readFileSync(new URL("../skills/blueprint/SKILL.md", import.meta.url), "utf8");
 
 test("blueprint has the required trigger", () => {
-  assert.match(skill, /description: The shape owner\. Turns current context into a PRD\/spec/u);
+  assert.match(skill, /description: Shapes current context into a PRD\/spec/u);
   assert.match(
     skill,
-    /Use for any shape-mode work - specs, breaking work into issues, planning structure, resolving unknowns, or triaging incoming issues\./u,
+    /Use for writing a PRD\/spec, breaking a plan into issues, planning structure, resolving unknowns, triaging incoming issues, or fetching a PR\/issue\/doc template\./u,
   );
 });
 

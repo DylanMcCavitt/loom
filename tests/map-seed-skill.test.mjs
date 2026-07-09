@@ -11,6 +11,10 @@ test("map-seed name matches its directory", () => {
 test("map-seed has the required trigger", () => {
   assert.match(
     skill,
+    /description: Prototypes under fixed constraints with a fast throwaway run/u,
+  );
+  assert.match(
+    skill,
     /Use when the user wants to prototype or de-risk a design before committing/u,
   );
 });

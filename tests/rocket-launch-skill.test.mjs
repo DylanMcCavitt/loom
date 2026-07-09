@@ -8,7 +8,7 @@ test("rocket-launch has the required trigger", () => {
   assert.match(skill, /name: rocket-launch/u);
   assert.match(
     skill,
-    /description: Ship a ready change off-planet by enforcing the launch gates, merging the PR, and letting the bridge close its tracked issue\./u,
+    /description: Launches a ready change by enforcing every launch gate, merging the PR, and letting the bridge close its tracked issue/u,
   );
   assert.match(skill, /Use when a change is ready to ship — merge the PR, run the review gate, and close out the tracked issue/u);
 });

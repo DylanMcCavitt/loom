@@ -1,9 +1,9 @@
 ---
 name: assembler
-description: Sets a repository up for the Factorio workflow kit or refreshes its envelope by reading the repo and generating the repo-local envelope every other kit skill binds to, plus the harness wiring and repo-specific skills and agents. Use when setting up a repo for the kit or refreshing its tracker team/project/label map, domain glossary, build/test/lint commands, PR/issue/doc templates, or repo-specific skills and agents.
+description: Bootstraps or refreshes a repo for the Factorio workflow kit by reading the repo and stamping the repo-local envelope (.agents/envelope/), harness wiring, and repo-specific skills/agents every other kit skill binds to. Use when setting up a repo for the kit, checking whether it is kit-ready, refreshing its tracker team/project/label map, domain glossary, build/test/lint commands, PR/issue/doc templates, or scaffolding a repo-specific skill. Not for opening tracked issues or writing PRDs/specs — use blueprint; not for capturing a brand-new idea as planning work — use prospect.
 metadata:
-  version: "0.3.0"
-  changelog: "0.3.0 - tracker-neutral vocabulary and a tighter entrypoint"
+  version: "0.3.1"
+  changelog: "0.3.1 - sharpen routing description with distinct verbs and negative triggers"
 
 ---
 

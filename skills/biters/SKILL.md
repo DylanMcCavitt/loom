@@ -1,9 +1,9 @@
 ---
 name: biters
-description: Adversarial reviewer that attacks a change before merge — probing for correctness bugs, regressions, maintainability rot, scope creep, and missing tests by default, with security, minimal-diff, and workflow-drift passes available as lenses. Use when the user wants a change reviewed adversarially, risks found before merge, or a lens-focused review pass (correctness, security, minimal-diff, drift).
+description: Probes a change before merge for correctness bugs, regressions, maintainability rot, scope creep, and missing tests by default, with security, minimal-diff, and workflow-drift review lenses. Use when reviewing a PR adversarially, hunting bugs and risks before merge, asking where the codebase could be breached, tightening an over-engineered diff, or checking planned-vs-actual drift. Not for explaining concepts; not for applying fixes — use repair-pack for one finding or roboports for full issue work; not for proving behavior with evidence — use lab.
 metadata:
-  version: "0.2.0"
-  changelog: "0.2.0 - duplicated governance boilerplate removed"
+  version: "0.2.1"
+  changelog: "0.2.1 - sharpen routing description with distinct verbs and negative triggers"
 
 ---
 

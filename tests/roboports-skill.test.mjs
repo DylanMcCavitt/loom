@@ -11,7 +11,7 @@ test("roboports frontmatter name matches the directory", () => {
 test("roboports has the required trigger", () => {
   assert.match(
     skill,
-    /description: The implement coordinator\. Runs one tracked issue end-to-end as code/u,
+    /description: Implements one ready tracked issue end to end as code/u,
   );
   assert.match(
     skill,

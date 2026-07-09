@@ -11,11 +11,11 @@ test("space-age frontmatter name matches the directory", () => {
 test("space-age has the required trigger", () => {
   assert.match(
     skill,
-    /description: Coordinates delivery beyond a single repo or environment/u,
+    /description: Promotes an artifact planet by planet through CI\/CD environments/u,
   );
   assert.match(
     skill,
-    /Use when work crosses one repo or one environment: CI\/CD pipelines, releasing\/promoting through environments, or coordinating a change across multiple repos\/services\./u,
+    /Use when work crosses one repo or one environment: CI\/CD pipelines, releasing\/promoting through staging then prod, or rolling a change across multiple service repos\./u,
   );
 });
 

@@ -1,9 +1,9 @@
 ---
 name: belt
-description: Handoff carrier that moves durable context between agents or threads with concise state, proof, risks, and next actions, covering handoff, thread-control, and resume flows through lenses. Use when writing a handoff, deciding whether to continue or start a new thread, or resuming a repo task from durable state.
+description: Compacts durable handoff, thread-control, and resume context between agents or threads — concise state, proof, risks, blockers, and next actions. Use when writing a handoff for the next agent, deciding whether to continue or start a new thread, or resuming a repo task from durable state before touching code. Not for triaging or planning incoming work — use blueprint; not for merging a PR or closing a tracked issue — use rocket-launch.
 metadata:
-  version: "0.2.1"
-  changelog: "0.2.1 - add trigger eval corpus for handoff, thread-control, and resume activation"
+  version: "0.2.2"
+  changelog: "0.2.2 - sharpen routing description with distinct verbs and negative triggers"
 
 ---
 

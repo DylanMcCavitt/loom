@@ -1,9 +1,9 @@
 ---
 name: rocket-launch
-description: Ship a ready change off-planet by enforcing the launch gates, merging the PR, and letting the bridge close its tracked issue. Use when a change is ready to ship — merge the PR, run the review gate, and close out the tracked issue; not for opening a draft or work that is not ready (that stays with `roboports`).
+description: Launches a ready change by enforcing every launch gate, merging the PR, and letting the bridge close its tracked issue while recording auditable evidence. Use when a change is ready to ship — merge the PR, run the review gate, and close out the tracked issue. Not for opening a draft PR or unfinished work — use roboports; not for multi-repo or multi-environment promotion — use space-age.
 metadata:
-  version: "0.3.0"
-  changelog: "0.3.0 - tracker-neutral vocabulary for the bridge, gates, and closeout record"
+  version: "0.3.1"
+  changelog: "0.3.1 - sharpen routing description with distinct verbs and negative triggers"
 
 ---
 

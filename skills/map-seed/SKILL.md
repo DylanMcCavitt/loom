@@ -1,9 +1,9 @@
 ---
 name: map-seed
-description: Plans around fixed constraints, runs a fast throwaway prototype, retros what worked versus what didn't, then restarts carrying the learnings instead of polishing a doomed first run. Use when the user wants to prototype or de-risk a design before committing, work out the kinks under fixed or awkward constraints, or run a quick throwaway then iterate.
+description: Prototypes under fixed constraints with a fast throwaway run, retros what worked versus what didn't, then rerolls carrying the learnings instead of polishing a doomed first attempt. Use when the user wants to prototype or de-risk a design before committing, mock up an approach around awkward constraints, or flip through throwaway layout variants. Not for writing the final committed PRD/spec — use blueprint; not for conceptual explanations.
 metadata:
-  version: "0.2.0"
-  changelog: "0.2.0 - entrypoint condensed to the word budget without changing the loop"
+  version: "0.2.1"
+  changelog: "0.2.1 - sharpen routing description with distinct verbs and negative triggers"
 
 ---
 

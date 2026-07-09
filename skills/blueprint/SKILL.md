@@ -1,9 +1,9 @@
 ---
 name: blueprint
-description: The shape owner. Turns current context into a PRD/spec with acceptance criteria, non-goals, and a proof plan, and covers issue decomposition, architecture seams, research spikes, and tracker triage through lenses. Owns the kit's reusable PR, issue, project-doc, and PRD templates. Use for any shape-mode work - specs, breaking work into issues, planning structure, resolving unknowns, or triaging incoming issues.
+description: Shapes current context into a PRD/spec with acceptance criteria, non-goals, and a proof plan, and covers issue decomposition, architecture seams, research spikes, and tracker triage through lenses. Owns the kit's reusable PR, issue, project-doc, and PRD templates. Use for writing a PRD/spec, breaking a plan into issues, planning structure, resolving unknowns, triaging incoming issues, or fetching a PR/issue/doc template. Not for implementing a ready tracked issue — use roboports; not for throwaway prototypes — use map-seed; not for landing a brand-new idea's tracker home — use prospect.
 metadata:
-  version: "0.2.0"
-  changelog: "0.2.0 - tracker-neutral vocabulary across entrypoint and lens references"
+  version: "0.2.1"
+  changelog: "0.2.1 - sharpen routing description with distinct verbs and negative triggers"
 
 ---
 
