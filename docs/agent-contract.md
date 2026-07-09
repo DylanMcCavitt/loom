@@ -123,15 +123,15 @@ Rules use stable IDs (`## rule/{stable-id}`) citing status, scope, rule, why, ex
 
 ### Machine-checkable JSON packets
 
-Emit conformant packets as JSON objects tagged with a top-level `"packet"` kind. Schemas and `validatePacket(kind, object)` live in `scripts/lib/packet-schema.mjs`; `scripts/validate-packets.mjs` scans `retro/**/*.md` (fenced json code blocks) and `retro/**/*.json` for tagged packets. Untagged JSON is ignored. Kinds:
+Tag packets with a top-level `"packet"` kind. Schemas: `scripts/lib/packet-schema.mjs`. Scanner: `scripts/validate-packets.mjs` over `retro/**/*.md` (fenced json) and `retro/**/*.json`; untagged JSON is ignored.
 
-| `packet` value | Purpose |
+| `packet` | Shape |
 | --- | --- |
-| `repair-finding` | repair-pack finding packet (nine required fields) |
-| `agent-input` | common bounded input (`mode`, `targetSurface`, optional `lens`/`lenses`, `context`, `scope`, `issueId`/`prId`) |
-| `agent-output` | common bounded output (mode, lens, loaded references, rule IDs, proof run/result, coverage gaps, changed files, optional blocker) |
+| `repair-finding` | nine required finding fields |
+| `agent-input` | `mode`, `targetSurface`; optional `lens`/`lenses`, `context`, `scope`, `issueId`/`prId` |
+| `agent-output` | mode, lens, loaded references, rule IDs, proof run/result, coverage gaps, changed files; optional blocker |
 
-Field names are camelCase. `context` is `validation` | `live` and defaults to `live` when omitted. Example:
+CamelCase fields. `context` is `validation` | `live` (default `live`). Example:
 
 ```json
 {

@@ -1,12 +1,5 @@
 #!/usr/bin/env node
-// Scans retro/**/*.md and retro/**/*.json for tagged JSON agent packets and
-// validates them against scripts/lib/packet-schema.mjs.
-//
-// Convention: every machine-checkable packet is a JSON object with a top-level
-// `"packet"` field naming the kind (`repair-finding` | `agent-input` |
-// `agent-output`). In markdown, emit the object inside a fenced ```json block.
-// Standalone .json files under retro/ are validated when they carry the same
-// `"packet"` kind tag; untagged JSON (legacy retro evidence) is skipped.
+// Validates tagged JSON agent packets under retro/ (see docs/agent-contract.md).
 
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
@@ -16,13 +9,8 @@ import { validateTaggedPacket } from "./lib/packet-schema.mjs";
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 const DEFAULT_RETRO_DIR = "retro";
 const USAGE = `Usage: node scripts/validate-packets.mjs [--root <dir>] [--retro-dir <dir>]`;
-
 const FENCED_JSON_RE = /```json\s*\n([\s\S]*?)```/giu;
 
-/**
- * @param {string[]} argv
- * @returns {{ root: string, retroDir: string }}
- */
 function readArgs(argv) {
   const options = { root: repoRoot, retroDir: DEFAULT_RETRO_DIR };
   for (let index = 0; index < argv.length; index += 1) {
@@ -47,11 +35,6 @@ function readArgs(argv) {
   return options;
 }
 
-/**
- * @param {string} dir
- * @param {(name: string) => boolean} [filter]
- * @returns {string[]}
- */
 function collectFiles(dir, filter = () => true) {
   if (!existsSync(dir)) return [];
   const files = [];
@@ -67,12 +50,6 @@ function collectFiles(dir, filter = () => true) {
   return files;
 }
 
-/**
- * Extract fenced ```json blocks from markdown text.
- *
- * @param {string} text
- * @returns {{ body: string, index: number }[]}
- */
 export function extractFencedJsonBlocks(text) {
   const blocks = [];
   for (const match of text.matchAll(FENCED_JSON_RE)) {
@@ -81,63 +58,33 @@ export function extractFencedJsonBlocks(text) {
   return blocks;
 }
 
-/**
- * @param {string} text
- * @param {number} index
- * @returns {number}
- */
 function lineNumberForIndex(text, index) {
   return text.slice(0, index).split("\n").length;
 }
 
-/**
- * @param {unknown} value
- * @returns {value is Record<string, unknown>}
- */
 function isPlainObject(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-/**
- * @param {unknown} value
- * @returns {boolean}
- */
 function looksLikeTaggedPacket(value) {
   return isPlainObject(value) && typeof value.packet === "string";
 }
 
-/**
- * Validate one parsed JSON value if it is a tagged packet.
- *
- * @param {unknown} value
- * @param {string} location
- * @returns {string[]}
- */
-function validateMaybePacket(value, location) {
-  if (!looksLikeTaggedPacket(value)) return [];
+function packetErrors(value, location) {
   const result = validateTaggedPacket(value);
   if (result.ok) return [];
   return result.errors.map((error) => `${location}: ${error}`);
 }
 
-/**
- * Scan a markdown file for fenced JSON packet blocks.
- *
- * @param {string} filePath
- * @param {string} content
- * @returns {{ checked: number, errors: string[] }}
- */
 export function scanMarkdownPackets(filePath, content) {
   const errors = [];
   let checked = 0;
   for (const block of extractFencedJsonBlocks(content)) {
-    const line = lineNumberForIndex(content, block.index);
-    const location = `${filePath}:${line}`;
+    const location = `${filePath}:${lineNumberForIndex(content, block.index)}`;
     let parsed;
     try {
       parsed = JSON.parse(block.body);
     } catch (error) {
-      // Only fail hard when the fence looks like a tagged packet attempt.
       if (/"packet"\s*:/u.test(block.body)) {
         errors.push(`${location}: invalid JSON in packet fence (${error.message})`);
       }
@@ -145,20 +92,12 @@ export function scanMarkdownPackets(filePath, content) {
     }
     if (!looksLikeTaggedPacket(parsed)) continue;
     checked += 1;
-    errors.push(...validateMaybePacket(parsed, location));
+    errors.push(...packetErrors(parsed, location));
   }
   return { checked, errors };
 }
 
-/**
- * Scan a standalone JSON file for a tagged packet.
- *
- * @param {string} filePath
- * @param {string} content
- * @returns {{ checked: number, errors: string[] }}
- */
 export function scanJsonPackets(filePath, content) {
-  const errors = [];
   let parsed;
   try {
     parsed = JSON.parse(content);
@@ -170,12 +109,13 @@ export function scanJsonPackets(filePath, content) {
   }
 
   if (Array.isArray(parsed)) {
+    const errors = [];
     let checked = 0;
     for (let index = 0; index < parsed.length; index += 1) {
       const item = parsed[index];
       if (!looksLikeTaggedPacket(item)) continue;
       checked += 1;
-      errors.push(...validateMaybePacket(item, `${filePath}[${index}]`));
+      errors.push(...packetErrors(item, `${filePath}[${index}]`));
     }
     return { checked, errors };
   }
@@ -183,13 +123,9 @@ export function scanJsonPackets(filePath, content) {
   if (!looksLikeTaggedPacket(parsed)) {
     return { checked: 0, errors: [] };
   }
-  return { checked: 1, errors: validateMaybePacket(parsed, filePath) };
+  return { checked: 1, errors: packetErrors(parsed, filePath) };
 }
 
-/**
- * @param {{ root?: string, retroDir?: string }} [options]
- * @returns {{ checked: number, files: number, errors: string[] }}
- */
 export function validateRetroPackets(options = {}) {
   const root = options.root ?? repoRoot;
   const retroDir = path.resolve(root, options.retroDir ?? DEFAULT_RETRO_DIR);
@@ -204,17 +140,14 @@ export function validateRetroPackets(options = {}) {
     return { checked: 0, files: 0, errors: [`${options.retroDir ?? DEFAULT_RETRO_DIR}: expected a directory`] };
   }
 
-  const mdFiles = collectFiles(retroDir, (name) => name.endsWith(".md"));
-  const jsonFiles = collectFiles(retroDir, (name) => name.endsWith(".json"));
-
-  for (const filePath of mdFiles) {
+  for (const filePath of collectFiles(retroDir, (name) => name.endsWith(".md"))) {
     files += 1;
     const relative = path.relative(root, filePath).split(path.sep).join("/");
     const result = scanMarkdownPackets(relative, readFileSync(filePath, "utf8"));
     checked += result.checked;
     errors.push(...result.errors);
   }
-  for (const filePath of jsonFiles) {
+  for (const filePath of collectFiles(retroDir, (name) => name.endsWith(".json"))) {
     files += 1;
     const relative = path.relative(root, filePath).split(path.sep).join("/");
     const result = scanJsonPackets(relative, readFileSync(filePath, "utf8"));
