@@ -1,10 +1,6 @@
 #!/usr/bin/env node
-// Convert judge scorecards (retro/judge-scorecard-*.json) into repair-pack
-// finding packets under retro/findings/<skill>/<slug>.md.
-//
-// Scorecards are gitignored model output; finding packets are shareable
-// repair inputs (same retro/ convention as retro/pr-* packets). No model
-// calls — this is a deterministic offline transform.
+// Convert judge scorecards into repair-pack finding packets under
+// retro/findings/<skill>/<slug>.md. Deterministic; no model calls.
 
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
@@ -36,11 +32,9 @@ function usage() {
   return [
     'Usage: node scripts/judge-to-findings.mjs [scorecard-or-dir]',
     '',
-    'Convert judge scorecard trim_candidates into repair-pack finding packets.',
-    'With no argument, uses the latest retro/judge-scorecard-*.json by generatedAt.',
-    'Packets land under retro/findings/<skill>/<slug>.md (shareable; not gitignored).',
-    'Stale candidates (no longer present in SKILL.md) are flagged and not emitted.',
-    'Re-runs are idempotent: existing packets with the same content hash are skipped.',
+    'Convert judge trim_candidates into repair-pack finding packets under',
+    'retro/findings/<skill>/. Default: latest retro/judge-scorecard-*.json.',
+    'Stale candidates are flagged; re-runs are idempotent.',
   ].join('\n');
 }
 
@@ -103,16 +97,12 @@ export function resolveScorecardPaths(input, { root = defaultRepoRoot } = {}) {
   if (!fs.existsSync(resolved)) {
     throw new Error(`scorecard path not found: ${input}`);
   }
-  const stat = fs.statSync(resolved);
-  if (stat.isDirectory()) {
+  if (fs.statSync(resolved).isDirectory()) {
     const files = listScorecardFiles(resolved);
     if (files.length === 0) {
       throw new Error(`no judge-scorecard-*.json files in ${input}`);
     }
     return files;
-  }
-  if (!SCORECARD_JSON_RE.test(path.basename(resolved)) && !resolved.endsWith('.json')) {
-    throw new Error(`expected a judge scorecard JSON file, got: ${input}`);
   }
   return [resolved];
 }
@@ -121,14 +111,12 @@ export function candidateStillPresent(skillMd, candidate) {
   const needle = String(candidate).trim();
   if (!needle) return false;
   if (needle.startsWith('#')) {
-    // Exact heading line match (## / ### as quoted by the judge).
-    const lines = skillMd.split(/\r?\n/u);
-    return lines.some((line) => line.trim() === needle);
+    return skillMd.split(/\r?\n/u).some((line) => line.trim() === needle);
   }
   return skillMd.includes(needle);
 }
 
-export function pickRubricDimension(scores = {}, notes = '') {
+export function pickRubricDimension(scores = {}) {
   let worst = null;
   let worstScore = Number.POSITIVE_INFINITY;
   for (const dimension of JUDGE_SCORE_DIMENSIONS) {
@@ -139,15 +127,7 @@ export function pickRubricDimension(scores = {}, notes = '') {
       worst = dimension;
     }
   }
-  if (worst) return worst;
-
-  const noteText = String(notes).toLowerCase();
-  for (const dimension of JUDGE_SCORE_DIMENSIONS) {
-    if (noteText.includes(dimension.replaceAll('_', ' ')) || noteText.includes(dimension)) {
-      return dimension;
-    }
-  }
-  return 'conciseness';
+  return worst ?? 'conciseness';
 }
 
 export function buildFindingPacket({
@@ -158,41 +138,36 @@ export function buildFindingPacket({
   scorecardFile,
   generatedAt,
 }) {
-  const dimension = pickRubricDimension(scores, notes);
+  const dimension = pickRubricDimension(scores);
   const scoreLine = JUDGE_SCORE_DIMENSIONS
     .map((name) => `${name}=${scores?.[name] ?? '?'}`)
     .join(', ');
   const isHeading = String(candidate).trim().startsWith('#');
   const file = `skills/${skill}/SKILL.md`;
-  const packet = {
+  const riskParts = [
+    `Token cost; rubric/${dimension} weakest (${scoreLine}).`,
+  ];
+  if (notes) riskParts.push(`Judge notes: ${notes}.`);
+  riskParts.push(`Source: ${scorecardFile}${generatedAt ? ` @ ${generatedAt}` : ''}.`);
+  return {
     file,
     symbol: candidate,
     scope: isHeading
       ? `Section "${candidate}" only in ${file}`
-      : `The quoted sentence only in ${file}`,
-    'concrete risk': [
-      `Token cost from keepable filler; rubric/${dimension} is the weakest cited dimension`,
-      `(scores: ${scoreLine}).`,
-      notes ? `Judge notes: ${notes}` : 'Judge notes: (none).',
-      `Source scorecard: ${scorecardFile}${generatedAt ? ` @ ${generatedAt}` : ''}.`,
-    ].join(' '),
+      : `Quoted sentence only in ${file}`,
+    'concrete risk': riskParts.join(' '),
     'minimal expected fix': isHeading
-      ? `Delete or tighten the section headed ${JSON.stringify(candidate)} (and its body) without changing behavioral rules elsewhere.`
-      : `Delete or tighten the quoted sentence ${JSON.stringify(candidate)} without changing behavioral rules elsewhere.`,
+      ? `Delete or tighten section ${JSON.stringify(candidate)}.`
+      : `Delete or tighten sentence ${JSON.stringify(candidate)}.`,
     'proof check': `npm run check; npm run bench -- --judge ${skill}`,
     'rule/source id': `rubric/${dimension}`,
-    'non-goals': 'No behavioral rule changes; do not edit other sections; do not change evals, references, or harness wiring.',
-    'allowed files': `${file} (including metadata.version / metadata.changelog bump only)`,
+    'non-goals': 'No behavioral rule changes; no other sections; no evals/references/harness edits.',
+    'allowed files': `${file} (version/changelog bump only)`,
   };
-  return packet;
 }
 
 export function renderFindingMarkdown(packet, { skill, slug, contentHash: hash, scorecardFile } = {}) {
-  const missing = FINDING_PACKET_FIELDS.filter((field) => !(field in packet));
-  if (missing.length) {
-    throw new Error(`finding packet missing fields: ${missing.join(', ')}`);
-  }
-  const lines = [
+  return [
     `# Repair finding: ${skill}/${slug}`,
     '',
     `- Generated by: \`scripts/judge-to-findings.mjs\``,
@@ -200,14 +175,11 @@ export function renderFindingMarkdown(packet, { skill, slug, contentHash: hash, 
     `- Content hash: \`${hash}\``,
     `- Status: pending-repair`,
     '',
-    'Repair-pack finding packet (one concrete trim candidate):',
-    '',
     '```json',
     JSON.stringify(packet, null, 2),
     '```',
     '',
-  ];
-  return lines.join('\n');
+  ].join('\n');
 }
 
 export function extractPacketFromMarkdown(markdown) {
@@ -234,10 +206,8 @@ export function validateFindingPacket(packet) {
 
 function loadSkillMd(skill, root) {
   const skillPath = path.join(root, 'skills', skill, 'SKILL.md');
-  if (!fs.existsSync(skillPath)) {
-    return { skillPath, skillMd: null };
-  }
-  return { skillPath, skillMd: fs.readFileSync(skillPath, 'utf8') };
+  if (!fs.existsSync(skillPath)) return null;
+  return fs.readFileSync(skillPath, 'utf8');
 }
 
 export function convertScorecardToFindings(scorecard, {
@@ -251,13 +221,13 @@ export function convertScorecardToFindings(scorecard, {
   const stale = [];
   const errors = [];
 
-  for (const entry of scorecard.skills ?? []) {
+  for (const entry of scorecard.skills) {
     if (!entry || typeof entry.skill !== 'string') {
       errors.push('scorecard skill entry missing skill name');
       continue;
     }
     const skill = entry.skill;
-    const { skillMd } = loadSkillMd(skill, root);
+    const skillMd = loadSkillMd(skill, root);
     if (skillMd == null) {
       errors.push(`skills/${skill}/SKILL.md not found; skipping skill`);
       continue;
@@ -306,14 +276,11 @@ export function convertScorecardToFindings(scorecard, {
       });
 
       if (fs.existsSync(absolutePath)) {
-        const existing = fs.readFileSync(absolutePath, 'utf8');
-        const existingPacket = extractPacketFromMarkdown(existing);
-        const existingHash = existingPacket ? contentHash(existingPacket) : null;
-        if (existingHash === hash || existing.includes(`Content hash: \`${hash}\``)) {
+        const existingPacket = extractPacketFromMarkdown(fs.readFileSync(absolutePath, 'utf8'));
+        if (existingPacket && contentHash(existingPacket) === hash) {
           skipped.push({ path: relativePath, reason: 'idempotent-skip', contentHash: hash });
           continue;
         }
-        // Same slug, different content: overwrite with the new packet (stable slug).
       }
 
       if (write) {

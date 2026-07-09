@@ -1,2 +1,1 @@
-# Generated repair-pack finding packets from judge trim candidates.
-# Scorecards (retro/judge-scorecard-*) stay gitignored; these packets are shareable.
+# Shareable repair-pack finding packets (judge scorecards stay gitignored).

@@ -106,7 +106,7 @@ test('buildFindingPacket includes all nine required fields', () => {
   assert.equal(packet['rule/source id'], 'rubric/conciseness');
   assert.match(packet['non-goals'], /No behavioral rule changes/u);
   assert.match(packet['allowed files'], /^skills\/sample-skill\/SKILL\.md/u);
-  assert.match(packet['allowed files'], /metadata\.version/u);
+  assert.match(packet['allowed files'], /version\/changelog bump only/u);
 });
 
 test('convertScorecardToFindings emits packets, flags stale, and is idempotent', () => {
